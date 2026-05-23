@@ -394,34 +394,122 @@ footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--border);displ
 
 const BINANCE = 'https://data-api.binance.vision';
 
-const SCAN_PAIRS = [
-  'BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT',
-  'ADAUSDT','AVAXUSDT','DOGEUSDT','DOTUSDT','MATICUSDT',
-  'LINKUSDT','ATOMUSDT','LTCUSDT','UNIUSDT','AAVEUSDT',
-  'NEARUSDT','FILUSDT','ARBUSDT','OPUSDT','INJUSDT',
-  'SUIUSDT','APTUSDT','TIAUSDT','FETUSDT','RUNEUSDT',
-  'STXUSDT','IMXUSDT','SANDUSDT','MANAUSDT','AXSUSDT',
-  'FTMUSDT','ALGOUSDT','GALAUSDT','APEUSDT','GMTUSDT',
-  'EGLDUSDT','CRVUSDT','MKRUSDT','SNXUSDT','COMPUSDT',
-  'YFIUSDT','SUSHIUSDT','GRTUSDT','ENSUSDT','LDOUSDT',
-  'DYDXUSDT','GMXUSDT','CAKEUSDT','XLMUSDT','VETUSDT',
-  'RNDRUSDT','SEIUSDT','WLDUSDT','JUPUSDT','PYTHUSDT',
-  'PEPEUSDT','BONKUSDT','FLOKIUSDT','MEMEUSDT','1000SHIBUSDT',
-  'TRXUSDT','ETCUSDT','BCHUSDT','ICPUSDT','THETAUSDT',
-  'KASUSDT','FLOWUSDT','XTZUSDT','HBARUSDT','QNTUSDT',
-  'KAVAUSDT','ROSEUSDT','CHZUSDT','ZILUSDT','KSMUSDT',
-  'CELOUSDT','1INCHUSDT','BALUSDT','ANKRUSDT','HOTUSDT',
-  'IOTAUSDT','ZRXUSDT','BATUSDT','WOOUSDT','CFXUSDT',
-  'MINAUSDT','BLURUSDT','JASMYUSDT','MASKUSDT','ACHUSDT',
-  'RSRUSDT','SKLUSDT','CELRUSDT','ONTUSDT','ICXUSDT',
-  'QTUMUSDT','DASHUSDT','ZECUSDT','RVNUSDT','SCUSDT',
-  'CKBUSDT','ARPAUSDT','LRCUSDT','MAGICUSDT','HOOKUSDT',
-  'IDUSDT','ALTUSDT','PORTALUSDT','PIXELUSDT','STRKUSDT',
-  'NOTUSDT','TNSRUSDT','ENAUSDT','OMUSDT','PENDLEUSDT',
-  'SUPERUSDT','TRBUSDT','API3USDT','NKNUSDT','WAVESUSDT',
-  'AUDIOUSDT','PEOPLEUSDT','SPELLUSDT','GLMRUSDT','ASTRUSDT',
-  'XAIUSDT','AIUSDT','NFPUSDT','MANTAUSDT','DYMUSDT',
-  'AEVOUSDT','ZETAUSDT','ETHFIUSDT','REZUSDT','TURBOUSDT'
+// ── Sectors ───────────────────────────────────────────────────────────────────
+const SECTORS = {
+  // ── Layer 1 — Major ──────────────────────────────────────────────────────────
+  'L1_MAJOR': [
+    'BTCUSDT','ETHUSDT','SOLUSDT','AVAXUSDT','DOTUSDT','BNBUSDT','ADAUSDT',
+    'TRXUSDT','HBARUSDT','TONUSDT','XRPUSDT','LTCUSDT','BCHUSDT',
+  ],
+  // ── Layer 1 — Alt ────────────────────────────────────────────────────────────
+  'L1_ALT': [
+    'NEARUSDT','APTUSDT','SUIUSDT','ALGOUSDT','EGLDUSDT','ICPUSDT',
+    'FTMUSDT','SEIUSDT','MINAUSDT','XTZUSDT','EOSUSDT','THETAUSDT',
+    'KAVAUSDT','FLOWUSDT','ONEUSDT','ZILUSDT','ONTUSDT','AIONUSDT',
+    'WAXPUSDT','ENJUSDT','CHZUSDT','CELOUSDT','KLAUSUSDT','CKBUSDT',
+    'STRKUSDT','BERAUSDT','MOVRUSDT','TAOUSDT','POLUSDT',
+  ],
+  // ── Layer 2 / Scaling ────────────────────────────────────────────────────────
+  'L2': [
+    'MATICUSDT','ARBUSDT','OPUSDT','IMXUSDT','STXUSDT','METISUSDT',
+    'SKLUSDT','LRCUSDT','NTRNUSDT','SCROLLUSDT','MANTAUSDT','BLASTUSDT',
+    'ZKUSDT','MNTUSDT','CFXUSDT','BTTUSDT',
+  ],
+  // ── DeFi ─────────────────────────────────────────────────────────────────────
+  'DEFI': [
+    'UNIUSDT','AAVEUSDT','CRVUSDT','MKRUSDT','SNXUSDT','COMPUSDT',
+    'SUSHIUSDT','DYDXUSDT','GMXUSDT','CAKEUSDT','BALUSDT','YFIUSDT',
+    '1INCHUSDT','RUNEUSDT','KNCUSDT','PENDLEUSDT','JUPUSDT','RAYUSDT',
+    'ORCAUSDT','MUXUSDT','KWENTAUSDT','LDOUSDT','RPLUSDT','FRAXUSDT',
+    'CVXUSDT','FLUXUSDT','RADUSDT',
+  ],
+  // ── AI & Data ────────────────────────────────────────────────────────────────
+  'AI_DATA': [
+    'FETUSDT','GRTUSDT','WLDUSDT','AGIXUSDT','OCEANUSDT','NMRUSDT',
+    'RNDRUSDT','TAOUVUSDT','AKTUSDT','ARKMUSDT','PHBUSDT','AIUSDT',
+    'MYRIAUSDT','VICAUSDT','NEIROUSDT','TURBOUSDT','COOKIEUSDT',
+    'KAIAUSDT','ALETHUSDT','GRIFFAINUSDT','VIRTUALUSDT','TWOMUSDT',
+  ],
+  // ── Gaming & Metaverse ───────────────────────────────────────────────────────
+  'GAMING': [
+    'AXSUSDT','SANDUSDT','MANAUSDT','GALAUSDT','GMTUSDT','APEUSDT',
+    'ILVUSDT','SLPUSDT','YGGUSDT','ALICEUSDT','TLMUSDT','RAREUSDT',
+    'RONINUSDT','SPSUSDT','PGOUSDT','ACEUSDT','NOTUSDT','PIXELUSDT',
+    'PORTALUSDT','GOMBLEUSDT','XAIUSDT','ALTUSDT','GUSDT','BOMEUSDT',
+  ],
+  // ── Infrastructure & Oracles ─────────────────────────────────────────────────
+  'INFRA': [
+    'LINKUSDT','FILUSDT','ENSUSDT','STORJUSDT','IOTAUSDT','BANDUSDT',
+    'APIUSDT','PYROOUSDT','DIAUSDT','ARKUSDT','BIOUSDT',
+    'VANRYUSDT','EIGENUSDT','PYTHUSDT','JTOLUSDT','JUPUSDT',
+  ],
+  // ── Payments & Settlement ────────────────────────────────────────────────────
+  'PAYMENTS': [
+    'XRPUSDT','XLMUSDT','LTCUSDT','VETUSDT','DASHUSDT','BCHUSDT',
+    'QNTUSDT','XDCUSDT','NEXOUSDT','ZENUSDT',
+  ],
+  // ── Cosmos Ecosystem ─────────────────────────────────────────────────────────
+  'COSMOS': [
+    'ATOMUSDT','TIAUSDT','RUNEUSDT','INJUSDT','AKTUSDT','NTRNUSDT',
+    'OSMUSDT','SECRETUSDT','STARSUSDT','EVMOSUSDT','DYMOUSDT','SEIUSDT',
+  ],
+  // ── Meme ─────────────────────────────────────────────────────────────────────
+  'MEME': [
+    'DOGEUSDT','SHIBUSDT','PEPEUSDT','FLOKIUSDT','BONKUSDT','WIFUSDT',
+    'MEMEUSDT','MOGUSDT','BRETUSDT','NEIROUSDT','GOATUSDT','PNUTUSDT',
+    'ACTUSDT','BOMEUSDT','TSTUSDT','CATIUSDT','HMSTRUSDT','MOODENGUUSDT',
+    'DOGSUSDT','TURBOUSDT','WOJAKUSDT','BABYDOGEUSDT',
+  ],
+  // ── Privacy ──────────────────────────────────────────────────────────────────
+  'PRIVACY': [
+    'XMRUSDT','ZECUSDT','ROSEUSDT','SCRTUSDT','DUSKUSDT','AZEROSUDT',
+  ],
+  // ── RWA — Real World Assets ──────────────────────────────────────────────────
+  'RWA': [
+    'ONDOUSDT','POLYXUSDT','CFGUSDT','MAPLEUUSDT','GOLDFINCHUSDT',
+    'TPROTOCOLUSDT','JTOUSDT','REUSUSDT','TOKENIZEUSDT',
+  ],
+  // ── Liquid Staking & Restaking ───────────────────────────────────────────────
+  'LST_RESTAKE': [
+    'LDOUSDT','RPLUSDT','EIGENUSDT','SSAUSDT','ANKRUSDT','SFRXETHUSDT',
+    'ETHFIUSDT','RENZOOUSDT','KELPDAOUSDT','JTOLUSDT','MSOLOUSDT',
+  ],
+  // ── Solana Ecosystem ─────────────────────────────────────────────────────────
+  'SOL_ECO': [
+    'SOLUSDT','BONKUSDT','WIFUSDT','JUPUSDT','RAYUSDT','ORCAUSDT',
+    'JTOLUSDT','MSOLOUSDT','PYTHUSDT','JLPUSDT','SAMUSDT','BOMEUSDT',
+    'POPCAT','WENWMTUSDT',
+  ],
+  // ── BNB Chain Ecosystem ──────────────────────────────────────────────────────
+  'BNB_ECO': [
+    'BNBUSDT','CAKEUSDT','BTTUSDT','ALPACAUSDT','XVSUSDT',
+    'AUTOUSDT','BSWUSDT','SYNUSDT',
+  ],
+  // ── Move Ecosystem (Aptos / Sui) ─────────────────────────────────────────────
+  'MOVE_ECO': [
+    'APTUSDT','SUIUSDT','MOVRUSDT','DEEPUSDT',
+  ],
+  // ── DePIN — Decentralised Physical Infrastructure ────────────────────────────
+  'DEPIN': [
+    'IOTAUSDT','HNTUSDT','RENDRUSDT','FETUSDT','ARKMUSDT',
+    'GEODNETUSDT','DYMOUSDT','ROAMUSDT','NOSUSDT',
+  ],
+  // ── Cross-chain / Interop ────────────────────────────────────────────────────
+  'INTEROP': [
+    'DOTUSDT','ATOMUSDT','QNTUSDT','AXLUSDT','WUSDT',
+    'SYNUSDT',
+  ],
+  // ── Derivatives / Perps ──────────────────────────────────────────────────────
+  'PERPS_DEFI': [
+    'DYDXUSDT','GMXUSDT','SNXUSDT','KWENTAUSDT','MUXUSDT','STGUSDT',
+    'PENDLEUSDT',
+  ],
+  // ── Big Alts basket (cross-sector rotation monitor) ──────────────────────────
+  'BIG_ALTS': [
+    'SOLUSDT','AVAXUSDT','DOTUSDT','NEARUSDT','MATICUSDT','LTCUSDT',
+    'LINKUSDT','ATOMUSDT','UNIUSDT','AAVEUSDT','XRPUSDT','ADAUSDT',
+    'FILUSDT','ARBUSDT','OPUSDT','APTUSDT','SUIUSDT','INJUSDT',
+    'TIAUSDT','SEIUSDT','STRKUSDT','WLDUSDT','ONDOUSDT','PENDLEUSDT',
   
 ];
 
