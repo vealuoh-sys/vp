@@ -681,20 +681,55 @@ async function triggerAndPoll() {
 
   let done = 0;
 
-  for (let i = 0; i < jobs.length; i += 3) {
-    const batch = jobs.slice(i, i + 3);
-    await Promise.allSettled(batch.map(async ({ sym, tf }) => {
+  // fetchWithRetry: if Binance rate-limits us (429) we wait and try again
+  async function fetchWithRetry(sym, tf, tries = 3) {
+    for (let attempt = 0; attempt < tries; attempt++) {
       try {
-        const candles = await fetchCandles(sym, tf, 120);
-        const sigs    = detectSignals(sym, candles, tf);
-        allSignals.push(...sigs);
-      } catch (e) { /* skip failed coin silently */ }
+        const url = `${BINANCE}/api/v3/klines?symbol=${sym}&interval=${tf}&limit=120`;
+        const res = await fetch(url);
+        // 429 = rate limited, 418 = banned temporarily
+        if (res.status === 429 || res.status === 418) {
+          const wait = (attempt + 1) * 2000; // wait 2s, 4s, 6s
+          await new Promise(r => setTimeout(r, wait));
+          continue; // retry
+        }
+        const raw = await res.json();
+        if (!Array.isArray(raw) || raw.length === 0) return null;
+        return raw.map(k => ({
+          time:    parseInt(k[0]),
+          open:    parseFloat(k[1]),
+          high:    parseFloat(k[2]),
+          low:     parseFloat(k[3]),
+          close:   parseFloat(k[4]),
+          volume:  parseFloat(k[5]),
+          typical: (parseFloat(k[2]) + parseFloat(k[3]) + parseFloat(k[4])) / 3
+        }));
+      } catch (e) {
+        if (attempt === tries - 1) return null; // give up after last try
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+    return null;
+  }
+
+  // Process 2 coins at a time (safer for large lists)
+  for (let i = 0; i < jobs.length; i += 2) {
+    const batch = jobs.slice(i, i + 2);
+    await Promise.allSettled(batch.map(async ({ sym, tf }) => {
+      const candles = await fetchWithRetry(sym, tf);
+      if (candles) {
+        try {
+          const sigs = detectSignals(sym, candles, tf);
+          allSignals.push(...sigs);
+        } catch (e) { /* skip bad signal calc */ }
+      }
       done++;
       const pct = Math.round((done / jobs.length) * 100);
       pfg.style.width = pct + '%';
       ptxt.textContent = `SCANNING… ${done} / ${jobs.length}`;
     }));
-    await new Promise(r => setTimeout(r, 300));
+    // 600ms pause between batches — prevents Binance from blocking us
+    await new Promise(r => setTimeout(r, 600));
   }
 
   document.getElementById('stScanned').textContent = SCAN_PAIRS.length;
