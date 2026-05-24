@@ -535,16 +535,6 @@ let mainChartObj = null, volChartObj = null, rsiChartObj = null;
 let candleSeries = null;
 let currentSymbol = null, currentTF = '1h', currentSigType = null;
 
-let btcRegime = {
-  trend:'NEUTRAL',
-  volatility:'NORMAL',
-  liquidity:getLiquidityTier(cur.close * cur.volume),
-strength:50
-};
-
-const tfTrendMap = {};
-
-
 const LABEL_MAP = {
   VAH:'▲ VAH BREAK', VAH_SPIKE:'▲ VAH + SPIKE 🔥',
   VAL:'▼ VAL RECLAIM', VAL_DIV:'▼ VAL + DIV 🔥', VAL_SPIKE:'▼ VAL + SPIKE 💥',
@@ -614,8 +604,7 @@ function setSort(key) {
   document.querySelectorAll('.th').forEach(th => {
     th.classList.remove('sort-asc','sort-desc');
   });
-  const thMap = {liquidity:getLiquidityTier(cur.close * cur.volume),
-strength:'thStr'};
+  const thMap = {strength:'thStr'};
   if (thMap[key]) {
     document.getElementById(thMap[key]).classList.add(sortDir === 'desc' ? 'sort-desc' : 'sort-asc');
   }
@@ -750,53 +739,6 @@ function calcEMA(candles,period){
   return ema;
 }
 
-
-function analyzeBTC(candles){
-
-  const ema20 = calcEMA(candles,20);
-  const ema50 = calcEMA(candles,50);
-
-  const last = candles.length - 1;
-
-  const price = candles[last].close;
-  const e20 = ema20[last];
-  const e50 = ema50[last];
-
-  let trend = 'NEUTRAL';
-
-  if(price > e20 && e20 > e50){
-    trend = 'BULLISH';
-  }
-  else if(price < e20 && e20 < e50){
-    trend = 'BEARISH';
-  }
-
-  const recentRange = Math.abs(
-    candles[last].high - candles[last].low
-  );
-
-  const avgRange = candles
-    .slice(-20)
-    .reduce((a,c)=>a+(c.high-c.low),0)/20;
-
-  const volatility = recentRange > avgRange * 1.8
-    ? 'HIGH'
-    : 'NORMAL';
-
-  let strength = 50;
-
-  if(trend === 'BULLISH') strength += 25;
-  if(trend === 'BEARISH') strength -= 25;
-  if(volatility === 'HIGH') strength += 10;
-
-  return {
-    trend,
-    volatility,
-    strength
-  };
-}
-
-
 function detectTrend(candles){
   const ema20=calcEMA(candles,20),ema50=calcEMA(candles,50);
   const last=candles.length-1,price=candles[last].close;
@@ -873,49 +815,21 @@ function detectSignals(symbol,candles,tf,chg){
   const sigs=[];
   if(prev.close<=vp.vah&&cur.close>vp.vah){
     if(div==='BEARISH'){
-      sigs.push({symbol,price:cur.close,vp,tf,type:'WARNING',trend,volTier,volRatio,ema20,ema50,chg,liquidity:getLiquidityTier(cur.close * cur.volume),
-strength:scoreSignal('WARNING',trend,volTier,div)});
+      sigs.push({symbol,price:cur.close,vp,tf,type:'WARNING',trend,volTier,volRatio,ema20,ema50,chg,strength:scoreSignal('WARNING',trend,volTier,div)});
     }else{
       const type=resolveType('VAH',div,volTier);
-      sigs.push({symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,liquidity:getLiquidityTier(cur.close * cur.volume),
-strength:scoreSignal('VAH',trend,volTier,div)});
+      sigs.push({symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,strength:scoreSignal('VAH',trend,volTier,div)});
     }
   }
   if(prev.close<vp.val&&cur.close>=vp.val){
     const type=resolveType('VAL',div,volTier);
-    sigs.push({symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,liquidity:getLiquidityTier(cur.close * cur.volume),
-strength:scoreSignal('VAL',trend,volTier,div)});
+    sigs.push({symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,strength:scoreSignal('VAL',trend,volTier,div)});
   }
   if(cur.low<=vp.poc*1.003&&cur.close>vp.poc){
     const type=resolveType('POC',div,volTier);
-    sigs.push({symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,liquidity:getLiquidityTier(cur.close * cur.volume),
-strength:scoreSignal('POC',trend,volTier,div)});
+    sigs.push({symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,strength:scoreSignal('POC',trend,volTier,div)});
   }
-  
-if(
-  cur.high > vp.vah &&
-  cur.close < vp.vah
-){
-
-  sigs.push({
-    symbol,
-    price:cur.close,
-    vp,
-    tf,
-    type:'FAKE_VAH',
-    trend,
-    volTier,
-    volRatio,
-    ema20,
-    ema50,
-    chg,
-    liquidity:getLiquidityTier(cur.close * cur.volume),
-    strength:78
-  });
-}
-
-
-return sigs;
+  return sigs;
 }
 
 // ── MAIN SCAN ──────────────────────────────────────
@@ -941,17 +855,6 @@ async function triggerAndPoll() {
       </div>`).join('');
 
   const newSignals=[];
-
-try{
-  const btcCandles = await fetchWithRetry('BTCUSDT','1h');
-
-  if(btcCandles){
-    btcRegime = analyzeBTC(btcCandles);
-  }
-}catch(e){
-  console.error('BTC regime failed',e);
-}
-
   const tfs=['1h','4h','1d'];
   const jobs=[];
   SCAN_PAIRS.forEach(sym=>tfs.forEach(tf=>jobs.push({sym,tf})));
@@ -996,7 +899,7 @@ try {
   const CONCURRENT_REQUESTS = 15;
 
 for(let i=0;i<jobs.length;i+=CONCURRENT_REQUESTS){
-    const batch=jobs.slice(i,i+CONCURRENT_REQUESTS);
+    const batch=jobs.slice(i,i+2);
     await Promise.allSettled(batch.map(async({sym,tf})=>{
       const candles=await fetchWithRetry(sym,tf);
       if(candles){
@@ -1404,22 +1307,3 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 </script>
 </body>
 </html>
-
-
-
-function getLiquidityTier(volume){
-
-  if(volume > 500000000){
-    return 'AAA';
-  }
-
-  if(volume > 100000000){
-    return 'A';
-  }
-
-  if(volume > 20000000){
-    return 'B';
-  }
-
-  return 'C';
-}
