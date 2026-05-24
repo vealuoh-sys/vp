@@ -1212,7 +1212,9 @@ async function triggerAndPoll(){
     return null;
   }
 
-  for(let i=0;i<jobs.length;i+=2){
+ const CONCURRENT_REQUESTS = 15;
+
+for(let i=0;i<jobs.length;i+=CONCURRENT_REQUESTS)
     const batch=jobs.slice(i,i+2);
     await Promise.allSettled(batch.map(async({sym,tf})=>{
       const candles=await fetchWithRetry(sym,tf);
@@ -1227,7 +1229,6 @@ async function triggerAndPoll(){
       pfg.style.width=Math.round((done/jobs.length)*100)+'%';
       ptxt.textContent=`SCANNING… ${done} / ${jobs.length}`;
     }));
-    await new Promise(r=>setTimeout(r,600));
   }
 
   const newKeys=new Set(newSignals.map(sigKey));
