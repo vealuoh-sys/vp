@@ -372,6 +372,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <span class="session-lbl">MARKET:</span>
   <span class="market-struct" id="marketStruct">—</span>
   <span class="flex1"></span>
+  <span style="font-size:.52rem;color:var(--acc2);letter-spacing:.1em" id="proxCount"></span>
   <span class="session-lbl" id="activeGroupLabel" style="color:var(--warn)"></span>
 </div>
 <div class="controls">
@@ -510,6 +511,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div class="ctx-item">STRUCT <span class="ctx-val" id="ctxMS">—</span></div>
       <div class="ctx-item">OB <span class="ctx-val" id="ctxOB">—</span></div>
       <div class="ctx-item">LIQ <span class="ctx-val" id="ctxLiq">—</span></div>
+      <div class="ctx-item">ADX <span class="ctx-val" id="ctxADX">—</span></div>
+      <div class="ctx-item">PATTERN <span class="ctx-val" id="ctxPattern">—</span></div>
       <div class="ctx-item">CONF <span class="ctx-val" id="ctxConf">—</span></div>
     </div>
     <div class="rr-panel" id="rrPanel">
@@ -673,6 +676,136 @@ function calcRSI(candles,period=14){const rsi=new Array(candles.length).fill(50)
 function checkDiv(candles,rsi){const curr=candles.length-1;let sHi=-1,sLo=-1;for(let i=curr-2;i>=Math.max(1,curr-30);i--){if(sHi===-1&&candles[i].high>candles[i-1].high&&candles[i].high>candles[i+1].high)sHi=i;if(sLo===-1&&candles[i].low<candles[i-1].low&&candles[i].low<candles[i+1].low)sLo=i;if(sHi!==-1&&sLo!==-1)break;}if(sHi!==-1&&candles[curr].high>candles[sHi].high&&rsi[curr]<rsi[sHi]&&rsi[curr]>55)return'BEARISH';if(sLo!==-1&&candles[curr].low<candles[sLo].low&&rsi[curr]>rsi[sLo]&&rsi[curr]<45)return'BULLISH';return null;}
 
 // 5. MARKET STRUCTURE
+
+// == 1. CANDLE PATTERN ==
+function detectCandlePattern(candles,vp){
+  const n=candles.length-1,cur=candles[n],prev=candles[n-1];
+  const body=Math.abs(cur.close-cur.open),range=cur.high-cur.low;
+  if(range===0)return null;
+  const uw=cur.high-Math.max(cur.open,cur.close),lw=Math.min(cur.open,cur.close)-cur.low;
+  const isBull=cur.close>cur.open;
+  const nVAL=Math.abs(cur.close-vp.val)/vp.val<0.008;
+  const nPOC=Math.abs(cur.close-vp.poc)/vp.poc<0.008;
+  const nVAH=Math.abs(cur.close-vp.vah)/vp.vah<0.008;
+  if((nVAL||nPOC)&&lw>body*2&&uw<body*0.5)return{pattern:'HAMMER',bullish:true,score:15};
+  if(nVAL&&isBull&&cur.close>prev.open&&cur.open<prev.close&&prev.close<prev.open)return{pattern:'BULL ENGULF',bullish:true,score:18};
+  if(nVAH&&!isBull&&cur.close<prev.open&&cur.open>prev.close&&prev.close>prev.open)return{pattern:'BEAR ENGULF',bullish:false,score:-15};
+  if(nVAH&&uw>body*2&&lw<body*0.5)return{pattern:'SHOOT STAR',bullish:false,score:-12};
+  if((nVAL||nPOC||nVAH)&&body<range*0.1)return{pattern:'DOJI',bullish:null,score:0};
+  if(nVAL&&isBull&&uw<body*0.05&&lw<body*0.05)return{pattern:'MARUBOZU',bullish:true,score:12};
+  return null;
+}
+
+// == 2. MTF VP LEVEL ALIGNMENT ==
+function checkMTFLevelAlignment(symbol){
+  const c1h=candleCache[symbol+'-1h'],c4h=candleCache[symbol+'-4h'],c1d=candleCache[symbol+'-1d'];
+  if(!c1h||!c4h)return{aligned:false,zones:[]};
+  const vp1h=calcVP(c1h.slice(0,-1)),vp4h=calcVP(c4h.slice(0,-1)),vp1d=c1d?calcVP(c1d.slice(0,-1)):null;
+  if(!vp1h||!vp4h)return{aligned:false,zones:[]};
+  const THRESH=0.005,zones=[],near=(a,b)=>Math.abs(a-b)/b<THRESH;
+  ['poc','vah','val'].forEach(lvl=>{
+    const prices=[vp1h[lvl],vp4h[lvl]];if(vp1d)prices.push(vp1d[lvl]);
+    if(prices.every(p=>near(p,prices[0]))){
+      zones.push({level:lvl.toUpperCase(),price:prices.reduce((a,b)=>a+b,0)/prices.length,tfs:prices.length>=3?'1H+4H+1D':'1H+4H',score:prices.length>=3?25:15});
+    }
+  });
+  return{aligned:zones.length>0,zones};
+}
+
+// == 3. REAL VOLUME DELTA (taker buy/sell from Binance) ==
+function calcRealDelta(candles){
+  const last=candles[candles.length-1];
+  if(!last.takerBuy||last.volume===0){
+    const range=last.high-last.low;
+    if(range===0)return{buyPct:50,label:'NEUTRAL'};
+    const bp=Math.round(((last.close-last.low)/range)*100);
+    return{buyPct:bp,label:bp>65?'SMART BUY':bp<35?'SMART SELL':'NEUTRAL'};
+  }
+  const buyPct=Math.round((last.takerBuy/last.volume)*100);
+  return{buyPct,takerBuy:last.takerBuy,takerSell:last.takerSell,label:buyPct>65?'SMART BUY':buyPct<35?'SMART SELL':'NEUTRAL'};
+}
+
+// == 4. ADX (trend strength) ==
+function calcADX(candles,period=14){
+  if(candles.length<period*2)return 0;
+  const tr=[],dp=[],dm=[];
+  for(let i=1;i<candles.length;i++){
+    const c=candles[i],p=candles[i-1];
+    tr.push(Math.max(c.high-c.low,Math.abs(c.high-p.close),Math.abs(c.low-p.close)));
+    const u=c.high-p.high,d=p.low-c.low;
+    dp.push(u>d&&u>0?u:0);dm.push(d>u&&d>0?d:0);
+  }
+  let atr=tr.slice(0,period).reduce((a,b)=>a+b,0);
+  let dP=dp.slice(0,period).reduce((a,b)=>a+b,0);
+  let dM=dm.slice(0,period).reduce((a,b)=>a+b,0);
+  const dx=[];
+  for(let i=period;i<tr.length;i++){
+    atr=atr-atr/period+tr[i];dP=dP-dP/period+dp[i];dM=dM-dM/period+dm[i];
+    const diP=atr>0?(dP/atr)*100:0,diM=atr>0?(dM/atr)*100:0;
+    dx.push(diP+diM>0?Math.abs(diP-diM)/(diP+diM)*100:0);
+  }
+  if(!dx.length)return 0;
+  let adx=dx.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<dx.length;i++)adx=(adx*(period-1)+dx[i])/period;
+  return Math.round(adx*10)/10;
+}
+
+// == 5. STOP HUNT DETECTOR ==
+function detectStopHunt(candles){
+  const n=candles.length-1,cur=candles[n];
+  const prev5=candles.slice(Math.max(0,n-8),n);
+  if(prev5.length<4)return null;
+  const swLow=Math.min(...prev5.map(c=>c.low)),swHigh=Math.max(...prev5.map(c=>c.high));
+  const bodyLow=Math.min(cur.open,cur.close),bodyHigh=Math.max(cur.open,cur.close);
+  if(cur.low<swLow*0.999&&bodyLow>swLow){
+    return{type:'BULL_HUNT',label:'STOP HUNT ↑',score:22};
+  }
+  if(cur.high>swHigh*1.001&&bodyHigh<swHigh){
+    return{type:'BEAR_HUNT',label:'STOP HUNT ↓',score:-18};
+  }
+  return null;
+}
+
+// == 6. SIGNAL COOLDOWN / DEDUP ==
+const signalCooldown=new Map();
+function getTFms(tf){return tf==='1h'?3600000:tf==='4h'?14400000:86400000;}
+function isDuplicateSignal(sym,type,tf){
+  const key=sym+'-'+type+'-'+tf,now=Date.now();
+  const last=signalCooldown.get(key)||0;
+  const cool=getTFms(tf)*2;
+  if(now-last<cool)return true;
+  signalCooldown.set(key,now);return false;
+}
+
+// == 7. VOLUME ANOMALY (market-wide spike) ==
+let volumeAnomalyActive=false;
+function detectVolumeAnomaly(sigs){
+  const spikes=sigs.filter(s=>s.volTier==='SPIKE').length;
+  volumeAnomalyActive=sigs.length>5&&spikes/sigs.length>0.3;
+  return volumeAnomalyActive;
+}
+
+// == 8. KEY LEVEL PROXIMITY ==
+let proximitySignals=[];
+function detectProximity(symbol,candles,tf){
+  const vp=calcVP(candles.slice(0,-1));if(!vp)return[];
+  const price=candles[candles.length-1].close,PROX=0.003,results=[];
+  const near=(p,lbl)=>{const dist=Math.abs(price-p)/p;if(dist<PROX&&dist>0.0001)results.push({symbol,tf,level:lbl,price,levelPrice:p,distPct:(dist*100).toFixed(2),dir:price<p?'APPROACHING ↑':'APPROACHING ↓'});};
+  near(vp.vah,'VAH');near(vp.poc,'POC');near(vp.val,'VAL');
+  return results;
+}
+
+// == 9. FALSE SIGNAL MEMORY ==
+const falseBreakMemory=new Map();
+function getFalseBreakPenalty(sym,type,tf){return Math.min((falseBreakMemory.get(sym+'-'+type+'-'+tf)||0)*8,24);}
+function checkForFalseBreak(candles,vp,type){
+  const n=candles.length-1;if(n<3)return false;
+  const cur=candles[n],prev=candles[n-1],prev2=candles[n-2],bt=baseType(type);
+  if(bt==='VAH'&&prev2.close>vp.vah&&prev.close>vp.vah&&cur.close<vp.vah)return true;
+  if(bt==='VAL'&&prev2.close>=vp.val&&prev.close>=vp.val&&cur.close<vp.val)return true;
+  return false;
+}
+
 function detectMarketStructure(candles){const n=candles.length;if(n<10)return{ms:'NEUTRAL',label:'→NEUT',score:0};const sl=candles.slice(-20),highs=sl.map(c=>c.high),lows=sl.map(c=>c.low);const hh=highs[highs.length-1]>Math.max(...highs.slice(0,-3));const ll=lows[lows.length-1]<Math.min(...lows.slice(0,-3));const hl=lows.length>6&&lows[lows.length-1]>lows[lows.length-6];const lh=highs.length>6&&highs[highs.length-1]<highs[highs.length-6];const p5Hi=Math.max(...highs.slice(-6,-1)),p5Lo=Math.min(...lows.slice(-6,-1));const lC=candles[n-1];if(lC.close>p5Hi&&hl)return{ms:'BOS',label:'BOS↑',score:25};if(lC.close<p5Lo&&lh)return{ms:'CHOCH',label:'CHOCH↓',score:-20};if(hh&&hl)return{ms:'HH',label:'HH/HL↑',score:15};if(ll&&lh)return{ms:'LL',label:'LL/LH↓',score:-15};if(hh)return{ms:'HH',label:'HH↑',score:10};if(ll)return{ms:'LL',label:'LL↓',score:-10};if(hl)return{ms:'HL',label:'HL↑',score:5};if(lh)return{ms:'LH',label:'LH↓',score:-5};return{ms:'NEUTRAL',label:'→NEUT',score:0};}
 
 // 2. S&R
@@ -691,7 +824,7 @@ function detectFVG(candles){const fvgs=[];for(let i=1;i<candles.length-1;i++){co
 function calcVolumeDelta(candles){const last=candles[candles.length-1];const range=last.high-last.low;if(range===0)return{buyPct:50,delta:'NEUT'};const bullPct=Math.round(((last.close-last.low)/range)*100);return{buyPct:bullPct,delta:bullPct>65?'BUY PRESSURE':bullPct<35?'SELL PRESSURE':'MIXED'};}
 
 // 1. CONFLUENCE ENGINE
-function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,obs){
+function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones){
   const last=candles.length-1,price=candles[last].close;
   const e20=candles[last].ema20||0,e50=candles[last].ema50||0;
   const factors=[];
@@ -710,12 +843,20 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   if(liqSweep&&liqSweep.type==='BULL_SWEEP')factors.push({n:'LIQ SWEEP',s:20});
   const nearSR=sr&&sr.find(l=>Math.abs(l.price-price)/price<0.008);if(nearSR)factors.push({n:'S/R ZONE',s:nearSR.type==='S'?12:-8});
   const nearOB=obs&&obs.find(ob=>price>=ob.bottom&&price<=ob.top);if(nearOB)factors.push({n:'ORDERBLOCK',s:nearOB.type==='BULL'?18:-12});
+  // NEW confluence factors
+  if(pattern&&pattern.bullish===true)factors.push({n:pattern.pattern,s:pattern.score});
+  if(pattern&&pattern.bullish===false)factors.push({n:pattern.pattern,s:pattern.score});
+  if(stopHunt&&stopHunt.type==='BULL_HUNT')factors.push({n:'STOP HUNT',s:22});
+  if(stopHunt&&stopHunt.type==='BEAR_HUNT')factors.push({n:'STOP HUNT D',s:-18});
+  if(adx&&adx>25)factors.push({n:'ADX TREND',s:Math.min(12,Math.round((adx-25)/2))});
+  if(adx&&adx>0&&adx<20)factors.push({n:'ADX CHOP',s:-8});
+  if(mtfZones&&mtfZones.length>0)factors.push({n:'MTF ALIGN '+mtfZones[0].tfs,s:mtfZones[0].score});
   const total=Math.min(100,Math.max(0,factors.reduce((a,f)=>a+f.s,0)));
   return{total,factors};
 }
 
 // 2. HEAT SCORE
-function calcHeat(conf,volTier,div,ms,liqSweep){let heat=conf>=80?5:conf>=65?4:conf>=50?3:conf>=35?2:1;if(volTier==='SPIKE'&&div==='BULLISH'&&heat<5)heat++;if(ms==='BOS'&&heat<5)heat++;if(liqSweep&&liqSweep.type==='BULL_SWEEP'&&heat<5)heat++;return Math.min(5,heat);}
+function calcHeat(conf,volTier,div,ms,liqSweep,pattern,stopHunt,adx){let heat=conf>=80?5:conf>=65?4:conf>=50?3:conf>=35?2:1;if(volTier==='SPIKE'&&div==='BULLISH'&&heat<5)heat++;if(ms==='BOS'&&heat<5)heat++;if(liqSweep&&liqSweep.type==='BULL_SWEEP'&&heat<5)heat++;return Math.min(5,heat);}
 function renderHeatBar(heat){const segs=Array.from({length:5},(_,i)=>`<div class="heat-seg heat-${i+1}${i<heat?' on':''}"></div>`).join('');return`<div class="heat-bar">${segs}<span class="heat-score" style="color:var(--heat${heat})">${heat}</span></div>`;}
 
 // 3. FRESHNESS
@@ -768,11 +909,71 @@ function renderBacktest(){const keys=Object.keys(candleCache).filter(k=>k.endsWi
 function calcCorrelation(a,b){if(a.length!==b.length||a.length<2)return 0;const ra=a.slice(1).map((v,i)=>(v-a[i])/a[i]),rb=b.slice(1).map((v,i)=>(v-b[i])/b[i]);const ma=ra.reduce((s,v)=>s+v,0)/ra.length,mb=rb.reduce((s,v)=>s+v,0)/rb.length;let num=0,da=0,db=0;ra.forEach((v,i)=>{const a2=v-ma,b2=rb[i]-mb;num+=a2*b2;da+=a2*a2;db+=b2*b2;});return(da&&db)?num/Math.sqrt(da*db):0;}
 function renderCorrTable(){const keys=Object.keys(candleCache).filter(k=>k.endsWith('-1h')).slice(0,10);if(keys.length<2){document.getElementById('corrTable').innerHTML='<span style="font-size:.52rem;color:var(--muted)">Need ≥2 coins.</span>';return;}const syms=keys.map(k=>k.replace('-1h',''));const closes=syms.map(sym=>(candleCache[sym+'-1h']||[]).map(c=>c.close));let html='<table class="corr-table"><tr><th></th>'+syms.map(s=>`<th>${s.replace('USDT','')}</th>`).join('')+'</tr>';syms.forEach((sa,i)=>{html+=`<tr><th>${sa.replace('USDT','')}</th>`;syms.forEach((sb,j)=>{const corr=i===j?1:calcCorrelation(closes[i],closes[j]);const v=corr.toFixed(2);const r=Math.round(Math.abs(corr)*255),g=corr>0?Math.round(corr*180):0,bl=corr<0?Math.round(Math.abs(corr)*220):0;html+=`<td style="background:rgba(${r},${g},${bl},.3);color:var(--text)">${v}</td>`;});html+='</tr>';});html+='</table>';document.getElementById('corrTable').innerHTML=html;}
 
-// 8. TELEGRAM
-function saveTG(){localStorage.setItem('tgToken',document.getElementById('tgToken').value);localStorage.setItem('tgChat',document.getElementById('tgChat').value);document.getElementById('tgStatus').textContent='✓ SAVED';setTimeout(()=>document.getElementById('tgStatus').textContent='',2000);}
-function testTG(){sendTelegram('🟢 <b>VP SCAN PRO</b> — Test message ✓');document.getElementById('tgStatus').textContent='CHECK TG';setTimeout(()=>document.getElementById('tgStatus').textContent='',4000);}
-async function sendTelegram(msg){const token=localStorage.getItem('tgToken'),chat=localStorage.getItem('tgChat');if(!token||!chat)return;try{await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chat,text:msg,parse_mode:'HTML'})});}catch(e){}}
-function alertViaTelegram(sig){const heat='🔥'.repeat(sig.heat||1);sendTelegram(`${heat} <b>VP SCAN PRO</b>\n\n<b>${sig.symbol}</b> — ${LABEL_MAP[sig.type]||sig.type}\n⏱ TF: <b>${sig.tf.toUpperCase()}</b>\n💰 Price: <b>$${fp(sig.price)}</b>\n🔥 Heat: ${sig.heat}/5 | STR: ${sig.strength}%\n📈 Trend: ${sig.trend} | Vol: ${sig.volTier}\n🏗 Structure: ${sig.msLabel||'—'}\n${sig.liqSweep?`💧 ${sig.liqSweep.label}\n`:''}\n🔴 VAH: $${fp(sig.vp.vah)}\n🟡 POC: $${fp(sig.vp.poc)}\n🟢 VAL: $${fp(sig.vp.val)}\n📊 Confluence: ${sig.confluence||0}/100`);}
+// TELEGRAM — FIXED
+// Bugs were: parse_mode HTML broke JSON with special chars; no cooldown caused spam
+const tgAlertedKeys=new Map();
+function saveTG(){
+  localStorage.setItem('tgToken',document.getElementById('tgToken').value.trim());
+  localStorage.setItem('tgChat',document.getElementById('tgChat').value.trim());
+  document.getElementById('tgStatus').textContent='SAVED';
+  setTimeout(()=>document.getElementById('tgStatus').textContent='',2000);
+}
+function testTG(){
+  document.getElementById('tgStatus').textContent='SENDING...';
+  sendTelegram('VP SCAN PRO — Test OK! Alerts are working.')
+    .then(ok=>{document.getElementById('tgStatus').textContent=ok?'SENT — CHECK TELEGRAM':'FAILED — Check token/chat ID';})
+    .catch(()=>{document.getElementById('tgStatus').textContent='ERROR';});
+}
+async function sendTelegram(msg){
+  const token=localStorage.getItem('tgToken');
+  const chat=localStorage.getItem('tgChat');
+  if(!token||!chat||token.length<10){console.warn('TG: missing token or chat');return false;}
+  // Use plain text — HTML parse_mode breaks when msg has special chars like $ % /
+  const plainMsg=msg.replace(/<[^>]+>/g,'');
+  try{
+    const res=await fetch('https://api.telegram.org/bot'+token+'/sendMessage',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:chat,text:plainMsg})
+    });
+    const data=await res.json();
+    if(!data.ok){console.warn('TG API error:',data.description);return false;}
+    return true;
+  }catch(e){console.warn('TG fetch error:',e.message);return false;}
+}
+function alertViaTelegram(sig){
+  const key=sig.symbol+'-'+sig.type+'-'+sig.tf;
+  const now=Date.now();
+  const lastSent=tgAlertedKeys.get(key)||0;
+  const cooldown=getTFms(sig.tf); // 1 candle period cooldown — no spam
+  if(now-lastSent<cooldown)return;
+  tgAlertedKeys.set(key,now);
+  const heat='HEAT '+sig.heat+'/5';
+  const pattern=sig.pattern?'Pattern: '+sig.pattern:'';
+  const stopHunt=sig.stopHunt?'Stop Hunt: '+sig.stopHunt.label:'';
+  const adxStr=sig.adx?'ADX: '+sig.adx.toFixed(1)+(sig.adx>25?' (TRENDING)':' (CHOPPY)'):'';
+  const mtfStr=sig.mtfZones&&sig.mtfZones.length?'MTF Aligned: '+sig.mtfZones.map(z=>z.level+' '+z.tfs).join(', '):'';
+  const anomaly=volumeAnomalyActive?'WARNING: Market-wide volume spike — lower signal quality':'';
+  const lines=[
+    (sig.heat>=4?'FIRE':'SIGNAL')+' VP SCAN PRO',
+    '',
+    sig.symbol+' — '+(LABEL_MAP[sig.type]||sig.type),
+    'TF: '+sig.tf.toUpperCase()+' | '+sig.session,
+    'Price: $'+fp(sig.price),
+    heat+' | STR: '+sig.strength+'%',
+    'Trend: '+sig.trend+' | Vol: '+sig.volTier,
+    'Structure: '+(sig.msLabel||'NEUTRAL'),
+    sig.liqSweep?'Liq: '+sig.liqSweep.label:'',
+    pattern,stopHunt,adxStr,mtfStr,anomaly,
+    '',
+    'VAH: $'+fp(sig.vp.vah),
+    'POC: $'+fp(sig.vp.poc),
+    'VAL: $'+fp(sig.vp.val),
+    'Confluence: '+(sig.confluence||0)+'/100'
+  ].filter(Boolean).join('\n');
+  sendTelegram(lines);
+}
+
 
 // 12. PRICE ALERTS
 function openAlertModal(){document.getElementById('alertModal').classList.add('open');renderAlerts();}
@@ -827,41 +1028,89 @@ function detectSignals(symbol,candles,tf,chg,ts){
   const session=getCurrentSession();
   const liqSweep=detectLiquiditySweep(candles);
   const sr=detectSR(candles),obs=detectOrderblocks(candles),fvgs=detectFVG(candles);
-  const volDelta=calcVolumeDelta(candles),freshness=detectFreshness(candles,vp);
+  const freshness=detectFreshness(candles,vp);
+  // NEW: all 9 new engines
+  const pattern=detectCandlePattern(candles,vp);
+  const stopHunt=detectStopHunt(candles);
+  const adx=calcADX(candles);
+  const volDelta=calcRealDelta(candles);
+  const mtfAlign=checkMTFLevelAlignment(symbol);
+  const mtfZones=mtfAlign.zones;
   const ema20arr=calcEMA(candles,20),ema50arr=calcEMA(candles,50);
   candles.forEach((c,i)=>{c.ema20=ema20arr[i];c.ema50=ema50arr[i];});
   const curr=candles.length-1,cur=candles[curr],prev=candles[curr-1];
+
+  // Proximity detection (approaching but not yet triggered)
+  const prox=detectProximity(symbol,candles,tf);
+  if(prox.length)proximitySignals.push(...prox);
+
   const sigs=[];
   const makeSig=(bt,type)=>{
-    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs);
-    const heat=calcHeat(conf.total,volTier,div,ms,liqSweep);
-    // Better strength: varies 20-99 based on all factors
+    // Skip duplicates within cooldown period
+    if(isDuplicateSignal(symbol,type,tf))return null;
+    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones);
+    const heat=calcHeat(conf.total,volTier,div,ms,liqSweep,pattern,stopHunt,adx);
     let str=35;
     if(bt==='VAL')str+=12;else if(bt==='VAH')str+=10;else if(bt==='POC')str+=8;
-    // Trend alignment (big factor)
     if(trend==='UP'&&(bt==='VAL'||bt==='POC'))str+=18;
     else if(trend==='UP'&&bt==='VAH')str+=12;
     else if(trend==='DOWN'&&bt==='VAH')str+=10;
     else if(trend==='DOWN')str-=10;
-    // Volume
     if(volTier==='SPIKE')str+=18;else if(volTier==='CONFIRMED')str+=10;else if(volTier==='STRONG')str+=5;else str-=5;
-    // Divergence
     if(div==='BULLISH')str+=10;if(div==='BEARISH')str-=15;
-    // Market structure
     if(['BOS','HH'].includes(ms)&&bt!=='WARNING')str+=8;
     if(['CHOCH','LL'].includes(ms))str-=8;
     if(ms==='HL'&&bt!=='WARNING')str+=4;
-    // Liquidity sweep
     if(liqSweep&&liqSweep.type==='BULL_SWEEP')str+=10;
-    // Confluence contribution
-    str+=Math.round(conf.total*0.15);
-    str=Math.min(99,Math.max(20,str));
-    return{symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,strength:str,confluence:conf.total,confluenceFactors:conf.factors,heat,ms,msLabel,freshness,session:session.session,liqSweep,sr,obs,fvgs,volDelta,ts:ts||Date.now()};
+    // NEW bonuses
+    if(pattern&&pattern.bullish===true)str+=pattern.score;
+    if(stopHunt&&stopHunt.type==='BULL_HUNT')str+=8;
+    if(adx>25)str+=Math.min(10,Math.round((adx-25)/3));
+    if(adx>0&&adx<20)str-=8; // penalize choppy market
+    if(mtfZones&&mtfZones.length>0)str+=10;
+    // False break penalty
+    str-=getFalseBreakPenalty(symbol,type,tf);
+    str+=Math.round(conf.total*0.12);
+    str=Math.min(99,Math.max(15,str));
+    return{symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema20,ema50,chg,
+      strength:str,confluence:conf.total,confluenceFactors:conf.factors,
+      heat,ms,msLabel,freshness,session:session.session,
+      liqSweep,sr,obs,fvgs,volDelta,
+      pattern:pattern?pattern.pattern:null,
+      stopHunt,adx,mtfZones,
+      ts:ts||Date.now()};
   };
-  if(prev.close<=vp.vah&&cur.close>vp.vah){if(div==='BEARISH'){sigs.push({...makeSig('WARNING','WARNING'),strength:10,heat:1});}else{sigs.push(makeSig('VAH',resolveType('VAH',div,volTier)));}}
-  if(prev.close<vp.val&&cur.close>=vp.val)sigs.push(makeSig('VAL',resolveType('VAL',div,volTier)));
-  if(cur.low<=vp.poc*1.003&&cur.close>vp.poc)sigs.push(makeSig('POC',resolveType('POC',div,volTier)));
-  if(liqSweep&&liqSweep.type==='BULL_SWEEP'&&!sigs.length)sigs.push({...makeSig('VAL','VAL_SPIKE'),heat:Math.min(5,(makeSig('VAL','VAL').heat||1)+1)});
+
+  // VAH BREAK
+  if(prev.close<=vp.vah&&cur.close>vp.vah){
+    // Check for false break (same level reversed recently)
+    if(checkForFalseBreak(candles,vp,'VAH')){
+      const key=symbol+'-VAH-'+tf;
+      falseBreakMemory.set(key,(falseBreakMemory.get(key)||0)+1);
+    }
+    if(div==='BEARISH'){
+      const s=makeSig('WARNING','WARNING');
+      if(s)sigs.push({...s,strength:10,heat:1});
+    }else{
+      const s=makeSig('VAH',resolveType('VAH',div,volTier));
+      if(s)sigs.push(s);
+    }
+  }
+  // VAL RECLAIM
+  if(prev.close<vp.val&&cur.close>=vp.val){
+    const s=makeSig('VAL',resolveType('VAL',div,volTier));
+    if(s)sigs.push(s);
+  }
+  // POC REACT
+  if(cur.low<=vp.poc*1.003&&cur.close>vp.poc){
+    const s=makeSig('POC',resolveType('POC',div,volTier));
+    if(s)sigs.push(s);
+  }
+  // LIQUIDITY SWEEP standalone
+  if(liqSweep&&liqSweep.type==='BULL_SWEEP'&&!sigs.length){
+    const s=makeSig('VAL','VAL_SPIKE');
+    if(s)sigs.push({...s,heat:Math.min(5,(s.heat||1)+1)});
+  }
   return sigs;
 }
 
@@ -873,6 +1122,7 @@ async function triggerAndPoll(){
   prog.classList.add('show');pfg.style.width='2%';ptxt.textContent='SCANNING…';
   document.getElementById('rows').innerHTML=Array.from({length:8}).map(()=>`<div class="skel-row">${Array.from({length:13}).map(()=>'<div class="skel" style="width:50px"></div>').join('')}</div>`).join('');
   const newSignals=[],pairs=scanPairs(),tfs=['1h','4h','1d'];
+  proximitySignals=[];
   let done=0;const chgCache={};
   try{const res=await fetch(`${BINANCE}/api/v3/ticker/24hr`);const tickers=await res.json();tickers.forEach(t=>{chgCache[t.symbol]=parseFloat(t.priceChangePercent)||0;livePrices[t.symbol]={price:parseFloat(t.lastPrice)||0,chg:parseFloat(t.priceChangePercent)||0};});}catch(e){}
   // ── FAST SCAN ENGINE ──────────────────────────────
@@ -937,6 +1187,13 @@ async function triggerAndPoll(){
   }
   const mtfMap=buildMTFMap(newSignals);newSignals.forEach(s=>{s.mtfCount=(mtfMap[s.symbol]?.size||0);});
   const newKeys=new Set(newSignals.map(sigKey));const brandNew=newSignals.filter(s=>!prevSigKeys.has(sigKey(s)));prevSigKeys=newKeys;allSignals=newSignals;
+  // Volume anomaly warning
+  const isAnomaly=detectVolumeAnomaly(newSignals);
+  if(isAnomaly){
+    showToast('⚠ MARKET-WIDE VOL SPIKE — Multiple signals may be lower quality','var(--warn)');
+    document.getElementById('marketStruct').textContent+=' ⚠ VOL ANOMALY';
+  }
+  // Telegram alerts — only heat>=4, with cooldown
   newSignals.filter(s=>(s.heat||0)>=4).forEach(s=>alertViaTelegram(s));
   pushHistory(newSignals,new Date().toISOString());updateMarketStructureBar(newSignals);renderBacktest();renderCorrTable();renderWatchlist();
   document.getElementById('stScanned').textContent=pairs.length;document.getElementById('scanTime').textContent='LAST: '+new Date().toLocaleTimeString('en-GB');document.getElementById('stHeat').textContent=newSignals.filter(s=>(s.heat||0)>=4).length;document.getElementById('stMTF').textContent=newSignals.filter(s=>s.mtfCount>=2).length;
@@ -968,11 +1225,14 @@ function render(){
     const msBadge=s.ms&&s.ms!=='NEUTRAL'?`<span class="ms-badge ${s.ms}">${s.msLabel}</span>`:'';
     const obBadge=s.obs&&s.obs.length?'<span class="ob-badge">OB</span>':'';
     const liqBadge=s.liqSweep?'<span class="liq-badge">LIQ</span>':'';
+    const patternBadge=s.pattern?`<span style="font-size:.46rem;padding:1px 4px;color:#00E5FF;border:1px solid rgba(0,229,255,.35);background:rgba(0,229,255,.08)">${s.pattern}</span>`:'';
+    const huntBadge=s.stopHunt?`<span style="font-size:.46rem;padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite">${s.stopHunt.label}</span>`:'';
+    const adxBadge=s.adx?`<span style="font-size:.44rem;color:${s.adx>25?'var(--acc)':s.adx<20?'var(--vah)':'var(--muted)'}">${s.adx>25?'ADX:TREND':'ADX:CHOP'}</span>`:''
     const heatBar=renderHeatBar(s.heat||1);const age=getSignalAge(s.ts||Date.now());
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:.48rem" title="${note}">📝</span>`:'';
     const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}`;
-    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${msBadge}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
+    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${msBadge}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
     return`<div class="${rowClass}" data-sym="${s.symbol}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
       <div class="td rank">${i+1}</div>
       <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${noteDot}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span></div></div></div>
