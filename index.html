@@ -620,9 +620,9 @@ let currentSymbol=null,currentTF='1h',currentSigType=null;
 let mainChartObj=null,volChartObj=null,rsiChartObj=null,candleSeries=null;
 
 const LABEL_MAP={
-  VAH:'▲ VAH BREAK',VAH_SPIKE:'▲ VAH+SPIKE 🔥',VAL:'▼ VAL RECLAIM',
-  VAL_DIV:'▼ VAL+DIV 🔥',VAL_SPIKE:'▼ VAL+SPIKE 💥',POC:'◆ POC REACT',
-  POC_DIV:'◆ POC+DIV 🔥',POC_SPIKE:'◆ POC+SPIKE 💥',WARNING:'⚠ VAH FAKEOUT'
+  VAH:'▲ VAH BREAK',VAH_SPIKE:'▲ VAH+SPIKE',VAL:'▼ VAL RECLAIM',
+  VAL_DIV:'▼ VAL+DIV',VAL_SPIKE:'▼ VAL+SPIKE',POC:'◆ POC REACT',
+  POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT'
 };
 function baseType(t){return t.startsWith('VAH')?'VAH':t.startsWith('VAL')?'VAL':t.startsWith('POC')?'POC':t;}
 function sigKey(s){return`${s.symbol}-${s.type}-${s.tf}`;}
@@ -809,7 +809,38 @@ function checkForFalseBreak(candles,vp,type){
 function detectMarketStructure(candles){const n=candles.length;if(n<10)return{ms:'NEUTRAL',label:'→NEUT',score:0};const sl=candles.slice(-20),highs=sl.map(c=>c.high),lows=sl.map(c=>c.low);const hh=highs[highs.length-1]>Math.max(...highs.slice(0,-3));const ll=lows[lows.length-1]<Math.min(...lows.slice(0,-3));const hl=lows.length>6&&lows[lows.length-1]>lows[lows.length-6];const lh=highs.length>6&&highs[highs.length-1]<highs[highs.length-6];const p5Hi=Math.max(...highs.slice(-6,-1)),p5Lo=Math.min(...lows.slice(-6,-1));const lC=candles[n-1];if(lC.close>p5Hi&&hl)return{ms:'BOS',label:'BOS↑',score:25};if(lC.close<p5Lo&&lh)return{ms:'CHOCH',label:'CHOCH↓',score:-20};if(hh&&hl)return{ms:'HH',label:'HH/HL↑',score:15};if(ll&&lh)return{ms:'LL',label:'LL/LH↓',score:-15};if(hh)return{ms:'HH',label:'HH↑',score:10};if(ll)return{ms:'LL',label:'LL↓',score:-10};if(hl)return{ms:'HL',label:'HL↑',score:5};if(lh)return{ms:'LH',label:'LH↓',score:-5};return{ms:'NEUTRAL',label:'→NEUT',score:0};}
 
 // 2. S&R
-function detectSR(candles,count=5){const levels=[];for(let i=2;i<candles.length-2;i++){const c=candles[i];if(c.high>candles[i-1].high&&c.high>candles[i-2].high&&c.high>candles[i+1].high&&c.high>candles[i+2].high)levels.push({price:c.high,type:'R',touches:1});if(c.low<candles[i-1].low&&c.low<candles[i-2].low&&c.low<candles[i+1].low&&c.low<candles[i+2].low)levels.push({price:c.low,type:'S',touches:1});}const cl=[];levels.forEach(l=>{const ex=cl.find(c=>Math.abs(c.price-l.price)/l.price<0.005);if(ex){ex.touches++;ex.price=(ex.price+l.price)/2;}else cl.push({...l});});return cl.sort((a,b)=>b.touches-a.touches).slice(0,count);}
+function detectSR(candles,count=5){
+  const price=candles[candles.length-1].close;
+  const levels=[];
+  for(let i=2;i<candles.length-2;i++){
+    const c=candles[i];
+    if(c.high>candles[i-1].high&&c.high>candles[i-2].high&&c.high>candles[i+1].high&&c.high>candles[i+2].high)
+      levels.push({price:c.high,origType:'R',touches:1});
+    if(c.low<candles[i-1].low&&c.low<candles[i-2].low&&c.low<candles[i+1].low&&c.low<candles[i+2].low)
+      levels.push({price:c.low,origType:'S',touches:1});
+  }
+  const cl=[];
+  levels.forEach(l=>{
+    const ex=cl.find(c=>Math.abs(c.price-l.price)/l.price<0.005);
+    if(ex){ex.touches++;ex.price=(ex.price+l.price)/2;}
+    else cl.push({...l});
+  });
+  // S/R FLIP: if price is below a support, it becomes resistance (and vice versa)
+  cl.forEach(l=>{
+    const wasSupport=l.origType==='S';
+    const wasResistance=l.origType==='R';
+    if(wasSupport&&price<l.price){
+      // Price broke below support — now it's resistance
+      l.type='R';l.flipped=true;l.flipLabel='FLIPPED R';
+    } else if(wasResistance&&price>l.price){
+      // Price broke above resistance — now it's support
+      l.type='S';l.flipped=true;l.flipLabel='FLIPPED S';
+    } else {
+      l.type=l.origType;l.flipped=false;l.flipLabel=null;
+    }
+  });
+  return cl.sort((a,b)=>b.touches-a.touches).slice(0,count);
+}
 
 // 3. ORDERBLOCKS
 function detectOrderblocks(candles){const obs=[];for(let i=2;i<candles.length-1;i++){const cur=candles[i],next=candles[i+1];if(cur.close<cur.open&&next.close>cur.high*1.005)obs.push({type:'BULL',top:cur.open,bottom:cur.close,idx:i,age:candles.length-1-i});if(cur.close>cur.open&&next.close<cur.low*0.995)obs.push({type:'BEAR',top:cur.close,bottom:cur.open,idx:i,age:candles.length-1-i});}const lC=candles[candles.length-1].close;return obs.filter(ob=>{if(ob.age>20)return false;if(ob.type==='BULL'&&lC>ob.bottom)return true;if(ob.type==='BEAR'&&lC<ob.top)return true;return false;}).slice(-3);}
@@ -841,7 +872,22 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   const sw=session.weight||1;if(sw>1)factors.push({n:'SESSION',s:Math.round(12*(sw-1))});
   if(e20>0&&e50>0){if(price>e20&&e20>e50)factors.push({n:'EMA STACK',s:10});if(price<e20&&e20<e50)factors.push({n:'EMA BEAR',s:-10});}
   if(liqSweep&&liqSweep.type==='BULL_SWEEP')factors.push({n:'LIQ SWEEP',s:20});
-  const nearSR=sr&&sr.find(l=>Math.abs(l.price-price)/price<0.008);if(nearSR)factors.push({n:'S/R ZONE',s:nearSR.type==='S'?12:-8});
+  const nearSR=sr&&sr.find(l=>Math.abs(l.price-price)/price<0.008);
+  if(nearSR){
+    let srScore;
+    if(nearSR.flipped&&nearSR.type==='R'){
+      // Flipped support (now resistance) — bearish — penalise long setups strongly
+      srScore=-15;
+    } else if(nearSR.flipped&&nearSR.type==='S'){
+      // Flipped resistance (now support) — bullish
+      srScore=15;
+    } else if(nearSR.type==='S'){
+      srScore=12;
+    } else {
+      srScore=-8;
+    }
+    factors.push({n:nearSR.flipped?'SR FLIP':'S/R ZONE',s:srScore});
+  }
   const nearOB=obs&&obs.find(ob=>price>=ob.bottom&&price<=ob.top);if(nearOB)factors.push({n:'ORDERBLOCK',s:nearOB.type==='BULL'?18:-12});
   // NEW confluence factors
   if(pattern&&pattern.bullish===true)factors.push({n:pattern.pattern,s:pattern.score});
@@ -1224,6 +1270,8 @@ function render(){
     const freshTag=s.freshness==='HOT'?'<span class="fresh-tag HOT">🔥HOT</span>':s.freshness==='WARM'?'<span class="fresh-tag WARM">WARM</span>':'';
     const msBadge=s.ms&&s.ms!=='NEUTRAL'?`<span class="ms-badge ${s.ms}">${s.msLabel}</span>`:'';
     const obBadge=s.obs&&s.obs.length?'<span class="ob-badge">OB</span>':'';
+    const flippedSR=s.sr&&s.sr.find(l=>l.flipped&&Math.abs(l.price-s.price)/s.price<0.012);
+    const srFlipBadge=flippedSR?`<span style="font-size:.44rem;padding:1px 4px;color:#FF9500;border:1px solid rgba(255,149,0,.5);background:rgba(255,149,0,.08);font-weight:700">SR FLIP</span>`:'';
     const liqBadge=s.liqSweep?'<span class="liq-badge">LIQ</span>':'';
     const patternBadge=s.pattern?`<span style="font-size:.46rem;padding:1px 4px;color:#00E5FF;border:1px solid rgba(0,229,255,.35);background:rgba(0,229,255,.08)">${s.pattern}</span>`:'';
     const huntBadge=s.stopHunt?`<span style="font-size:.46rem;padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite">${s.stopHunt.label}</span>`:'';
@@ -1342,9 +1390,11 @@ function renderLayerToolbar(){
     _srList.forEach((l,i)=>{
       const key='SR'+i;
       if(layerState.SR[key]===undefined)layerState.SR[key]=true;
-      // Clean label: R1, R2, S1, S2
-      const lbl=l.type==='R'?'R'+(++rIdx):'S'+(++sIdx);
-      html+=btn(lbl,'#FFD740',layerState.SR[key],`toggleSR(${i})`);
+      // Clean label: R1, R2, S1, S2 — with FLIP indicator
+      const baseLbl=l.type==='R'?'R'+(++rIdx):'S'+(++sIdx);
+      const lbl=l.flipped?baseLbl+'~':baseLbl; // tilde = flipped
+      const color=l.flipped?'#FF9500':'#FFD740'; // orange for flipped
+      html+=btn(lbl,color,layerState.SR[key],`toggleSR(${i})`);
     });
   }
   if(_obList.length){
@@ -1549,9 +1599,13 @@ function buildLWChart(candles,vp,sr,obs){
     sr.slice(0,5).forEach((l,i)=>{
       const key='SR'+i;
       if(layerState.SR[key]===undefined) layerState.SR[key]=true;
-      const label = l.type==='R' ? '◀ R'+(++rCount) : '◀ S'+(++sCount);
-      addLevel(key, l.price,'rgba(255,215,64,0.7)',label,
-        LightweightCharts.LineStyle.Dotted, layerState.SR[key]);
+      const typeLabel=l.type==='R'?'R'+(++rCount):'S'+(++sCount);
+      const flipMark=l.flipped?'~':''; // tilde signals S/R flip
+      const label='◀ '+typeLabel+flipMark;
+      // Flipped levels: orange dashed — original levels: gold dotted
+      const color=l.flipped?'rgba(255,149,0,0.85)':'rgba(255,215,64,0.7)';
+      const style=l.flipped?LightweightCharts.LineStyle.Dashed:LightweightCharts.LineStyle.Dotted;
+      addLevel(key, l.price, color, label, style, layerState.SR[key]);
     });
   }
 
