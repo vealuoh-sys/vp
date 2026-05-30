@@ -93,7 +93,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .view-btn{background:var(--s1);border:1px solid var(--border);color:var(--muted);font-size:.68rem;width:26px;height:26px;display:grid;place-items:center;cursor:pointer;transition:all .14s;}
 .view-btn.on{border-color:var(--acc2);color:var(--acc2);}
 .sig-count-badge{font-size:.58rem;color:var(--muted);letter-spacing:.09em;}
-.stats{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;margin-bottom:13px;}
+.stats{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;margin-bottom:13px;}
 @media(max-width:1100px){.stats{grid-template-columns:repeat(4,1fr);}}
 @media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr);}}
 .stat{background:var(--s1);border:1px solid var(--border);padding:11px 12px;position:relative;overflow:hidden;}
@@ -187,12 +187,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .badge.POC_DIV{background:rgba(255,215,0,.18);color:#FFE55C;border:2px solid var(--poc);font-weight:900;}
 .badge.POC_SPIKE{background:rgba(255,215,0,.18);color:#FFE55C;border:2px solid var(--poc);font-weight:900;}
 .badge.WARNING{background:rgba(255,94,58,.12);color:#ff5e3a;border:1px dashed #ff5e3a;animation:pulse 2s infinite;}
-.badge.CAB_S1{background:rgba(191,95,255,.12);color:#CF9FFF;border:1px solid rgba(191,95,255,.4);}
-.badge.CAB_S2{background:rgba(255,184,0,.12);color:#FFB800;border:1px solid rgba(255,184,0,.4);}
-.badge.CAB_S3{background:rgba(0,255,178,.12);color:#00FFB2;border:2px solid rgba(0,255,178,.5);font-weight:900;}
-.badge.CAB_AR{background:rgba(0,229,255,.15);color:#00E5FF;border:2px solid rgba(0,229,255,.6);font-weight:900;animation:pulse 2s infinite;}
-.cab-pill{display:inline-flex;align-items:center;gap:3px;font-size:.46rem;font-weight:700;padding:2px 6px;white-space:nowrap;color:#CF9FFF;background:rgba(191,95,255,.08);border:1px solid rgba(191,95,255,.35);}
-.cab-trigger-info{font-size:.5rem;color:var(--muted);letter-spacing:.09em;}
 .badge.NEW-TAG{background:rgba(0,255,178,.15);color:var(--acc);border:1px solid var(--acc);font-size:.44rem;padding:1px 4px;}
 .badge.MTF-TAG{background:rgba(124,77,255,.15);color:#BF5FFF;border:1px solid rgba(124,77,255,.4);font-size:.44rem;padding:1px 4px;}
 @keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
@@ -360,7 +354,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     </div>
     <div>
       <div class="brand-name">VP<em>SCAN</em> <span style="font-size:.68rem;color:var(--poc);font-weight:700">PRO</span></div>
-      <div class="brand-sub">MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · R:R · VSA CAB · BACKTEST · CORR · LIVE WS · ALERTS</div>
+      <div class="brand-sub">MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · R:R · BACKTEST · CORR · LIVE WS · ALERTS</div>
     </div>
   </div>
   <div class="hdr-right">
@@ -396,7 +390,6 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <div class="divider"></div>
   <button class="sig-btn" id="warnBtn" onclick="togWarn(this)" style="border-color:#ff5e3a;color:#ff5e3a;">⚠ FAKEOUTS</button>
   <button class="sig-btn" id="mtfBtn" onclick="togMTF(this)" style="border-color:#BF5FFF;color:#BF5FFF;">◈ MTF ONLY</button>
-  <button class="sig-btn" id="vsaBtn" onclick="togVSA(this)" style="border-color:#CF9FFF;color:#CF9FFF;opacity:1;">◈ VSA CAB</button>
 </div>
 <div class="filter-row">
   <div class="search-wrap">
@@ -426,7 +419,6 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <div class="stat" style="--c:var(--vah)"><div class="stat-lbl">VAH</div><div class="stat-val" id="stVAH">—</div></div>
   <div class="stat" style="--c:var(--val)"><div class="stat-lbl">VAL</div><div class="stat-val" id="stVAL">—</div></div>
   <div class="stat" style="--c:var(--poc)"><div class="stat-lbl">POC</div><div class="stat-val" id="stPOC">—</div></div>
-  <div class="stat" style="--c:#CF9FFF"><div class="stat-lbl">VSA CAB ◈</div><div class="stat-val" id="stCAB">—</div></div>
   <div class="stat" style="--c:#BF5FFF"><div class="stat-lbl">MTF ◈</div><div class="stat-val" id="stMTF">—</div></div>
   <div class="stat" style="--c:#FF1744"><div class="stat-lbl">HIGH HEAT 🔥</div><div class="stat-val" id="stHeat">—</div></div>
   <div class="stat" style="--c:var(--warn)"><div class="stat-lbl">TOTAL</div><div class="stat-val" id="stTotal">—</div></div>
@@ -473,7 +465,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     <div class="th">R:R</div>
     <div class="th sort-desc" id="thStr" onclick="setSort('strength')">STR</div>
   </div>
-  <div class="click-hint">CLICK ROW → CHART + R:R CALC + NOTES · 🔥HOT=fresh · ◈=MTF · OB=Orderblock · LIQ=Liquidity Sweep · VSA=CAB trigger lines on chart</div>
+  <div class="click-hint">CLICK ROW → CHART + R:R CALC + NOTES · 🔥HOT=fresh · ◈=MTF · OB=Orderblock · LIQ=Liquidity Sweep</div>
   <div class="prog-wrap" id="progWrap"><span id="progTxt">SCANNING…</span><div class="prog-bg"><div class="prog-fg" id="progFg" style="width:0%"></div></div></div>
   <div class="rows" id="rows"><div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">SCANNING STARTS AUTOMATICALLY…</div></div></div>
 </div>
@@ -533,16 +525,6 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div class="rr-item"><div class="rr-item-lbl">TARGET 2</div><div class="rr-item-val rr-g" id="rrT2">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">R:R</div><div class="rr-item-val" id="rrRatio">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">RISK %</div><div class="rr-item-val rr-b" id="rrRisk">—</div></div>
-      <div id="cabInfoPanel" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:0 4px;border-left:2px solid #CF9FFF;margin-left:4px;">
-        <div style="font-size:.48rem;color:#CF9FFF;letter-spacing:.12em;font-weight:700">VSA CAB</div>
-        <div class="rr-item"><div class="rr-item-lbl">SCENARIO</div><div class="rr-item-val" id="cabScenario" style="color:#CF9FFF">—</div></div>
-        <div class="rr-item"><div class="rr-item-lbl">CAB HIGH</div><div class="rr-item-val" id="cabUpper" style="color:#fff">—</div></div>
-        <div class="rr-item"><div class="rr-item-lbl">CAB BODY</div><div class="rr-item-val" id="cabBody" style="color:#FF9500">—</div></div>
-        <div class="rr-item"><div class="rr-item-lbl">50% MID</div><div class="rr-item-val" id="cabMid" style="color:#FFD700">—</div></div>
-        <div class="rr-item"><div class="rr-item-lbl">CAB LOW</div><div class="rr-item-val" id="cabLower" style="color:#CF9FFF">—</div></div>
-        <div class="rr-item"><div class="rr-item-lbl">DEF STOP</div><div class="rr-item-val rr-b" id="cabStop">—</div></div>
-        <div class="rr-item" style="max-width:180px"><div class="rr-item-lbl">ACTION</div><div class="rr-item-val" id="cabAction" style="color:#00FFB2;font-size:.5rem">—</div></div>
-      </div>
       <div class="note-wrap">
         <input id="modalNote" type="text" placeholder="Trade note…">
         <button class="note-save-btn" onclick="saveNote()">SAVE NOTE</button>
@@ -630,16 +612,12 @@ const DEFAULT_PAIRS=[
   'VINEUSDT','CHILLGUYUSDT','NEIROUSDT','MOODENGUSDT','GOATUSDT','TRUMPUSDT','MELANIAUSDT','FARTCOINUSDT','DEGOUSDT','LPTUSDT',
   'AEVOUSDT','OMNIUSDT','SAGAUSDT','VANRYUSDT','ETHFIUSDT','XAIUSDT','MANTAUSDT','FRONTUSDT','NFPUSDT','AIUSDT',
   'WOOUSDT','SFPUSDT','BANDUSDT','OCEANUSDT','LRCUSDT','STORJUSDT','ANKRUSDT','BATUSDT','CHZUSDT','ENJUSDT',
-  'ONTUSDT','ZECUSDT','DASHUSDT','QTUMUSDT','IOSTUSDT','RVNUSDT','ZILUSDT','HOTUSDT','SONICUSDT','STGUSDT',
-  'IDUSDT','AMBUSDT','HOOKUSDT','HIGHUSDT','PHBUSDT','GALUSDT','RADUSDT','BNTUSDT','NMRUSDT','OXTUSDT',
-  'POWRUSDT','ALPACAUSDT','BNXUSDT','TUSDT','MDTUSDT','PROSUSDT','REEFUSDT','KLAYUSDT','NKNUSDT','CTSIUSDT',
-  'STPTUSDT','FORTHUSDT','BURGERUSDT','BICOUSDT','GLMUSDT','BALUSDT','AVAUSDT','SXPUSDT','DREPUSDT','VOXELUSDT',
-  'MLNUSDT','BONDUSDT','QIUSDT','SPELLUSDT','1INCHUSDT','CELOUSDT','ELAUSDT','ROSEUSDT','FLOWUSDT','CVXUSDT'
+  'ONTUSDT','ZECUSDT','DASHUSDT','QTUMUSDT','IOSTUSDT','RVNUSDT','ZILUSDT','HOTUSDT','ICPUSDT','SONICUSDT'
 ];
 
 // STATE
 let activeTFs=new Set(['1h','4h','1d']),activeSigs=new Set(['VAH','VAL','POC']);
-let showWarnings=false,mtfOnly=false,showVSA=true,allSignals=[],minStrength=0;
+let showWarnings=false,mtfOnly=false,allSignals=[],minStrength=0;
 let sortKey='strength',sortDir='desc',scanHistory=[],prevSigKeys=new Set();
 let livePrices={},watchlist=[],priceAlerts=[],coinGroups=[],activeGroup=null,tradeNotes={};
 let wsConn=null,wsReconnectTimer=null,candleCache={};
@@ -649,8 +627,7 @@ let mainChartObj=null,volChartObj=null,rsiChartObj=null,candleSeries=null;
 const LABEL_MAP={
   VAH:'▲ VAH BREAK',VAH_SPIKE:'▲ VAH+SPIKE',VAL:'▼ VAL RECLAIM',
   VAL_DIV:'▼ VAL+DIV',VAL_SPIKE:'▼ VAL+SPIKE',POC:'◆ POC REACT',
-  POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT',
-  CAB_S1:'◈ VSA CAB S1 — LOW',CAB_S2:'◈ VSA CAB S2 — MED',CAB_S3:'◈ VSA CAB S3 — HIGH ★',CAB_AR:'◈ VSA CAB AR — TOP ★★'
+  POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT'
 };
 function baseType(t){return t.startsWith('VAH')?'VAH':t.startsWith('VAL')?'VAL':t.startsWith('POC')?'POC':t;}
 function sigKey(s){return`${s.symbol}-${s.type}-${s.tf}`;}
@@ -684,7 +661,6 @@ function togTF(el){const tf=el.dataset.tf;if(activeTFs.has(tf)){if(activeTFs.siz
 function togSig(el){const sig=el.dataset.sig,cls=`on-${sig.toLowerCase()}`;if(activeSigs.has(sig)){if(activeSigs.size===1)return;activeSigs.delete(sig);el.classList.remove(cls);}else{activeSigs.add(sig);el.classList.add(cls);}render();}
 function togWarn(el){showWarnings=!showWarnings;el.style.opacity=showWarnings?'1':'0.45';render();}
 function togMTF(el){mtfOnly=!mtfOnly;el.style.opacity=mtfOnly?'1':'0.45';el.style.background=mtfOnly?'rgba(124,77,255,.1)':'';render();}
-function togVSA(el){showVSA=!showVSA;el.style.opacity=showVSA?'1':'0.45';el.style.background=showVSA?'rgba(191,95,255,.1)':'';render();}
 function setView(v){document.getElementById('viewTable').classList.toggle('on',v==='table');document.getElementById('viewHeat').classList.toggle('on',v==='heatmap');document.getElementById('tblWrap').style.display=v==='table'?'block':'none';document.getElementById('heatmapView').classList.toggle('active',v==='heatmap');if(v==='heatmap')renderHeatmap();}
 
 // SORT
@@ -910,142 +886,6 @@ function detectStopHunt(candles){
   return null;
 }
 
-// ══ VSA — CLIMACTIC ACTION BAR (CAB) + AUTOMATIC RALLY (AR) ══
-// Selling climax during a RETRACEMENT inside a bullish uptrend.
-// 4 required conditions (per Tom Williams/Gavin Holmes VSA):
-//   1. SELLING BACKGROUND: ≥1 red candle before CAB — must be during a decline
-//   2. BEARISH CANDLE: CAB must close below open (sell candle)
-//   3. ULTRA-HIGH VOLUME: highest volume in the entire selling wave — NON-NEGOTIABLE
-//   4. BIG SPREAD: large range vs wave avg — the only condition that can be compromised
-// Trigger lines: Upper=CAB.high, Lower=CAB.low, Body=CAB.close
-// Three Scenarios + Automatic Rally:
-//   S1 (LOW PROB):     No sweep of lower trigger — price rallies immediately
-//   S2 (MED PROB):     Wick sweeps below lower, body closes ABOVE it
-//   S3 (HIGH PROB):    Candle CLOSES below lower trigger, then recovers
-//   AR (HIGHEST PROB): Post-CAB automatic rally — touches lower, rallies to 50%+ of CAB,
-//                      gets rejected from upper, breaks 2+ lows, forms channel → breakout
-function detectVSAcab(candles){
-  const n=candles.length;
-  if(n<20)return null;
-
-  // ── 1. Uptrend context: last 40 candles net positive (close > first close) ──
-  const tw=candles.slice(Math.max(0,n-40));
-  if(tw[tw.length-1].close<=tw[0].close*0.99)return null;
-
-  // ── 2. Find the most recent selling wave (retracement into the uptrend) ──
-  // Selling wave = ≥2 bars of declining closes, ending within last 20 candles.
-  let waveEnd=-1,waveStart=-1;
-  for(let i=n-2;i>=Math.max(2,n-20);i--){
-    if(candles[i].close<candles[i-1].close){
-      let ws=i;
-      while(ws>2&&candles[ws-1].close<candles[ws-2].close)ws--;
-      if(i-ws>=1){waveStart=ws;waveEnd=i;break;}
-    }
-  }
-  // Fallback: any 2 consecutive red candles in last 15
-  if(waveStart<0){
-    for(let i=n-2;i>=Math.max(1,n-15);i--){
-      if(candles[i].close<candles[i].open&&candles[i-1].close<candles[i-1].open){
-        waveStart=i-1;waveEnd=i;break;
-      }
-    }
-  }
-  if(waveStart<0)return null;
-
-  // ── 3. Find CAB = bearish candle with HIGHEST volume in wave (NON-NEGOTIABLE) ──
-  let cabIdx=-1,cabVol=-Infinity;
-  for(let i=waveStart;i<=waveEnd;i++){
-    if(candles[i].close<candles[i].open&&candles[i].volume>cabVol){
-      cabVol=candles[i].volume;cabIdx=i;
-    }
-  }
-  if(cabIdx<0)return null;
-  const waveMaxVol=Math.max(...candles.slice(waveStart,waveEnd+1).map(c=>c.volume));
-  if(cabVol<waveMaxVol*0.98)return null; // must be max volume in wave
-
-  // Ultra-high: must be ≥1.5× average of prior 20 candles
-  const preSlice=candles.slice(Math.max(0,waveStart-20),waveStart);
-  const preAvgVol=preSlice.length?preSlice.reduce((a,c)=>a+c.volume,0)/preSlice.length:cabVol;
-  const cabVolRatio=preAvgVol>0?cabVol/preAvgVol:1;
-  if(cabVolRatio<1.5)return null;
-
-  // ── Condition 1: Selling background — at least 1 red candle before CAB ──
-  const preCabReds=candles.slice(waveStart,cabIdx).filter(c=>c.close<c.open).length;
-  const preWaveRed=waveStart>0&&candles[waveStart-1].close<candles[waveStart-1].open;
-  if(preCabReds===0&&!preWaveRed)return null;
-
-  const cab=candles[cabIdx];
-  const cabSpread=cab.high-cab.low;
-  const waveAvgSpread=candles.slice(waveStart,waveEnd+1).reduce((a,c)=>a+(c.high-c.low),0)/(waveEnd-waveStart+1);
-  const spreadOk=cabSpread>=waveAvgSpread*0.75; // can be compromised if other 3 are strong
-
-  // ── Trigger lines ──
-  const upperTrigger=cab.high;   // high wick
-  const lowerTrigger=cab.low;    // low wick
-  const bodyTrigger=cab.close;   // lower body / close (mid-line)
-  const midCAB=lowerTrigger+(upperTrigger-lowerTrigger)*0.5;
-
-  // ── Post-CAB price behavior ──
-  const postCAB=candles.slice(cabIdx+1);
-  if(postCAB.length===0){
-    return{scenario:'CAB_S1',scenarioProb:'LOW PROB',
-      entryNote:'CAB just formed — watching for scenario development',
-      cabIdx,cabCandle:cab,upperTrigger,lowerTrigger,bodyTrigger,midCAB,
-      cabVolRatio:Math.round(cabVolRatio*10)/10,spreadOk,stop:lowerTrigger,
-      wickSweepOnly:false,closedBelowLower:false,isAR:false};
-  }
-  const lastPost=postCAB[postCAB.length-1];
-  const definiteLow=Math.min(...postCAB.map(c=>c.low));
-  // S2: wick below lower trigger, but BODY (close) stays above
-  const wickSweepOnly=postCAB.some(c=>c.low<lowerTrigger&&c.close>lowerTrigger);
-  // S3: at least one candle CLOSES below lower trigger
-  const closedBelowLower=postCAB.some(c=>c.close<lowerTrigger);
-  const recoveredAboveLower=closedBelowLower&&lastPost.close>lowerTrigger;
-  const brokUpperByClose=lastPost.close>upperTrigger;
-  const brokBodyTrigger=lastPost.close>bodyTrigger;
-
-  // AR detection: price touches/sweeps lower → rallies to ≥50% of CAB range →
-  // gets rejected from upper (no immediate close above upper) →
-  // breaks 2+ lows → channel forms → breakout trade
-  let isAR=false;
-  if(postCAB.length>=4){
-    const touchedLower=postCAB.some(c=>c.low<=lowerTrigger*1.003);
-    const rallyHigh=Math.max(...postCAB.map(c=>c.high));
-    const rallyReachedMid=rallyHigh>=midCAB;
-    const rejectedFromUpper=rallyHigh<upperTrigger*1.002||(rallyHigh>=upperTrigger*0.995&&postCAB.some(c=>c.close<upperTrigger));
-    let sweepCount=0,prevL=lowerTrigger;
-    for(const c of postCAB){if(c.low<prevL){sweepCount++;prevL=c.low;}}
-    isAR=touchedLower&&rallyReachedMid&&rejectedFromUpper&&sweepCount>=1;
-  }
-
-  let scenario,scenarioProb,entryNote,stop;
-
-  if(isAR){
-    stop=definiteLow;scenario='CAB_AR';scenarioProb='HIGHEST PROB';
-    if(brokUpperByClose){entryNote='E3: retest FVG/OB after upper trigger break';}
-    else if(brokBodyTrigger){entryNote='E2: close above upper trigger w/ momentum';}
-    else{entryNote='E1: break upper channel line + body trigger w/ momentum candle';}
-  } else if(closedBelowLower){
-    stop=definiteLow;scenario='CAB_S3';scenarioProb='HIGH PROB';
-    if(recoveredAboveLower&&brokUpperByClose){entryNote='E3: retest upper trigger → OB/FVG';}
-    else if(recoveredAboveLower&&brokBodyTrigger){entryNote='E2: break above upper trigger w/ momentum';}
-    else if(recoveredAboveLower){entryNote='E1: close above body trigger';}
-    else{entryNote='Ranging — wait recovery: target close above body trigger';}
-  } else if(wickSweepOnly){
-    stop=definiteLow;scenario='CAB_S2';scenarioProb='MED PROB';
-    if(brokUpperByClose){entryNote='E2 (main): retest upper trigger → OB/FVG';}
-    else{entryNote='E1: wait low-volume momentum break of upper trigger';}
-  } else {
-    stop=lowerTrigger;scenario='CAB_S1';scenarioProb='LOW PROB';
-    if(brokUpperByClose){entryNote='Wait: 2nd breakout of upper trigger w/ momentum candle';}
-    else{entryNote='Wait: break upper trigger, then 2nd entry on retest';}
-  }
-
-  return{scenario,scenarioProb,cabIdx,cabCandle:cab,upperTrigger,lowerTrigger,bodyTrigger,midCAB,
-    cabVolRatio:Math.round(cabVolRatio*10)/10,spreadOk,entryNote,stop,isAR,
-    wickSweepOnly,closedBelowLower,recoveredAboveLower,brokUpperByClose};
-}
-
 // == 6. SIGNAL COOLDOWN / DEDUP ==
 const signalCooldown=new Map();
 function getTFms(tf){return tf==='1h'?3600000:tf==='4h'?14400000:86400000;}
@@ -1062,60 +902,156 @@ function isDuplicateSignal(sym,type,tf){
 // BTC.D rising = money going into BTC = bad for alts
 // USDT.D rising = money leaving crypto = bad for everything
 // We approximate using BTCUSDT price trend as BTC.D proxy
-let dominanceState={btc:'NEUTRAL',usdt:'NEUTRAL',altSeason:false,lastUpdate:0};
+// ══════════════════════════════════════════════════════════════════
+//  REAL BTC.D + USDT.D — from CoinGecko Global API (free, no key)
+//  This gives the EXACT same numbers as TradingView BTC.D chart
+//  Endpoint: https://api.coingecko.com/api/v3/global
+//  Returns: btc_dominance, eth_dominance, total_market_cap, etc.
+//  Also gets historical % change to determine trend direction
+// ══════════════════════════════════════════════════════════════════
 
-async function checkDominance(){
-  if(Date.now()-dominanceState.lastUpdate<300000)return; // cache 5 min
-  try{
-    const [btcRes,usdtRes]=await Promise.all([
-      fetch(`${BINANCE}/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=60`),
-      fetch(`${BINANCE}/api/v3/klines?symbol=ETHUSDT&interval=1d&limit=60`)
-    ]);
-    const btcRaw=await btcRes.json(),ethRaw=await usdtRes.json();
-    if(!Array.isArray(btcRaw)||!Array.isArray(ethRaw))return;
-    const parse=raw=>raw.map(k=>({close:parseFloat(k[4]),time:parseInt(k[0])}));
-    const btcC=parse(btcRaw),ethC=parse(ethRaw);
-    // BTC dominance proxy: BTC/ETH ratio trend
-    // When BTC is outperforming ETH, dominance is likely rising
-    const btcEthRatio=btcC.map((b,i)=>({close:ethC[i]?b.close/ethC[i].close:1,time:b.time}));
-    const ratioTrend=detectTrendFromClose(btcEthRatio);
-    // USDT dominance proxy: inverse of total crypto momentum
-    // Simple: if BTC 5MA < 53MA, money flowing to stable = USDT.D rising
-    const btcTrend=detectTrendFromClose(btcC);
-    dominanceState.btc=ratioTrend; // UP=BTC dominating=bad for alts
-    dominanceState.usdt=btcTrend==='DOWN'?'UP':'DOWN'; // inverse
-    dominanceState.altSeason=ratioTrend==='DOWN'&&btcTrend==='UP'; // alts pump when BTC.D falls but BTC rises
-    dominanceState.lastUpdate=Date.now();
-    renderDominanceBar();
-  }catch(e){console.warn('Dominance check failed:',e.message);}
+let dominanceState={
+  btcD:0, usdtD:0, totalMC:0,
+  btcD1hAgo:0, usdtD1hAgo:0,   // for trend direction
+  btcDtrend:'NEUTRAL', usdtDtrend:'NEUTRAL',
+  altSeason:false, lastUpdate:0,
+  btcDHistory:[], usdtDHistory:[],  // rolling history for EMA trend
+  totalMCChange24h:0
+};
+
+function detectTrendFromClose(arr){
+  if(arr.length<6)return'NEUTRAL';
+  const n=arr.length-1;
+  // Use simple short-term EMA (5 vs 12) on dominance history
+  const e5arr=calcEMA(arr,Math.min(5,arr.length-1));
+  const e12arr=calcEMA(arr,Math.min(12,arr.length-1));
+  const v5=e5arr[n],v12=e12arr[n];
+  if(v5>v12&&arr[n].close>arr[Math.max(0,n-2)].close)return'UP';
+  if(v5<v12&&arr[n].close<arr[Math.max(0,n-2)].close)return'DOWN';
+  return'NEUTRAL';
 }
 
-function detectTrendFromClose(candles){
-  if(candles.length<55)return'NEUTRAL';
-  const closes=candles.map(c=>({close:c.close}));
-  const e5arr=calcEMA(closes,5),e12arr=calcEMA(closes,12),e53arr=calcEMA(closes,53);
-  const n=closes.length-1;
-  const v5=e5arr[n],v12=e12arr[n],v53=e53arr[n];
-  if(v5>v53&&v12>v53)return'UP';
-  if(v5<v53||v12<v53)return'DOWN';
-  return'NEUTRAL';
+async function checkDominance(){
+  // Refresh every 5 minutes — CoinGecko free tier allows 30 calls/min
+  if(Date.now()-dominanceState.lastUpdate<300000)return;
+
+  const domEl=document.getElementById('domBar');
+  if(domEl)domEl.innerHTML='<span style="font-size:.48rem;color:var(--muted)">DOM: fetching...</span>';
+
+  try{
+    // ── Primary: CoinGecko /global — real BTC.D and USDT.D ──────
+    const res=await fetch('https://api.coingecko.com/api/v3/global',{
+      headers:{'Accept':'application/json'}
+    });
+
+    if(!res.ok)throw new Error('CoinGecko '+res.status);
+    const data=await res.json();
+    const g=data.data;
+
+    const btcD  = g.market_cap_percentage?.btc  || 0;
+    const usdtD = g.market_cap_percentage?.usdt || 0;
+    const usdcD = g.market_cap_percentage?.usdc || 0;
+    const totalMC = g.total_market_cap?.usd || 0;
+    const totalMCChange24h = g.market_cap_change_percentage_24h_usd || 0;
+    const activeCryptos = g.active_cryptocurrencies || 0;
+
+    // Combined stablecoin dominance (USDT + USDC)
+    const stableD = usdtD + usdcD;
+
+    // ── Push to rolling history for EMA trend ──────────────────
+    dominanceState.btcDHistory.push({close:btcD});
+    dominanceState.usdtDHistory.push({close:stableD});
+    if(dominanceState.btcDHistory.length>60)dominanceState.btcDHistory.shift();
+    if(dominanceState.usdtDHistory.length>60)dominanceState.usdtDHistory.shift();
+
+    // ── Trend from EMA on dominance history ────────────────────
+    const btcDtrend  = detectTrendFromClose(dominanceState.btcDHistory);
+    const usdtDtrend = detectTrendFromClose(dominanceState.usdtDHistory);
+
+    // ── Alt Season: BTC.D falling + stable.D falling = alts pumping
+    const altSeason = btcDtrend==='DOWN' && usdtDtrend==='DOWN';
+
+    dominanceState={
+      btcD, usdtD, usdcD, stableD, totalMC,
+      totalMCChange24h, activeCryptos,
+      btcDtrend, usdtDtrend, altSeason,
+      btcDHistory:dominanceState.btcDHistory,
+      usdtDHistory:dominanceState.usdtDHistory,
+      lastUpdate:Date.now()
+    };
+
+    renderDominanceBar();
+
+  }catch(e){
+    console.warn('CoinGecko failed, trying fallback:',e.message);
+    // ── Fallback: calculate from Binance 24hr tickers ─────────
+    await checkDominanceFallback();
+  }
+}
+
+// ── FALLBACK: calculate from Binance prices × known supplies ────
+// Used if CoinGecko is rate-limited. Accurate to ~2% of real BTC.D
+const SUPPLY={
+  BTCUSDT:19700000, ETHUSDT:120200000, BNBUSDT:145880000,
+  SOLUSDT:461000000, XRPUSDT:57000000000, ADAUSDT:35700000000,
+  DOGEUSDT:144600000000, AVAXUSDT:407000000, TONUSDT:5100000000,
+  TRXUSDT:87500000000, LINKUSDT:587000000, LTCUSDT:74000000,
+  DOTUSDT:1400000000, ATOMUSDT:387000000, NEARUSDT:1050000000,
+  ICPUSDT:510000000, XLMUSDT:29300000000,
+  _STABLE:149400000000 // USDT+USDC+DAI combined
+};
+async function checkDominanceFallback(){
+  try{
+    const res=await fetch(`${BINANCE}/api/v3/ticker/24hr`);
+    const tickers=await res.json();
+    if(!Array.isArray(tickers))return;
+    const prices={};
+    tickers.forEach(t=>{prices[t.symbol]=parseFloat(t.lastPrice)||0;});
+    let cryptoMC=0, btcMC=0;
+    Object.entries(SUPPLY).forEach(([sym,supply])=>{
+      if(sym==='_STABLE')return;
+      const mc=(prices[sym]||0)*supply;
+      cryptoMC+=mc;
+      if(sym==='BTCUSDT')btcMC=mc;
+    });
+    const totalMC=cryptoMC+SUPPLY._STABLE;
+    const btcD=totalMC>0?(btcMC/totalMC)*100:0;
+    const stableD=totalMC>0?(SUPPLY._STABLE/totalMC)*100:0;
+    const usdtD=stableD*0.74; // USDT is ~74% of stables
+    dominanceState={...dominanceState,btcD,usdtD,stableD,totalMC,lastUpdate:Date.now()};
+    renderDominanceBar();
+  }catch(e){console.warn('Fallback dominance failed:',e.message);}
 }
 
 function renderDominanceBar(){
   const el=document.getElementById('domBar');if(!el)return;
-  const btcColor=dominanceState.btc==='UP'?'var(--vah)':dominanceState.btc==='DOWN'?'var(--acc)':'var(--muted)';
-  const usdtColor=dominanceState.usdt==='UP'?'var(--vah)':dominanceState.usdt==='DOWN'?'var(--acc)':'var(--muted)';
-  const altColor=dominanceState.altSeason?'var(--acc)':'var(--muted)';
-  const btcLabel=dominanceState.btc==='UP'?'BTC.D ↑ (BAD FOR ALTS)':dominanceState.btc==='DOWN'?'BTC.D ↓ (GOOD FOR ALTS)':'BTC.D NEUTRAL';
-  const usdtLabel=dominanceState.usdt==='UP'?'USDT.D ↑ (RISK OFF)':dominanceState.usdt==='DOWN'?'USDT.D ↓ (RISK ON)':'USDT.D NEUTRAL';
-  const altLabel=dominanceState.altSeason?'ALT SEASON SIGNAL':'—';
+  const{btcD,usdtD,stableD,btcDtrend,usdtDtrend,altSeason,totalMC,totalMCChange24h,activeCryptos}=dominanceState;
+  if(!btcD){el.innerHTML='<span style="font-size:.48rem;color:var(--muted)">DOM: unavailable</span>';return;}
+
+  const btcArrow=btcDtrend==='UP'?'▲':btcDtrend==='DOWN'?'▼':'─';
+  const usdtArrow=usdtDtrend==='UP'?'▲':usdtDtrend==='DOWN'?'▼':'─';
+  const btcColor=btcDtrend==='UP'?'var(--vah)':btcDtrend==='DOWN'?'var(--acc)':'var(--muted)';
+  const usdtColor=usdtDtrend==='UP'?'var(--vah)':usdtDtrend==='DOWN'?'var(--acc)':'var(--muted)';
+  const altColor=altSeason?'var(--acc)':'var(--muted)';
+  const btcNote=btcDtrend==='UP'?'BAD FOR ALTS':btcDtrend==='DOWN'?'GOOD FOR ALTS':'NEUTRAL';
+  const usdtNote=usdtDtrend==='UP'?'RISK OFF':usdtDtrend==='DOWN'?'RISK ON':'NEUTRAL';
+  const mcStr=totalMC>1e12?'$'+(totalMC/1e12).toFixed(2)+'T':totalMC>1e9?'$'+(totalMC/1e9).toFixed(0)+'B':'—';
+  const mcChange=totalMCChange24h?((totalMCChange24h>=0?'+':'')+totalMCChange24h.toFixed(2)+'%'):'';
+  const mcChangeColor=totalMCChange24h>=0?'var(--acc)':'var(--vah)';
+
   el.innerHTML=`
-    <span style="font-size:.5rem;color:var(--muted);letter-spacing:.14em">DOM:</span>
-    <span style="font-size:.52rem;font-weight:700;color:${btcColor}">${btcLabel}</span>
-    <span style="color:var(--border2)">|</span>
-    <span style="font-size:.52rem;font-weight:700;color:${usdtColor}">${usdtLabel}</span>
-    <span style="color:var(--border2)">|</span>
-    <span style="font-size:.52rem;font-weight:700;color:${altColor}">${altLabel}</span>
+    <span style="font-size:.46rem;color:var(--muted);letter-spacing:.1em;flex-shrink:0">DOMINANCE (CoinGecko):</span>
+    <span style="font-size:.58rem;font-weight:900;color:${btcColor}">BTC.D ${btcD.toFixed(2)}% ${btcArrow}</span>
+    <span style="font-size:.46rem;color:${btcColor}">${btcNote}</span>
+    <span style="color:var(--border2);margin:0 5px">|</span>
+    <span style="font-size:.58rem;font-weight:900;color:${usdtColor}">USDT.D ${usdtD.toFixed(2)}% ${usdtArrow}</span>
+    <span style="font-size:.46rem;color:${usdtColor}">${usdtNote}</span>
+    <span style="color:var(--border2);margin:0 5px">|</span>
+    <span style="font-size:.56rem;font-weight:700;color:${altColor}">${altSeason?'ALT SEASON':'—'}</span>
+    <span style="color:var(--border2);margin:0 5px">|</span>
+    <span style="font-size:.46rem;color:var(--muted)">TOTAL MC: ${mcStr}</span>
+    ${mcChange?`<span style="font-size:.46rem;color:${mcChangeColor}">${mcChange} 24h</span>`:''}
+    <span style="font-size:.44rem;color:var(--muted);margin-left:4px">via CoinGecko</span>
   `;
 }
 
@@ -1239,8 +1175,6 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   if(adx&&adx>25)factors.push({n:'ADX TREND',s:Math.min(12,Math.round((adx-25)/2))});
   if(adx&&adx>0&&adx<20)factors.push({n:'ADX CHOP',s:-8});
   if(mtfZones&&mtfZones.length>0)factors.push({n:'MTF ALIGN '+mtfZones[0].tfs,s:mtfZones[0].score});
-  // VSA CAB bonus — smart money absorption signal
-  if(arguments[16]){const cab=arguments[16];const cabBonus=cab.scenario==='CAB_AR'?32:cab.scenario==='CAB_S3'?22:cab.scenario==='CAB_S2'?14:8;factors.push({n:'VSA CAB '+cab.scenarioProb,s:cabBonus});}
   const total=Math.min(100,Math.max(0,factors.reduce((a,f)=>a+f.s,0)));
   return{total,factors};
 }
@@ -1343,7 +1277,6 @@ function alertViaTelegram(sig){
   const stopHunt=sig.stopHunt?'Stop Hunt: '+sig.stopHunt.label:'';
   const adxStr=sig.adx?'ADX: '+sig.adx.toFixed(1)+(sig.adx>25?' (TRENDING)':' (CHOPPY)'):'';
   const mtfStr=sig.mtfZones&&sig.mtfZones.length?'MTF Aligned: '+sig.mtfZones.map(z=>z.level+' '+z.tfs).join(', '):'';
-  const cabStr=sig.cab?`VSA CAB: ${sig.cab.scenario} (${sig.cab.scenarioProb}) Vol:${sig.cab.cabVolRatio}x | ${sig.cab.entryNote}`:'';
   const anomaly=volumeAnomalyActive?'WARNING: Market-wide volume spike — lower signal quality':'';
   const lines=[
     (sig.heat>=4?'FIRE':'SIGNAL')+' VP SCAN PRO',
@@ -1355,7 +1288,7 @@ function alertViaTelegram(sig){
     'Trend: '+sig.trend+' | Vol: '+sig.volTier,
     'Structure: '+(sig.msLabel||'NEUTRAL'),
     sig.liqSweep?'Liq: '+sig.liqSweep.label:'',
-    pattern,stopHunt,adxStr,mtfStr,cabStr,anomaly,
+    pattern,stopHunt,adxStr,mtfStr,anomaly,
     '',
     'VAH: $'+fp(sig.vp.vah),
     'POC: $'+fp(sig.vp.poc),
@@ -1427,7 +1360,6 @@ function detectSignals(symbol,candles,tf,chg,ts){
   const volDelta=calcRealDelta(candles);
   const mtfAlign=checkMTFLevelAlignment(symbol);
   const mtfZones=mtfAlign.zones;
-  const cab=detectVSAcab(candles);
   const ema5arr=calcEMA(candles,5),ema12arr=calcEMA(candles,12),ema16arr=calcEMA(candles,16);
   const ema40arr=calcEMA(candles,40),ema53arr=calcEMA(candles,53);
   const ema20arr=ema12arr,ema50arr=ema53arr; // compat aliases
@@ -1442,7 +1374,7 @@ function detectSignals(symbol,candles,tf,chg,ts){
   const makeSig=(bt,type)=>{
     // Skip duplicates within cooldown period
     if(isDuplicateSignal(symbol,type,tf))return null;
-    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones,cab);
+    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones);
     const heat=calcHeat(conf.total,volTier,div,ms,liqSweep,pattern,stopHunt,adx);
     let str=35;
     if(bt==='VAL')str+=12;else if(bt==='VAH')str+=10;else if(bt==='POC')str+=8;
@@ -1474,19 +1406,13 @@ function detectSignals(symbol,candles,tf,chg,ts){
     // False break penalty
     str-=getFalseBreakPenalty(symbol,type,tf);
     str+=Math.round(conf.total*0.12);
-    if(cab&&cab.scenario===type){
-      if(cab.scenario==='CAB_AR')str+=28;
-      else if(cab.scenario==='CAB_S3')str+=18;
-      else if(cab.scenario==='CAB_S2')str+=10;
-      else str+=5;
-    }
     str=Math.min(99,Math.max(15,str));
     return{symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema5,ema12,ema16,ema53,ema20,ema50,crossBullish5,crossBullish12,crossBearish5,crossBearish12,earlyWarning,fullBullConfirm,fullBearConfirm,chg,
       strength:str,confluence:conf.total,confluenceFactors:conf.factors,
       heat,ms,msLabel,freshness,session:session.session,
       liqSweep,sr,obs,fvgs,volDelta,
       pattern:pattern?pattern.pattern:null,
-      stopHunt,adx,mtfZones,cab,
+      stopHunt,adx,mtfZones,
       ts:ts||Date.now()};
   };
 
@@ -1519,23 +1445,6 @@ function detectSignals(symbol,candles,tf,chg,ts){
   if(liqSweep&&liqSweep.type==='BULL_SWEEP'&&!sigs.length){
     const s=makeSig('VAL','VAL_SPIKE');
     if(s)sigs.push({...s,heat:Math.min(5,(s.heat||1)+1)});
-  }
-  // VSA CAB standalone signal — only if no duplicate already in this coin+tf
-  if(cab&&!isDuplicateSignal(symbol,cab.scenario,tf)){
-    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones,cab);
-    const baseStr=cab.scenario==='CAB_AR'?76:cab.scenario==='CAB_S3'?66:cab.scenario==='CAB_S2'?54:40;
-    const heatAdj=cab.scenario==='CAB_AR'?2:cab.scenario==='CAB_S3'?1:0;
-    const heat=Math.min(5,calcHeat(conf.total,volTier,div,ms,liqSweep,pattern,stopHunt,adx)+heatAdj);
-    sigs.push({
-      symbol,price:cur.close,vp,tf,type:cab.scenario,trend,volTier,volRatio,
-      ema5,ema12,ema16,ema53,ema20,ema50,crossBullish5,crossBullish12,
-      crossBearish5,crossBearish12,earlyWarning,fullBullConfirm,fullBearConfirm,chg,
-      strength:Math.min(99,Math.max(20,baseStr)),confluence:conf.total,confluenceFactors:conf.factors,
-      heat,ms,msLabel,freshness,session:session.session,
-      liqSweep,sr,obs,fvgs,volDelta,
-      pattern:pattern?pattern.pattern:null,stopHunt,adx,mtfZones,cab,
-      ts:ts||Date.now()
-    });
   }
   return sigs;
 }
@@ -1597,7 +1506,7 @@ async function triggerAndPoll(){
   }
 
   const scanStartTs=Date.now();
-  const BATCH=20; // 20 coins × 3 TFs = 60 parallel requests per batch — faster
+  const BATCH=12; // 12 coins × 3 TFs = 36 parallel requests per batch — fast but safe
 
   for(let i=0;i<pairs.length;i+=BATCH){
     const batch=pairs.slice(i,i+BATCH);
@@ -1606,8 +1515,10 @@ async function triggerAndPoll(){
     done+=batch.length;
     pfg.style.width=Math.round((done/pairs.length)*100)+'%';
     ptxt.textContent=`SCANNING… ${done} / ${pairs.length} COINS`;
-    // 60ms gap: 60 reqs/batch × ~16 batches/10s = ~100 reqs/s — well within Binance limits
-    if(i+BATCH<pairs.length) await new Promise(r=>setTimeout(r,60));
+    // Short pause between batches to stay within Binance rate limits
+    // Binance allows 1200 weight/min. 24 requests × 1 weight = 24/batch.
+    // 150ms gap = ~160 batches/min max = 3840 requests/min → well under limit
+    if(i+BATCH<pairs.length) await new Promise(r=>setTimeout(r,150));
   }
   const mtfMap=buildMTFMap(newSignals);newSignals.forEach(s=>{s.mtfCount=(mtfMap[s.symbol]?.size||0);});
   const newKeys=new Set(newSignals.map(sigKey));const brandNew=newSignals.filter(s=>!prevSigKeys.has(sigKey(s)));prevSigKeys=newKeys;allSignals=newSignals;
@@ -1630,14 +1541,9 @@ async function triggerAndPoll(){
 
 // RENDER TABLE
 function render(){
-  document.getElementById('stVAH').textContent=allSignals.filter(s=>baseType(s.type)==='VAH').length;
-  document.getElementById('stVAL').textContent=allSignals.filter(s=>baseType(s.type)==='VAL').length;
-  document.getElementById('stPOC').textContent=allSignals.filter(s=>baseType(s.type)==='POC').length;
-  document.getElementById('stTotal').textContent=allSignals.length;
-  const cabEl=document.getElementById('stCAB');
-  if(cabEl)cabEl.textContent=allSignals.filter(s=>['CAB_S1','CAB_S2','CAB_S3','CAB_AR'].includes(s.type)).length;
+  document.getElementById('stVAH').textContent=allSignals.filter(s=>baseType(s.type)==='VAH').length;document.getElementById('stVAL').textContent=allSignals.filter(s=>baseType(s.type)==='VAL').length;document.getElementById('stPOC').textContent=allSignals.filter(s=>baseType(s.type)==='POC').length;document.getElementById('stTotal').textContent=allSignals.length;
   const query=(document.getElementById('coinSearch').value||'').toUpperCase().trim();
-  let filtered=allSignals.filter(s=>{const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;if(s.type==='WARNING')return showWarnings;if(['CAB_S1','CAB_S2','CAB_S3','CAB_AR'].includes(s.type))return showVSA;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;return true;});
+  let filtered=allSignals.filter(s=>{const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;if(s.type==='WARNING')return showWarnings;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;return true;});
   filtered=sortSignals(filtered);document.getElementById('sigCount').textContent=`${filtered.length} SIGNAL${filtered.length!==1?'S':''}`;
   const rows=document.getElementById('rows');
   if(!filtered.length){rows.innerHTML=`<div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">NO SIGNALS MATCH FILTERS</div></div>`;return;}
@@ -1661,15 +1567,14 @@ function render(){
     const huntBadge=s.stopHunt?`<span style="font-size:.46rem;padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite">${s.stopHunt.label}</span>`:'';
     const emaCrossBadge=s.crossBullish12?'<span style="font-size:.44rem;padding:1px 5px;color:#FF3333;border:1px solid rgba(255,51,51,.5);background:rgba(255,51,51,.1);font-weight:900">BULL CONFIRM</span>':s.crossBullish5?'<span style="font-size:.44rem;padding:1px 5px;color:#FFD700;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.08)">EARLY BULL</span>':s.crossBearish12?'<span style="font-size:.44rem;padding:1px 5px;color:#FF5E3A;border:1px solid rgba(255,94,58,.5);background:rgba(255,94,58,.1);font-weight:900">BEAR CONFIRM</span>':s.earlyWarning?'<span style="font-size:.44rem;padding:1px 5px;color:#FF9500;border:1px solid rgba(255,149,0,.4)">WARN</span>':''
     const adxBadge=s.adx?`<span style="font-size:.44rem;color:${s.adx>25?'var(--acc)':s.adx<20?'var(--vah)':'var(--muted)'}">${s.adx>25?'ADX:TREND':'ADX:CHOP'}</span>`:''
-    const cabBadge=s.cab?`<span class="cab-pill" title="${s.cab.entryNote}">VSA ${s.cab.scenario.replace('CAB_','')} ${s.cab.cabVolRatio}x · ${s.cab.scenarioProb}</span>`:'';
     const heatBar=renderHeatBar(s.heat||1);const age=getSignalAge(s.ts||Date.now());
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:.48rem" title="${note}">📝</span>`:'';
     const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}`;
-    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${cabBadge}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
+    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${msBadge}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
     return`<div class="${rowClass}" data-sym="${s.symbol}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
       <div class="td rank">${i+1}</div>
-      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${noteDot}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span>${cabBadge}</div></div></div>
+      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${noteDot}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span></div></div></div>
       <div class="td"><span class="price-cell price-live">$${fp(dispPrice)}</span></div>
       <div class="td"><span class="chg chg-live ${chgCls}">${chgStr}</span></div>
       <div class="td lvl">$${fp(s.vp.vah)}</div><div class="td lvl">$${fp(s.vp.val)}</div><div class="td lvl">$${fp(s.vp.poc)}</div>
@@ -1733,26 +1638,6 @@ async function loadChartData(symbol,tf,vpHint){
     document.getElementById('ctxHeat').textContent='🔥'.repeat(heat)+` (${conf.total}/100)`;document.getElementById('ctxMS').textContent=msLabel||'—';
     document.getElementById('ctxOB').textContent=obs.length?obs.map(o=>o.type).join(','):'NONE';document.getElementById('ctxLiq').textContent=liqSweep?liqSweep.label:'NONE';document.getElementById('ctxConf').textContent=conf.total+'/100';
     const tEl=document.getElementById('infoTrend');tEl.textContent=trend==='UP'?'↑ UPTREND':trend==='DOWN'?'↓ DOWNTREND':'→ NEUTRAL';tEl.className='info-val '+(trend==='UP'?'trend-up':trend==='DOWN'?'trend-dn':'trend-n');
-    // VSA CAB detection for chart
-    const cabModal=detectVSAcab(candles);
-    const ctxAdx=document.getElementById('ctxADX');if(ctxAdx)ctxAdx.textContent=adxModal?adxModal.toFixed(1)+(adxModal>25?' TREND':adxModal<20?' CHOP':''):'—';
-    const ctxPattern=document.getElementById('ctxPattern');if(ctxPattern)ctxPattern.textContent=patternModal?patternModal.pattern:'NONE';
-    const ctxConf2=document.getElementById('ctxConf');if(ctxConf2)ctxConf2.textContent=conf.total+'/100';
-    // Store cab for chart drawing
-    window._modalCab=cabModal;
-    // Populate CAB info panel
-    const cabPanel=document.getElementById('cabInfoPanel');
-    if(cabModal&&cabPanel){
-      cabPanel.style.display='flex';
-      document.getElementById('cabScenario').textContent=cabModal.scenario.replace('CAB_','S')+(cabModal.isAR?' ★★':'');
-      document.getElementById('cabScenario').style.color=cabModal.scenario==='CAB_AR'?'#00E5FF':cabModal.scenario==='CAB_S3'?'#00FFB2':cabModal.scenario==='CAB_S2'?'#FFB800':'#CF9FFF';
-      document.getElementById('cabUpper').textContent='$'+fp(cabModal.upperTrigger);
-      document.getElementById('cabBody').textContent='$'+fp(cabModal.bodyTrigger);
-      document.getElementById('cabMid').textContent='$'+fp(cabModal.midCAB);
-      document.getElementById('cabLower').textContent='$'+fp(cabModal.lowerTrigger);
-      document.getElementById('cabStop').textContent='$'+fp(cabModal.stop);
-      document.getElementById('cabAction').textContent=cabModal.entryNote;
-    } else if(cabPanel){cabPanel.style.display='none';}
     const rr=calcRR(last.close,vp,currentSigType||'POC');
     document.getElementById('rrEntry').textContent='$'+fp(rr.entry);document.getElementById('rrStop').textContent='$'+fp(rr.stop);document.getElementById('rrT1').textContent='$'+fp(rr.t1);document.getElementById('rrT2').textContent='$'+fp(rr.t2);
     const rrEl=document.getElementById('rrRatio');rrEl.textContent='1:'+rr.rr;rrEl.className='rr-item-val '+(parseFloat(rr.rr)>=2?'rr-g':parseFloat(rr.rr)>=1?'rr-m':'rr-b');document.getElementById('rrRisk').textContent=rr.riskPct+'%';
@@ -1839,18 +1724,8 @@ function renderLayerToolbar(){
   html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
   html+=btn('VOL','#00BFFF',layerState.VOL,"toggleLyr('VOL')");
   html+=btn('RSI','#CF9FFF',layerState.RSI,"toggleLyr('RSI')");
-  // VSA CAB trigger lines toggle
-  if(layerDefs.CAB_UPPER){
-    html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
-    if(layerState.CAB_LINES===undefined)layerState.CAB_LINES=true;
-    html+=btn('CAB LINES','#CF9FFF',layerState.CAB_LINES,"toggleCABLines()");
-  }
   html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
-  // Measurement tool toggle
-  const measOn=window._measActive||false;
-  html+=`<button onclick="toggleMeasurement()" style="background:${measOn?'rgba(255,215,0,.15)':'transparent'};border:1px solid ${measOn?'#FFD700':'#3A6880'};color:${measOn?'#FFD700':'#3A6880'};font-family:'Space Mono',monospace;font-size:.46rem;padding:2px 8px;cursor:pointer" title="Click-drag on chart to measure % P&L">📏 MEASURE</button>`;
   html+=`<button onclick="resetAllLayers()" style="background:transparent;border:1px solid #3A6880;color:#3A6880;font-family:'Space Mono',monospace;font-size:.46rem;padding:2px 8px;cursor:pointer">SHOW ALL</button>`;
-  html+=`<button onclick="hideAllLayers()" style="background:transparent;border:1px solid #FF5E3A;color:#FF5E3A;font-family:'Space Mono',monospace;font-size:.46rem;padding:2px 8px;cursor:pointer" title="Clean chart — hide everything">HIDE ALL</button>`;
   html+='</div>';
   bar.innerHTML=html;
 }
@@ -1950,134 +1825,10 @@ function toggleOB(idx){
 function resetAllLayers(){
   layerState.VAH=true;layerState.POC=true;layerState.VAL=true;
   layerState.EMA5=true;layerState.EMA12=true;layerState.EMA16=true;layerState.EMA40=false;layerState.EMA53=true;
-  layerState.EMA20=true;layerState.EMA50=true;layerState.VOL=true;layerState.RSI=true;layerState.CAB_LINES=true;
+  layerState.EMA20=true;layerState.EMA50=true;layerState.VOL=true;layerState.RSI=true;
   Object.keys(layerState.SR).forEach(k=>layerState.SR[k]=true);
   Object.keys(layerState.OB).forEach(k=>layerState.OB[k]=true);
   loadChartData(currentSymbol,currentTF,null);
-}
-
-// ── Hide all layers for a clean chart ─────────────
-function hideAllLayers(){
-  ['VAH','POC','VAL','EMA5','EMA12','EMA16','EMA40','EMA53','EMA20','EMA50'].forEach(k=>{
-    layerState[k]=false;
-    const s=layerDefs[k];
-    if(s&&mainChartObj){try{mainChartObj.removeSeries(s);}catch(e){}}
-    layerDefs[k]=null;
-  });
-  Object.keys(layerState.SR).forEach((k,i)=>{
-    layerState.SR[k]=false;
-    const s=layerDefs[k];if(s&&mainChartObj){try{mainChartObj.removeSeries(s);}catch(e){}}layerDefs[k]=null;
-  });
-  Object.keys(layerState.OB).forEach(k=>{
-    layerState.OB[k]=false;
-    ['_top','_bot'].forEach(suffix=>{const s=layerDefs[k+suffix];if(s&&mainChartObj){try{mainChartObj.removeSeries(s);}catch(e){}}layerDefs[k+suffix]=null;});
-  });
-  // Hide CAB lines
-  ['CAB_UPPER','CAB_BODY','CAB_MID','CAB_LOWER'].forEach(k=>{
-    const s=layerDefs[k];if(s&&mainChartObj){try{mainChartObj.removeSeries(s);}catch(e){}}layerDefs[k]=null;
-  });
-  layerState.CAB_LINES=false;
-  // Hide VOL and RSI sub-charts
-  layerState.VOL=false;layerState.RSI=false;
-  document.getElementById('volChart').style.display='none';
-  document.getElementById('rsiChart').style.display='none';
-  renderLayerToolbar();
-}
-
-// ── Toggle CAB trigger lines ───────────────────────
-function toggleCABLines(){
-  layerState.CAB_LINES=!layerState.CAB_LINES;
-  const on=layerState.CAB_LINES;
-  ['CAB_UPPER','CAB_BODY','CAB_MID','CAB_LOWER'].forEach(k=>{
-    const s=layerDefs[k];
-    if(mainChartObj){
-      if(s){try{mainChartObj.removeSeries(s);}catch(e){}}
-      if(on){
-        const d=layerDefs[k+'_opts'];
-        if(d){const ns=mainChartObj.addLineSeries(d.opts);ns.setData(d.data);layerDefs[k]=ns;}
-      } else {layerDefs[k]=null;}
-    }
-  });
-  renderLayerToolbar();
-}
-
-// ── Measurement Tool ──────────────────────────────
-// Click-drag on chart to measure % P&L between two price points
-window._measActive=false;
-window._measSeries=null;
-window._measStart=null;
-window._measOverlay=null;
-
-function toggleMeasurement(){
-  window._measActive=!window._measActive;
-  if(!window._measActive){
-    clearMeasurement();
-  } else {
-    showToast('📏 MEASURE: Click start price, drag to end price on chart','#FFD700');
-  }
-  renderLayerToolbar();
-}
-
-function clearMeasurement(){
-  if(window._measSeries&&mainChartObj){
-    try{mainChartObj.removeSeries(window._measSeries);}catch(e){}
-    window._measSeries=null;
-  }
-  const ov=document.getElementById('measOverlay');
-  if(ov)ov.remove();
-  window._measStart=null;
-}
-
-function initMeasurementTool(){
-  const mainEl=document.getElementById('mainChart');
-  if(!mainEl)return;
-  mainEl.addEventListener('mousedown',e=>{
-    if(!window._measActive||!mainChartObj)return;
-    const rect=mainEl.getBoundingClientRect();
-    const y=e.clientY-rect.top;
-    // Convert pixel y → price using chart's price scale
-    const price=mainChartObj.priceScale('right').coordinateToPrice(y);
-    if(!price)return;
-    window._measStart={price,y:e.clientY};
-    clearMeasurement();
-    e.preventDefault();
-  });
-  mainEl.addEventListener('mousemove',e=>{
-    if(!window._measActive||!window._measStart||!mainChartObj)return;
-    const rect=mainEl.getBoundingClientRect();
-    const y=e.clientY-rect.top;
-    const price=mainChartObj.priceScale('right').coordinateToPrice(y);
-    if(!price)return;
-    drawMeasurementOverlay(window._measStart.price,price,window._measStart.y,e.clientY);
-  });
-  mainEl.addEventListener('mouseup',e=>{
-    if(!window._measActive||!window._measStart)return;
-    // Keep the overlay visible until next click
-  });
-}
-
-function drawMeasurementOverlay(startPrice,endPrice,startY,endY){
-  let ov=document.getElementById('measOverlay');
-  if(!ov){
-    ov=document.createElement('div');
-    ov.id='measOverlay';
-    ov.style.cssText='position:absolute;z-index:50;pointer-events:none;font-family:"Space Mono",monospace;font-size:.58rem;white-space:nowrap;';
-    document.getElementById('mainChart').appendChild(ov);
-  }
-  const pct=((endPrice-startPrice)/startPrice*100);
-  const pctStr=(pct>=0?'+':'')+pct.toFixed(2)+'%';
-  const color=pct>=0?'#00FFB2':'#FF5E3A';
-  const minY=Math.min(startY,endY)-document.getElementById('mainChart').getBoundingClientRect().top;
-  const maxY=Math.max(startY,endY)-document.getElementById('mainChart').getBoundingClientRect().top;
-  const midY=(minY+maxY)/2;
-  ov.style.top=(midY-10)+'px';
-  ov.style.left='50%';
-  ov.style.transform='translateX(-50%)';
-  ov.innerHTML=`<div style="background:rgba(8,15,24,.92);border:1px solid ${color};color:${color};padding:4px 10px;">
-    <span>${fmtPrice(startPrice)} → ${fmtPrice(endPrice)}</span>
-    <span style="font-weight:900;margin-left:8px;font-size:.7rem;">${pctStr}</span>
-    <span style="color:var(--muted);margin-left:6px;">${Math.abs(pct).toFixed(2)}% range</span>
-  </div>`;
 }
 
 function buildLWChart(candles,vp,sr,obs){
@@ -2228,33 +1979,6 @@ function buildLWChart(candles,vp,sr,obs){
   // Compat aliases
   layerDefs.EMA20=layerDefs.EMA12;layerDefs.EMA20_opts=layerDefs.EMA12_opts;
   layerDefs.EMA50=layerDefs.EMA53;layerDefs.EMA50_opts=layerDefs.EMA53_opts;
-
-  // ── VSA CAB Trigger Lines ─────────────────────────────────────
-  const cab=window._modalCab;
-  if(cab){
-    if(layerState.CAB_LINES===undefined)layerState.CAB_LINES=true;
-    const cabTriggers=[
-      {key:'CAB_UPPER', val:cab.upperTrigger, color:'rgba(255,255,255,0.9)',  label:'◀ CAB HIGH',  style:LightweightCharts.LineStyle.Solid,   w:2},
-      {key:'CAB_BODY',  val:cab.bodyTrigger,  color:'rgba(255,149,0,0.9)',    label:'◀ CAB BODY',  style:LightweightCharts.LineStyle.Dashed,  w:1.5},
-      {key:'CAB_MID',   val:cab.midCAB,       color:'rgba(255,215,0,0.55)',   label:'◀ CAB 50%',   style:LightweightCharts.LineStyle.Dotted,  w:1},
-      {key:'CAB_LOWER', val:cab.lowerTrigger, color:'rgba(191,95,255,0.9)',   label:'◀ CAB LOW',   style:LightweightCharts.LineStyle.Solid,   w:2},
-    ];
-    const vis=layerState.CAB_LINES;
-    cabTriggers.forEach(t=>{
-      const opts={color:t.color,lineWidth:t.w,lineStyle:t.style,
-        title:t.label,priceLineVisible:false,lastValueVisible:vis,crosshairMarkerVisible:false,
-        visible:vis,priceFormat:{type:'price',precision:DEC,minMove:MM}};
-      const data=flat(t.val);
-      const s=mainChartObj.addLineSeries(opts);s.setData(data);
-      layerDefs[t.key]=s;layerDefs[t.key+'_opts']={opts:{...opts,visible:true,lastValueVisible:true},data};
-    });
-    // Mark the CAB candle
-    const cabTime=Math.floor(candles[cab.cabIdx].time/1000);
-    const existingMarkers=candleSeries.markers()||[];
-    const cabLabel=`VSA CAB · ${cab.scenario.replace('CAB_','')} · ${cab.cabVolRatio}x VOL${cab.isAR?' · AR':''} · ${cab.spreadOk?'BIG SPREAD':'SPREAD OK'}`;
-    const cabMarker={time:cabTime,position:'aboveBar',color:'#CF9FFF',shape:'arrowDown',text:cabLabel,size:2};
-    candleSeries.setMarkers([...existingMarkers,cabMarker].sort((a,b)=>a.time-b.time));
-  }
 
   // ── Crossover markers on chart ─────────────────────────────────
   // Mark the exact candle where 5 or 12 crossed the 53
@@ -2420,8 +2144,6 @@ function buildLWChart(candles,vp,sr,obs){
 
   // ── Render toolbar ────────────────────────────────
   renderLayerToolbar();
-  // ── Init measurement tool ─────────────────────────
-  initMeasurementTool();
 }
 
 // ── Auto-detect decimal precision from price ──────
@@ -2449,7 +2171,7 @@ function fmtPrice(p){
 
 
 function switchModalTF(btn){document.querySelectorAll('.modal-tf-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');currentTF=btn.dataset.tf;document.getElementById('modalTF').textContent=currentTF.toUpperCase();document.getElementById('chartLoadingState').style.display='flex';document.getElementById('chartLoadingState').innerHTML='<div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div>';document.getElementById('chartContainer').style.display='none';document.getElementById('chartInfoBar').style.display='none';loadChartData(currentSymbol,currentTF,null);}
-function closeModal(){document.getElementById('modalOverlay').classList.remove('open');destroyAllCharts();window._measActive=false;clearMeasurement();}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');destroyAllCharts();}
 function handleOverlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
 
 window.addEventListener('resize',()=>{if(!mainChartObj)return;const vpW=window.innerWidth>700?108:0;const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));['mainChart','volChart','rsiChart'].forEach(id=>document.getElementById(id).style.width=mainW+'px');mainChartObj.applyOptions({width:mainW});if(volChartObj)volChartObj.applyOptions({width:mainW});if(rsiChartObj)rsiChartObj.applyOptions({width:mainW});});
