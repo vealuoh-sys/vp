@@ -93,7 +93,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .view-btn{background:var(--s1);border:1px solid var(--border);color:var(--muted);font-size:.68rem;width:26px;height:26px;display:grid;place-items:center;cursor:pointer;transition:all .14s;}
 .view-btn.on{border-color:var(--acc2);color:var(--acc2);}
 .sig-count-badge{font-size:.58rem;color:var(--muted);letter-spacing:.09em;}
-.stats{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;margin-bottom:13px;}
+.stats{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;margin-bottom:13px;}
 @media(max-width:1100px){.stats{grid-template-columns:repeat(4,1fr);}}
 @media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr);}}
 .stat{background:var(--s1);border:1px solid var(--border);padding:11px 12px;position:relative;overflow:hidden;}
@@ -187,6 +187,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .badge.POC_DIV{background:rgba(255,215,0,.18);color:#FFE55C;border:2px solid var(--poc);font-weight:900;}
 .badge.POC_SPIKE{background:rgba(255,215,0,.18);color:#FFE55C;border:2px solid var(--poc);font-weight:900;}
 .badge.WARNING{background:rgba(255,94,58,.12);color:#ff5e3a;border:1px dashed #ff5e3a;animation:pulse 2s infinite;}
+.badge.CAB_S1{background:rgba(191,95,255,.12);color:#CF9FFF;border:1px solid rgba(191,95,255,.4);}
+.badge.CAB_S2{background:rgba(255,184,0,.12);color:#FFB800;border:1px solid rgba(255,184,0,.4);}
+.badge.CAB_S3{background:rgba(0,255,178,.12);color:#00FFB2;border:2px solid rgba(0,255,178,.5);font-weight:900;}
+.badge.CAB_S4{background:rgba(0,229,255,.12);color:#00E5FF;border:2px solid rgba(0,229,255,.5);font-weight:900;}
+.cab-pill{display:inline-flex;align-items:center;gap:3px;font-size:.46rem;font-weight:700;padding:2px 6px;white-space:nowrap;color:#CF9FFF;background:rgba(191,95,255,.08);border:1px solid rgba(191,95,255,.35);}
+.cab-trigger-info{font-size:.5rem;color:var(--muted);letter-spacing:.09em;}
 .badge.NEW-TAG{background:rgba(0,255,178,.15);color:var(--acc);border:1px solid var(--acc);font-size:.44rem;padding:1px 4px;}
 .badge.MTF-TAG{background:rgba(124,77,255,.15);color:#BF5FFF;border:1px solid rgba(124,77,255,.4);font-size:.44rem;padding:1px 4px;}
 @keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
@@ -354,7 +360,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     </div>
     <div>
       <div class="brand-name">VP<em>SCAN</em> <span style="font-size:.68rem;color:var(--poc);font-weight:700">PRO</span></div>
-      <div class="brand-sub">MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · R:R · BACKTEST · CORR · LIVE WS · ALERTS</div>
+      <div class="brand-sub">MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · R:R · VSA CAB · BACKTEST · CORR · LIVE WS · ALERTS</div>
     </div>
   </div>
   <div class="hdr-right">
@@ -390,6 +396,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <div class="divider"></div>
   <button class="sig-btn" id="warnBtn" onclick="togWarn(this)" style="border-color:#ff5e3a;color:#ff5e3a;">⚠ FAKEOUTS</button>
   <button class="sig-btn" id="mtfBtn" onclick="togMTF(this)" style="border-color:#BF5FFF;color:#BF5FFF;">◈ MTF ONLY</button>
+  <button class="sig-btn" id="vsaBtn" onclick="togVSA(this)" style="border-color:#CF9FFF;color:#CF9FFF;opacity:1;">◈ VSA CAB</button>
 </div>
 <div class="filter-row">
   <div class="search-wrap">
@@ -419,6 +426,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <div class="stat" style="--c:var(--vah)"><div class="stat-lbl">VAH</div><div class="stat-val" id="stVAH">—</div></div>
   <div class="stat" style="--c:var(--val)"><div class="stat-lbl">VAL</div><div class="stat-val" id="stVAL">—</div></div>
   <div class="stat" style="--c:var(--poc)"><div class="stat-lbl">POC</div><div class="stat-val" id="stPOC">—</div></div>
+  <div class="stat" style="--c:#CF9FFF"><div class="stat-lbl">VSA CAB ◈</div><div class="stat-val" id="stCAB">—</div></div>
   <div class="stat" style="--c:#BF5FFF"><div class="stat-lbl">MTF ◈</div><div class="stat-val" id="stMTF">—</div></div>
   <div class="stat" style="--c:#FF1744"><div class="stat-lbl">HIGH HEAT 🔥</div><div class="stat-val" id="stHeat">—</div></div>
   <div class="stat" style="--c:var(--warn)"><div class="stat-lbl">TOTAL</div><div class="stat-val" id="stTotal">—</div></div>
@@ -465,7 +473,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     <div class="th">R:R</div>
     <div class="th sort-desc" id="thStr" onclick="setSort('strength')">STR</div>
   </div>
-  <div class="click-hint">CLICK ROW → CHART + R:R CALC + NOTES · 🔥HOT=fresh · ◈=MTF · OB=Orderblock · LIQ=Liquidity Sweep</div>
+  <div class="click-hint">CLICK ROW → CHART + R:R CALC + NOTES · 🔥HOT=fresh · ◈=MTF · OB=Orderblock · LIQ=Liquidity Sweep · VSA=CAB trigger lines on chart</div>
   <div class="prog-wrap" id="progWrap"><span id="progTxt">SCANNING…</span><div class="prog-bg"><div class="prog-fg" id="progFg" style="width:0%"></div></div></div>
   <div class="rows" id="rows"><div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">SCANNING STARTS AUTOMATICALLY…</div></div></div>
 </div>
@@ -617,7 +625,7 @@ const DEFAULT_PAIRS=[
 
 // STATE
 let activeTFs=new Set(['1h','4h','1d']),activeSigs=new Set(['VAH','VAL','POC']);
-let showWarnings=false,mtfOnly=false,allSignals=[],minStrength=0;
+let showWarnings=false,mtfOnly=false,showVSA=true,allSignals=[],minStrength=0;
 let sortKey='strength',sortDir='desc',scanHistory=[],prevSigKeys=new Set();
 let livePrices={},watchlist=[],priceAlerts=[],coinGroups=[],activeGroup=null,tradeNotes={};
 let wsConn=null,wsReconnectTimer=null,candleCache={};
@@ -627,7 +635,8 @@ let mainChartObj=null,volChartObj=null,rsiChartObj=null,candleSeries=null;
 const LABEL_MAP={
   VAH:'▲ VAH BREAK',VAH_SPIKE:'▲ VAH+SPIKE',VAL:'▼ VAL RECLAIM',
   VAL_DIV:'▼ VAL+DIV',VAL_SPIKE:'▼ VAL+SPIKE',POC:'◆ POC REACT',
-  POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT'
+  POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT',
+  CAB_S1:'◈ VSA CAB S1',CAB_S2:'◈ VSA CAB S2',CAB_S3:'◈ VSA CAB S3 ★',CAB_S4:'◈ VSA CAB S4 ★★'
 };
 function baseType(t){return t.startsWith('VAH')?'VAH':t.startsWith('VAL')?'VAL':t.startsWith('POC')?'POC':t;}
 function sigKey(s){return`${s.symbol}-${s.type}-${s.tf}`;}
@@ -661,6 +670,7 @@ function togTF(el){const tf=el.dataset.tf;if(activeTFs.has(tf)){if(activeTFs.siz
 function togSig(el){const sig=el.dataset.sig,cls=`on-${sig.toLowerCase()}`;if(activeSigs.has(sig)){if(activeSigs.size===1)return;activeSigs.delete(sig);el.classList.remove(cls);}else{activeSigs.add(sig);el.classList.add(cls);}render();}
 function togWarn(el){showWarnings=!showWarnings;el.style.opacity=showWarnings?'1':'0.45';render();}
 function togMTF(el){mtfOnly=!mtfOnly;el.style.opacity=mtfOnly?'1':'0.45';el.style.background=mtfOnly?'rgba(124,77,255,.1)':'';render();}
+function togVSA(el){showVSA=!showVSA;el.style.opacity=showVSA?'1':'0.45';el.style.background=showVSA?'rgba(191,95,255,.1)':'';render();}
 function setView(v){document.getElementById('viewTable').classList.toggle('on',v==='table');document.getElementById('viewHeat').classList.toggle('on',v==='heatmap');document.getElementById('tblWrap').style.display=v==='table'?'block':'none';document.getElementById('heatmapView').classList.toggle('active',v==='heatmap');if(v==='heatmap')renderHeatmap();}
 
 // SORT
@@ -886,6 +896,58 @@ function detectStopHunt(candles){
   return null;
 }
 
+// ══ VSA — CLIMACTIC ACTION BAR (CAB) ══
+function detectVSAcab(candles){
+  const n=candles.length;
+  if(n<15)return null;
+  const lookback=Math.min(n-2,30);
+  let retracementStart=-1;
+  for(let i=n-2;i>=n-lookback;i--){
+    if(candles[i].close>candles[i-1].close&&candles[i].close>candles[i+1].close){retracementStart=i;break;}
+  }
+  if(retracementStart<0||retracementStart>=n-2)return null;
+  const retracementCandles=[];
+  for(let i=retracementStart+1;i<n;i++)retracementCandles.push({idx:i,...candles[i]});
+  if(retracementCandles.length<1)return null;
+  const redCandles=retracementCandles.filter(c=>c.close<c.open);
+  if(redCandles.length===0)return null;
+  let cabIdx=-1,cabVol=-Infinity;
+  retracementCandles.forEach(c=>{if(c.close<c.open&&c.volume>cabVol){cabVol=c.volume;cabIdx=c.idx;}});
+  if(cabIdx<0)return null;
+  const cab=candles[cabIdx];
+  const preSlice=candles.slice(Math.max(0,retracementStart-20),retracementStart);
+  const preAvgVol=preSlice.length?preSlice.reduce((a,c)=>a+c.volume,0)/preSlice.length:cabVol;
+  const cabVolRatio=preAvgVol>0?cabVol/preAvgVol:1;
+  if(cabVolRatio<1.5)return null;
+  const cabSpread=cab.high-cab.low;
+  const avgSpread=retracementCandles.reduce((a,c)=>a+(c.high-c.low),0)/retracementCandles.length;
+  const spreadOk=cabSpread>avgSpread*0.75;
+  const upperTrigger=cab.high,lowerTrigger=cab.low,bodyTrigger=cab.close;
+  const postCAB=candles.slice(cabIdx+1);
+  if(postCAB.length===0)return null;
+  const lastPostCAB=postCAB[postCAB.length-1];
+  const postHigh=Math.max(...postCAB.map(c=>c.high));
+  const sweptLower=postCAB.some(c=>c.low<lowerTrigger);
+  const closedBelowLower=postCAB.some(c=>c.close<lowerTrigger);
+  const recoveredAboveLower=sweptLower&&lastPostCAB.close>lowerTrigger;
+  const brokUpperClose=lastPostCAB.close>upperTrigger;
+  let lowSweepCount=0,prevLow=lowerTrigger;
+  for(const c of postCAB){if(c.low<prevLow){lowSweepCount++;prevLow=c.low;}}
+  let scenario=null,scenarioProb=null,entryNote='';
+  if(closedBelowLower&&lowSweepCount>=2){
+    scenario='CAB_S4';scenarioProb='HIGHEST PROB';entryNote='Entry: channel trendline break';
+  } else if(closedBelowLower&&recoveredAboveLower){
+    scenario='CAB_S3';scenarioProb='HIGH PROB';entryNote='Entry: close above body trigger';
+  } else if(sweptLower&&!closedBelowLower&&brokUpperClose){
+    scenario='CAB_S2';scenarioProb='MED PROB';entryNote='Entry: upper trigger break';
+  } else if(!sweptLower){
+    scenario='CAB_S1';scenarioProb='LOW PROB';entryNote='Wait: break+retest upper trigger';
+  } else {return null;}
+  return{scenario,scenarioProb,cabIdx,cabCandle:cab,upperTrigger,lowerTrigger,bodyTrigger,
+    cabVolRatio:Math.round(cabVolRatio*10)/10,spreadOk,entryNote,
+    sweptLower,closedBelowLower,recoveredAboveLower,brokUpperClose,lowSweepCount};
+}
+
 // == 6. SIGNAL COOLDOWN / DEDUP ==
 const signalCooldown=new Map();
 function getTFms(tf){return tf==='1h'?3600000:tf==='4h'?14400000:86400000;}
@@ -1079,6 +1141,8 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   if(adx&&adx>25)factors.push({n:'ADX TREND',s:Math.min(12,Math.round((adx-25)/2))});
   if(adx&&adx>0&&adx<20)factors.push({n:'ADX CHOP',s:-8});
   if(mtfZones&&mtfZones.length>0)factors.push({n:'MTF ALIGN '+mtfZones[0].tfs,s:mtfZones[0].score});
+  // VSA CAB bonus — smart money absorption signal
+  if(arguments[16]){const cab=arguments[16];const cabBonus=cab.scenario==='CAB_S4'?30:cab.scenario==='CAB_S3'?22:cab.scenario==='CAB_S2'?14:8;factors.push({n:'VSA CAB '+cab.scenarioProb,s:cabBonus});}
   const total=Math.min(100,Math.max(0,factors.reduce((a,f)=>a+f.s,0)));
   return{total,factors};
 }
@@ -1181,6 +1245,7 @@ function alertViaTelegram(sig){
   const stopHunt=sig.stopHunt?'Stop Hunt: '+sig.stopHunt.label:'';
   const adxStr=sig.adx?'ADX: '+sig.adx.toFixed(1)+(sig.adx>25?' (TRENDING)':' (CHOPPY)'):'';
   const mtfStr=sig.mtfZones&&sig.mtfZones.length?'MTF Aligned: '+sig.mtfZones.map(z=>z.level+' '+z.tfs).join(', '):'';
+  const cabStr=sig.cab?`VSA CAB: ${sig.cab.scenario} (${sig.cab.scenarioProb}) Vol:${sig.cab.cabVolRatio}x | ${sig.cab.entryNote}`:'';
   const anomaly=volumeAnomalyActive?'WARNING: Market-wide volume spike — lower signal quality':'';
   const lines=[
     (sig.heat>=4?'FIRE':'SIGNAL')+' VP SCAN PRO',
@@ -1192,7 +1257,7 @@ function alertViaTelegram(sig){
     'Trend: '+sig.trend+' | Vol: '+sig.volTier,
     'Structure: '+(sig.msLabel||'NEUTRAL'),
     sig.liqSweep?'Liq: '+sig.liqSweep.label:'',
-    pattern,stopHunt,adxStr,mtfStr,anomaly,
+    pattern,stopHunt,adxStr,mtfStr,cabStr,anomaly,
     '',
     'VAH: $'+fp(sig.vp.vah),
     'POC: $'+fp(sig.vp.poc),
@@ -1264,6 +1329,7 @@ function detectSignals(symbol,candles,tf,chg,ts){
   const volDelta=calcRealDelta(candles);
   const mtfAlign=checkMTFLevelAlignment(symbol);
   const mtfZones=mtfAlign.zones;
+  const cab=detectVSAcab(candles);
   const ema5arr=calcEMA(candles,5),ema12arr=calcEMA(candles,12),ema16arr=calcEMA(candles,16);
   const ema40arr=calcEMA(candles,40),ema53arr=calcEMA(candles,53);
   const ema20arr=ema12arr,ema50arr=ema53arr; // compat aliases
@@ -1278,7 +1344,7 @@ function detectSignals(symbol,candles,tf,chg,ts){
   const makeSig=(bt,type)=>{
     // Skip duplicates within cooldown period
     if(isDuplicateSignal(symbol,type,tf))return null;
-    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones);
+    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones,cab);
     const heat=calcHeat(conf.total,volTier,div,ms,liqSweep,pattern,stopHunt,adx);
     let str=35;
     if(bt==='VAL')str+=12;else if(bt==='VAH')str+=10;else if(bt==='POC')str+=8;
@@ -1310,13 +1376,19 @@ function detectSignals(symbol,candles,tf,chg,ts){
     // False break penalty
     str-=getFalseBreakPenalty(symbol,type,tf);
     str+=Math.round(conf.total*0.12);
+    if(cab&&cab.scenario===type){
+      if(cab.scenario==='CAB_S4')str+=25;
+      else if(cab.scenario==='CAB_S3')str+=18;
+      else if(cab.scenario==='CAB_S2')str+=10;
+      else str+=5;
+    }
     str=Math.min(99,Math.max(15,str));
     return{symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema5,ema12,ema16,ema53,ema20,ema50,crossBullish5,crossBullish12,crossBearish5,crossBearish12,earlyWarning,fullBullConfirm,fullBearConfirm,chg,
       strength:str,confluence:conf.total,confluenceFactors:conf.factors,
       heat,ms,msLabel,freshness,session:session.session,
       liqSweep,sr,obs,fvgs,volDelta,
       pattern:pattern?pattern.pattern:null,
-      stopHunt,adx,mtfZones,
+      stopHunt,adx,mtfZones,cab,
       ts:ts||Date.now()};
   };
 
@@ -1349,6 +1421,24 @@ function detectSignals(symbol,candles,tf,chg,ts){
   if(liqSweep&&liqSweep.type==='BULL_SWEEP'&&!sigs.length){
     const s=makeSig('VAL','VAL_SPIKE');
     if(s)sigs.push({...s,heat:Math.min(5,(s.heat||1)+1)});
+  }
+  // VSA CAB standalone signal — only if no duplicate already in this coin+tf
+  if(cab&&!isDuplicateSignal(symbol,cab.scenario,tf)){
+    // Build the CAB signal directly (bypass makeSig type resolution)
+    const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones,cab);
+    const baseStr=cab.scenario==='CAB_S4'?72:cab.scenario==='CAB_S3'?65:cab.scenario==='CAB_S2'?52:38;
+    const heat=calcHeat(conf.total,volTier,div,ms,liqSweep,pattern,stopHunt,adx);
+    sigs.push({
+      symbol,price:cur.close,vp,tf,type:cab.scenario,trend,volTier,volRatio,
+      ema5,ema12,ema16,ema53,ema20,ema50,crossBullish5,crossBullish12,
+      crossBearish5,crossBearish12,earlyWarning,fullBullConfirm,fullBearConfirm,chg,
+      strength:Math.min(99,Math.max(20,baseStr)),confluence:conf.total,confluenceFactors:conf.factors,
+      heat:Math.min(5,heat+(cab.scenario==='CAB_S4'?2:cab.scenario==='CAB_S3'?1:0)),
+      ms,msLabel,freshness,session:session.session,
+      liqSweep,sr,obs,fvgs,volDelta,
+      pattern:pattern?pattern.pattern:null,stopHunt,adx,mtfZones,cab,
+      ts:ts||Date.now()
+    });
   }
   return sigs;
 }
@@ -1445,9 +1535,14 @@ async function triggerAndPoll(){
 
 // RENDER TABLE
 function render(){
-  document.getElementById('stVAH').textContent=allSignals.filter(s=>baseType(s.type)==='VAH').length;document.getElementById('stVAL').textContent=allSignals.filter(s=>baseType(s.type)==='VAL').length;document.getElementById('stPOC').textContent=allSignals.filter(s=>baseType(s.type)==='POC').length;document.getElementById('stTotal').textContent=allSignals.length;
+  document.getElementById('stVAH').textContent=allSignals.filter(s=>baseType(s.type)==='VAH').length;
+  document.getElementById('stVAL').textContent=allSignals.filter(s=>baseType(s.type)==='VAL').length;
+  document.getElementById('stPOC').textContent=allSignals.filter(s=>baseType(s.type)==='POC').length;
+  document.getElementById('stTotal').textContent=allSignals.length;
+  const cabEl=document.getElementById('stCAB');
+  if(cabEl)cabEl.textContent=allSignals.filter(s=>['CAB_S1','CAB_S2','CAB_S3','CAB_S4'].includes(s.type)).length;
   const query=(document.getElementById('coinSearch').value||'').toUpperCase().trim();
-  let filtered=allSignals.filter(s=>{const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;if(s.type==='WARNING')return showWarnings;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;return true;});
+  let filtered=allSignals.filter(s=>{const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;if(s.type==='WARNING')return showWarnings;if(['CAB_S1','CAB_S2','CAB_S3','CAB_S4'].includes(s.type))return showVSA;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;return true;});
   filtered=sortSignals(filtered);document.getElementById('sigCount').textContent=`${filtered.length} SIGNAL${filtered.length!==1?'S':''}`;
   const rows=document.getElementById('rows');
   if(!filtered.length){rows.innerHTML=`<div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">NO SIGNALS MATCH FILTERS</div></div>`;return;}
@@ -1471,14 +1566,15 @@ function render(){
     const huntBadge=s.stopHunt?`<span style="font-size:.46rem;padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite">${s.stopHunt.label}</span>`:'';
     const emaCrossBadge=s.crossBullish12?'<span style="font-size:.44rem;padding:1px 5px;color:#FF3333;border:1px solid rgba(255,51,51,.5);background:rgba(255,51,51,.1);font-weight:900">BULL CONFIRM</span>':s.crossBullish5?'<span style="font-size:.44rem;padding:1px 5px;color:#FFD700;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.08)">EARLY BULL</span>':s.crossBearish12?'<span style="font-size:.44rem;padding:1px 5px;color:#FF5E3A;border:1px solid rgba(255,94,58,.5);background:rgba(255,94,58,.1);font-weight:900">BEAR CONFIRM</span>':s.earlyWarning?'<span style="font-size:.44rem;padding:1px 5px;color:#FF9500;border:1px solid rgba(255,149,0,.4)">WARN</span>':''
     const adxBadge=s.adx?`<span style="font-size:.44rem;color:${s.adx>25?'var(--acc)':s.adx<20?'var(--vah)':'var(--muted)'}">${s.adx>25?'ADX:TREND':'ADX:CHOP'}</span>`:''
+    const cabBadge=s.cab?`<span class="cab-pill" title="${s.cab.entryNote}">VSA ${s.cab.scenario} ${s.cab.cabVolRatio}x · ${s.cab.scenarioProb}</span>`:'';
     const heatBar=renderHeatBar(s.heat||1);const age=getSignalAge(s.ts||Date.now());
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:.48rem" title="${note}">📝</span>`:'';
     const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}`;
-    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${msBadge}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
+    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${cabBadge}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
     return`<div class="${rowClass}" data-sym="${s.symbol}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
       <div class="td rank">${i+1}</div>
-      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${noteDot}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span></div></div></div>
+      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${noteDot}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span>${cabBadge}</div></div></div>
       <div class="td"><span class="price-cell price-live">$${fp(dispPrice)}</span></div>
       <div class="td"><span class="chg chg-live ${chgCls}">${chgStr}</span></div>
       <div class="td lvl">$${fp(s.vp.vah)}</div><div class="td lvl">$${fp(s.vp.val)}</div><div class="td lvl">$${fp(s.vp.poc)}</div>
@@ -1542,6 +1638,13 @@ async function loadChartData(symbol,tf,vpHint){
     document.getElementById('ctxHeat').textContent='🔥'.repeat(heat)+` (${conf.total}/100)`;document.getElementById('ctxMS').textContent=msLabel||'—';
     document.getElementById('ctxOB').textContent=obs.length?obs.map(o=>o.type).join(','):'NONE';document.getElementById('ctxLiq').textContent=liqSweep?liqSweep.label:'NONE';document.getElementById('ctxConf').textContent=conf.total+'/100';
     const tEl=document.getElementById('infoTrend');tEl.textContent=trend==='UP'?'↑ UPTREND':trend==='DOWN'?'↓ DOWNTREND':'→ NEUTRAL';tEl.className='info-val '+(trend==='UP'?'trend-up':trend==='DOWN'?'trend-dn':'trend-n');
+    // VSA CAB detection for chart
+    const cabModal=detectVSAcab(candles);
+    const ctxAdx=document.getElementById('ctxADX');if(ctxAdx)ctxAdx.textContent=adxModal?adxModal.toFixed(1)+(adxModal>25?' TREND':adxModal<20?' CHOP':''):'—';
+    const ctxPattern=document.getElementById('ctxPattern');if(ctxPattern)ctxPattern.textContent=patternModal?patternModal.pattern:'NONE';
+    const ctxConf2=document.getElementById('ctxConf');if(ctxConf2)ctxConf2.textContent=conf.total+'/100';
+    // Store cab for chart drawing
+    window._modalCab=cabModal;
     const rr=calcRR(last.close,vp,currentSigType||'POC');
     document.getElementById('rrEntry').textContent='$'+fp(rr.entry);document.getElementById('rrStop').textContent='$'+fp(rr.stop);document.getElementById('rrT1').textContent='$'+fp(rr.t1);document.getElementById('rrT2').textContent='$'+fp(rr.t2);
     const rrEl=document.getElementById('rrRatio');rrEl.textContent='1:'+rr.rr;rrEl.className='rr-item-val '+(parseFloat(rr.rr)>=2?'rr-g':parseFloat(rr.rr)>=1?'rr-m':'rr-b');document.getElementById('rrRisk').textContent=rr.riskPct+'%';
@@ -1883,6 +1986,32 @@ function buildLWChart(candles,vp,sr,obs){
   // Compat aliases
   layerDefs.EMA20=layerDefs.EMA12;layerDefs.EMA20_opts=layerDefs.EMA12_opts;
   layerDefs.EMA50=layerDefs.EMA53;layerDefs.EMA50_opts=layerDefs.EMA53_opts;
+
+  // ── VSA CAB Trigger Lines ─────────────────────────────────────
+  // Draw Upper (white), Body (orange), Lower (purple) trigger lines when CAB detected
+  const cab=window._modalCab;
+  if(cab){
+    const cabColors={upper:'rgba(255,255,255,0.85)',body:'rgba(255,149,0,0.85)',lower:'rgba(191,95,255,0.85)'};
+    const cabTriggers=[
+      {key:'CAB_UPPER', val:cab.upperTrigger, color:cabColors.upper, label:'◀ CAB HIGH'},
+      {key:'CAB_BODY',  val:cab.bodyTrigger,  color:cabColors.body,  label:'◀ CAB BODY'},
+      {key:'CAB_LOWER', val:cab.lowerTrigger, color:cabColors.lower, label:'◀ CAB LOW'},
+    ];
+    cabTriggers.forEach(t=>{
+      const opts={color:t.color,lineWidth:1.5,lineStyle:LightweightCharts.LineStyle.Dashed,
+        title:t.label,priceLineVisible:false,lastValueVisible:true,crosshairMarkerVisible:false,
+        visible:true,priceFormat:{type:'price',precision:DEC,minMove:MM}};
+      const data=flat(t.val);
+      const s=mainChartObj.addLineSeries(opts);s.setData(data);
+      layerDefs[t.key]=s;layerDefs[t.key+'_opts']={opts,data};
+    });
+    // Mark the CAB candle on chart
+    const cabTime=Math.floor(candles[cab.cabIdx].time/1000);
+    const existingMarkers=candleSeries.markers()||[];
+    const cabMarker={time:cabTime,position:'aboveBar',color:'#CF9FFF',shape:'arrowDown',
+      text:`CAB ${cab.scenario} ${cab.cabVolRatio}x`,size:2};
+    candleSeries.setMarkers([...existingMarkers,cabMarker].sort((a,b)=>a.time-b.time));
+  }
 
   // ── Crossover markers on chart ─────────────────────────────────
   // Mark the exact candle where 5 or 12 crossed the 53
