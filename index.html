@@ -305,6 +305,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 #mainChart{flex:1;min-height:0;position:relative;}
 #volChart{height:62px;border-top:1px solid var(--border);}
 #rsiChart{height:80px;border-top:1px solid var(--border);}
+#layerToolbar{flex-shrink:0;background:#071220;border-bottom:1px solid #132435;min-height:28px;}
 .vp-sidebar{width:106px;flex-shrink:0;background:var(--s2);display:flex;flex-direction:column;overflow:hidden;}
 .vp-sidebar-title{font-size:.44rem;color:var(--muted);padding:6px 8px 4px;border-bottom:1px solid var(--border);text-align:center;}
 .vp-ema-legend{padding:5px 6px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:3px;}
@@ -533,8 +534,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       </div>
     </div>
     <div class="modal-body">
-      <div id="chartLoadingState" class="chart-loading" style="flex:1;"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
       <div id="layerToolbar"></div>
+      <div id="chartLoadingState" class="chart-loading" style="flex:1;"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
       <div class="chart-container" id="chartContainer" style="display:none;">
         <div class="main-chart-wrap">
           <div id="mainChart" style="position:relative;">
@@ -638,11 +639,13 @@ const LABEL_MAP={
 };
 function baseType(t){return t.startsWith('VAH')?'VAH':t.startsWith('VAL')?'VAL':t.startsWith('POC')?'POC':t.startsWith('EMA')?'EMA':t;}
 function sigKey(s){return`${s.symbol}-${s.type}-${s.tf}`;}
-// Render-level dedup: keep only the highest-strength signal per symbol+TF
+// Render-level dedup: keep only the highest-strength signal per symbol+TF+category
+// VP signals (VAH/VAL/POC) dedup separately from EMA signals so both can show
 function dedupBySymbolTF(signals){
   const map=new Map();
   signals.forEach(s=>{
-    const key=`${s.symbol}-${s.tf}`;
+    const cat=baseType(s.type)==='EMA'?'EMA':'VP';
+    const key=`${s.symbol}-${s.tf}-${cat}`;
     if(!map.has(key)||s.strength>map.get(key).strength) map.set(key,s);
   });
   return Array.from(map.values());
@@ -1459,8 +1462,8 @@ function detectSignals(symbol,candles,tf,chg,ts){
   }
 
   // ── EMA EARLY SIGNAL: 5 EMA just crossed above 53 EMA ────────────
-  // This fires BEFORE VAH/VAL/POC, giving an early warning
-  if(crossBullish5&&!sigs.length){
+  // Fires even if VAH/VAL/POC signals already exist — it's an additive confirmation
+  if(crossBullish5){
     if(!isDuplicateSignal(symbol,'EMA_EARLY',tf)){
       const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones);
       const heat=calcHeat(conf.total,volTier,div,ms,liqSweep,pattern,stopHunt,adx);
@@ -1480,7 +1483,7 @@ function detectSignals(symbol,candles,tf,chg,ts){
     }
   }
   // ── EMA BULL CONFIRM: 12 EMA crossed above 53 EMA ────────────────
-  if(crossBullish12&&!sigs.some(s=>s.type==='EMA_BULL')){
+  if(crossBullish12){
     if(!isDuplicateSignal(symbol,'EMA_BULL',tf)){
       const conf=calcConfluence(candles,vp,rsiArr,div,trend,volTier,ms,session,liqSweep,sr,obs,pattern,stopHunt,adx,mtfZones);
       const heat=calcHeat(conf.total,volTier,div,ms,liqSweep,pattern,stopHunt,adx);
@@ -1702,7 +1705,9 @@ async function loadChartData(symbol,tf,vpHint){
     document.getElementById('rrEntry').textContent='$'+fp(rr.entry);document.getElementById('rrStop').textContent='$'+fp(rr.stop);document.getElementById('rrT1').textContent='$'+fp(rr.t1);document.getElementById('rrT2').textContent='$'+fp(rr.t2);
     const rrEl=document.getElementById('rrRatio');rrEl.textContent='1:'+rr.rr;rrEl.className='rr-item-val '+(parseFloat(rr.rr)>=2?'rr-g':parseFloat(rr.rr)>=1?'rr-m':'rr-b');document.getElementById('rrRisk').textContent=rr.riskPct+'%';
     document.getElementById('chartLoadingState').style.display='none';document.getElementById('chartContainer').style.display='flex';document.getElementById('chartInfoBar').style.display='grid';
-    await new Promise(r=>setTimeout(r,150));buildLWChart(candles,vp,sr,obs);drawVPHistogram(candles,vp);
+    // Wait for browser to paint the flex layout before measuring element sizes
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    buildLWChart(candles,vp,sr,obs);drawVPHistogram(candles,vp);
   }catch(e){document.getElementById('chartLoadingState').innerHTML=`<div style="color:var(--vah);font-size:.6rem;">ERROR: ${e.message}</div>`;}
 }
 
@@ -2100,7 +2105,7 @@ function buildLWChart(candles,vp,sr,obs){
     rightPriceScale:{...common.rightPriceScale,scaleMargins:{top:.1,bottom:0}},
     crosshair:{horzLine:{visible:false},vertLine:{color:'rgba(0,191,255,0.3)'}}
   });
-  const vs=volChartObj.addHistogramSeries({priceFormat:{type:'volume'},priceScaleId:''});
+  const vs=volChartObj.addHistogramSeries({priceFormat:{type:'volume'},priceScaleId:'right'});
   vs.setData(candles.map(c=>({time:Math.floor(c.time/1000),value:c.volume,
     color:c.close>=c.open?'rgba(0,255,178,0.4)':'rgba(255,94,58,0.35)'})));
 
@@ -2110,14 +2115,14 @@ function buildLWChart(candles,vp,sr,obs){
     grid:{vertLines:{color:'rgba(19,36,53,0.4)'},horzLines:{color:'rgba(19,36,53,0.4)'}},
     rightPriceScale:{...common.rightPriceScale,scaleMargins:{top:.1,bottom:.1}}
   });
-  const rs=rsiChartObj.addLineSeries({color:'#CF9FFF',lineWidth:2,priceScaleId:''});
+  const rs=rsiChartObj.addLineSeries({color:'#CF9FFF',lineWidth:2,priceScaleId:'right'});
   const rsiData=candles.map(c=>({time:Math.floor(c.time/1000),value:c.rsi||50}));
   rs.setData(rsiData);
   const rsiOb=rsiChartObj.addLineSeries({color:'rgba(255,94,58,0.5)',lineWidth:1,
-    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OB',priceScaleId:''});
+    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OB',priceScaleId:'right'});
   rsiOb.setData(lwC.map(c=>({time:c.time,value:70})));
   const rsiOs=rsiChartObj.addLineSeries({color:'rgba(0,255,178,0.5)',lineWidth:1,
-    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OS',priceScaleId:''});
+    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OS',priceScaleId:'right'});
   rsiOs.setData(lwC.map(c=>({time:c.time,value:30})));
 
   // ── DRAW RSI DIVERGENCE LINES ──────────────────────────────────
@@ -2138,7 +2143,7 @@ function buildLWChart(candles,vp,sr,obs){
           color:'rgba(255,94,58,0.9)',lineWidth:2,
           lineStyle:LightweightCharts.LineStyle.Solid,
           priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:''
+          crosshairMarkerVisible:false,priceScaleId:'right'
         });
         divSeries.setData([
           {time:Math.floor(candles[sh1].time/1000),value:candles[sh1].rsi||50},
@@ -2163,7 +2168,7 @@ function buildLWChart(candles,vp,sr,obs){
           color:'rgba(0,255,178,0.9)',lineWidth:2,
           lineStyle:LightweightCharts.LineStyle.Solid,
           priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:''
+          crosshairMarkerVisible:false,priceScaleId:'right'
         });
         divSeries.setData([
           {time:Math.floor(candles[sl1].time/1000),value:candles[sl1].rsi||50},
@@ -2187,7 +2192,7 @@ function buildLWChart(candles,vp,sr,obs){
           color:'rgba(255,149,0,0.8)',lineWidth:1.5,
           lineStyle:LightweightCharts.LineStyle.Dashed,
           priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:''
+          crosshairMarkerVisible:false,priceScaleId:'right'
         });
         divSeries.setData([
           {time:Math.floor(candles[sl1].time/1000),value:candles[sl1].rsi||50},
