@@ -2107,7 +2107,7 @@ function buildLWChart(candles,vp,sr,obs){
     const canvas=document.getElementById('volChart');
     if(!canvas)return;
     const dpr=window.devicePixelRatio||1;
-    const W=canvas.offsetWidth||mainW;
+    const W=mainW;  // use pre-computed width — offsetWidth is 0 before browser layout
     const H=62;
     canvas.width=W*dpr; canvas.height=H*dpr;
     canvas.style.width=W+'px'; canvas.style.height=H+'px';
@@ -2142,7 +2142,7 @@ function buildLWChart(candles,vp,sr,obs){
     const canvas=document.getElementById('rsiChart');
     if(!canvas)return;
     const dpr=window.devicePixelRatio||1;
-    const W=canvas.offsetWidth||mainW;
+    const W=mainW;  // use pre-computed width — offsetWidth is 0 before browser layout
     const H=80;
     canvas.width=W*dpr; canvas.height=H*dpr;
     canvas.style.width=W+'px'; canvas.style.height=H+'px';
@@ -2198,7 +2198,7 @@ function buildLWChart(candles,vp,sr,obs){
     const canvas=document.getElementById('rsiChart');
     if(!canvas||canvas.style.display==='none')return;
     const ctx=canvas.getContext('2d');
-    const W=parseInt(canvas.style.width)||canvas.width;
+    const W=mainW;
     const H=80;
     const toY=v=>H-((Math.min(100,Math.max(0,v)))/100)*H;
     const toX=i=>(i/candles.length)*W;
