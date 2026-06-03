@@ -534,9 +534,10 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       </div>
     </div>
     <div class="modal-body">
-      <div id="layerToolbar"></div>
       <div id="chartLoadingState" class="chart-loading" style="flex:1;"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
-      <div class="chart-container" id="chartContainer" style="display:none;">
+      <div class="chart-container" id="chartContainer" style="display:none;flex-direction:column;">
+        <div id="layerToolbar"></div>
+        <div style="display:flex;flex:1;min-height:0;">
         <div class="main-chart-wrap">
           <div id="mainChart" style="position:relative;">
             <div class="chart-tooltip" id="chartTooltip">
@@ -548,7 +549,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
               <div class="tt-row"><span class="tt-lbl">VOL</span><span class="tt-val" id="ttVol">—</span></div>
             </div>
           </div>
-          <div id="volChart"></div><div id="rsiChart"></div>
+          <canvas id="volChart" height="62" style="display:block;width:100%;height:62px;background:#060D15;border-top:1px solid #132435;flex-shrink:0;"></canvas>
+          <canvas id="rsiChart" height="80" style="display:block;width:100%;height:80px;background:#060D15;border-top:1px solid #132435;flex-shrink:0;"></canvas>
         </div>
         <div class="vp-sidebar">
           <div class="vp-sidebar-title">VOL PROFILE</div>
@@ -562,6 +564,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
           </div>
           <canvas id="vpHistogram"></canvas>
         </div>
+        </div><!-- /inner-flex -->
       </div>
       <div class="chart-info-bar" id="chartInfoBar" style="display:none;">
         <div class="info-cell"><div class="info-lbl">VAH</div><div class="info-val vah-c" id="infoVAH">—</div></div>
@@ -1715,7 +1718,15 @@ async function loadChartData(symbol,tf,vpHint){
 function drawVPHistogram(candles,vp){const canvas=document.getElementById('vpHistogram');const wrap=canvas.parentElement;const dpr=window.devicePixelRatio||1;const W=wrap.clientWidth,H=wrap.clientHeight;if(W<=0||H<=0)return;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);let lo=Infinity,hi=-Infinity;candles.forEach(c=>{if(c.high>hi)hi=c.high;if(c.low<lo)lo=c.low;});const range=hi-lo;if(!range)return;const binSize=range/VP_BINS,vol=new Array(VP_BINS).fill(0);candles.forEach(c=>{const idx=Math.min(Math.floor((c.typical-lo)/binSize),VP_BINS-1);vol[idx]+=c.volume;});const maxVol=Math.max(...vol);const pLo=Math.min(lo,vp.val*.999),pHi=Math.max(hi,vp.vah*1.001),pRange=pHi-pLo;const py=p=>H-((p-pLo)/pRange)*H;ctx.fillStyle='rgba(0,255,178,0.05)';ctx.fillRect(0,py(vp.vah),W,py(vp.val)-py(vp.vah));vol.forEach((v,i)=>{const price=lo+(i+.5)*binSize;const barH=Math.max(1,(binSize/pRange)*H-1),barW=maxVol>0?(v/maxVol)*(W-4):0,y=py(lo+(i+1)*binSize);const isPOC=Math.abs(price-vp.poc)<binSize,inVA=price>=vp.val&&price<=vp.vah;ctx.fillStyle=isPOC?'rgba(255,215,0,0.85)':inVA?'rgba(0,255,178,0.5)':'rgba(0,191,255,0.28)';ctx.fillRect(0,y,barW,barH);});const dl=(price,color,label,below)=>{ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.beginPath();ctx.moveTo(0,py(price));ctx.lineTo(W,py(price));ctx.stroke();ctx.setLineDash([]);ctx.font='bold 8px monospace';ctx.textAlign='left';ctx.fillStyle=color;ctx.fillText(label,2,below?py(price)+10:py(price)-3);};dl(vp.vah,'#FF5E3A','VAH',false);dl(vp.poc,'#FFD700','POC',false);dl(vp.val,'#00FFB2','VAL',true);}
 
 // CHART BUILDER
-function destroyAllCharts(){if(mainChartObj){mainChartObj.remove();mainChartObj=null;}if(volChartObj){volChartObj.remove();volChartObj=null;}if(rsiChartObj){rsiChartObj.remove();rsiChartObj=null;}candleSeries=null;}
+function destroyAllCharts(){
+  if(mainChartObj){mainChartObj.remove();mainChartObj=null;}
+  volChartObj=null; rsiChartObj=null; candleSeries=null;
+  // Clear canvases
+  ['volChart','rsiChart'].forEach(id=>{
+    const c=document.getElementById(id);
+    if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}
+  });
+}
 // ── Layer visibility state ────────────────────────
 // Persists across TF switches within same modal session
 let layerState = {
@@ -1740,11 +1751,16 @@ function getMinMove(p){const d=getPriceDecimals(p);return parseFloat((1/Math.pow
 function fmtPrice(p){if(!p&&p!==0)return'—';return p.toFixed(getPriceDecimals(p));}
 
 // ── Layer toolbar render ──────────────────────────
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return`${r},${g},${b}`;
+}
 function renderLayerToolbar(){
   const bar=document.getElementById('layerToolbar');if(!bar)return;
   const btn=(label,color,on,fn)=>{
-    const bg=on?`rgba(${color.startsWith('#')?hexToRgb(color):'0,0,0'},.15)`:'transparent';
-    const brd=on?color:'#1E3A55';const op=on?'1':'0.4';
+    const op=on?'1':'0.38';
+    const bg=on?`rgba(${hexToRgb(color)},.18)`:'transparent';
+    const brd=on?color:'#1E3A55';
     return `<button onclick="${fn}" style="background:${bg};border:1px solid ${brd};color:${color};font-family:'Space Mono',monospace;font-size:.48rem;padding:2px 8px;cursor:pointer;opacity:${op};transition:all .15s;white-space:nowrap">${label}</button>`;
   };
   // Count S/R by type for clean numbering
@@ -1790,10 +1806,6 @@ function renderLayerToolbar(){
   html+='</div>';
   bar.innerHTML=html;
 }
-function hexToRgb(hex){
-  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  return`${r},${g},${b}`;
-}
 
 // ── Add a line series that acts as a level line ───
 // Returns the series so caller can store it for removal
@@ -1821,9 +1833,11 @@ function toggleLyr(key){
   layerState[key]=!layerState[key];
   const on=layerState[key];
   if(key==='VOL'){
-    document.getElementById('volChart').style.display=on?'':'none';
+    const el=document.getElementById('volChart');
+    if(el)el.style.display=on?'block':'none';
   } else if(key==='RSI'){
-    document.getElementById('rsiChart').style.display=on?'':'none';
+    const el=document.getElementById('rsiChart');
+    if(el)el.style.display=on?'block':'none';
   } else {
     const s=layerDefs[key];
     if(s&&mainChartObj){
@@ -1898,19 +1912,11 @@ function buildLWChart(candles,vp,sr,obs){
   _srList=sr||[];_obList=obs||[];
 
   const mainEl=document.getElementById('mainChart');
-  const volEl=document.getElementById('volChart');
-  const rsiEl=document.getElementById('rsiChart');
   const mainH=Math.max(240,window.innerHeight*.35);
   const vpW=window.innerWidth>700?108:0;
   const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));
   mainEl.style.height=mainH+'px';
-  [mainEl,volEl,rsiEl].forEach(el=>el.style.width=mainW+'px');
-  // CRITICAL: must set height before LightweightCharts.createChart() or chart height=0
-  volEl.style.height='62px';
-  rsiEl.style.height='80px';
-  // Always make visible during chart creation — hide after charts are built
-  volEl.style.display='';
-  rsiEl.style.display='';
+  mainEl.style.width=mainW+'px';
 
   const lastClose=candles[candles.length-1].close;
   const DEC=getPriceDecimals(lastClose);
@@ -2096,148 +2102,133 @@ function buildLWChart(candles,vp,sr,obs){
     document.getElementById('ttVol').textContent=m?m.volume.toLocaleString('en',{maximumFractionDigits:0}):'—';
   });
 
-  // ── Volume chart ──────────────────────────────────
-  volChartObj=LightweightCharts.createChart(volEl,{
-    width:mainW,height:62,
-    layout:{background:{color:'#080F18'},textColor:'#3A6880',fontFamily:"'Space Mono',monospace",fontSize:8},
-    grid:{vertLines:{color:'rgba(19,36,53,0.4)'},horzLines:{visible:false}},
-    rightPriceScale:{borderColor:'#132435',textColor:'#3A6880',scaleMargins:{top:0.1,bottom:0}},
-    leftPriceScale:{visible:false},
-    timeScale:{visible:false,borderColor:'#132435'},
-    crosshair:{horzLine:{visible:false},vertLine:{color:'rgba(0,191,255,0.3)',labelVisible:false}},
-    handleScroll:{mouseWheel:false,pressedMouseMove:false,horzTouchDrag:false,vertTouchDrag:false},
-    handleScale:{mouseWheel:false,pinch:false,axisPressedMouseMove:false}
-  });
-  const vs=volChartObj.addHistogramSeries({
-    priceFormat:{type:'volume'},
-    priceScaleId:'right',
-    lastValueVisible:false,
-    priceLineVisible:false
-  });
-  vs.setData(candles.map(c=>({
-    time:Math.floor(c.time/1000),
-    value:c.volume,
-    color:c.close>=c.open?'rgba(0,255,178,0.45)':'rgba(255,94,58,0.35)'
-  })));
+  // ── Volume chart (canvas) ─────────────────────────
+  (function drawVolCanvas(){
+    const canvas=document.getElementById('volChart');
+    if(!canvas)return;
+    const dpr=window.devicePixelRatio||1;
+    const W=canvas.offsetWidth||mainW;
+    const H=62;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    const ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#060D15';
+    ctx.fillRect(0,0,W,H);
+    const vols=candles.map(c=>c.volume);
+    const maxV=Math.max(...vols)||1;
+    const barW=Math.max(1,W/vols.length-0.5);
+    vols.forEach((v,i)=>{
+      const x=i*(W/vols.length);
+      const bh=Math.max(1,(v/maxV)*(H-8));
+      ctx.fillStyle=candles[i].close>=candles[i].open?'rgba(0,255,178,0.55)':'rgba(255,94,58,0.45)';
+      ctx.fillRect(x,H-bh,barW,bh);
+    });
+    // Label
+    ctx.fillStyle='#3A6880'; ctx.font='bold 7px monospace';
+    ctx.fillText('VOLUME',4,10);
+    // Avg line
+    const avgV=vols.reduce((a,b)=>a+b,0)/vols.length;
+    const avgY=H-(avgV/maxV)*(H-8);
+    ctx.strokeStyle='rgba(255,215,0,0.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(0,avgY); ctx.lineTo(W,avgY); ctx.stroke();
+    ctx.setLineDash([]);
+    canvas.style.display=layerState.VOL?'block':'none';
+  })();
 
-  // ── RSI chart ─────────────────────────────────────
-  rsiChartObj=LightweightCharts.createChart(rsiEl,{
-    width:mainW,height:80,
-    layout:{background:{color:'#080F18'},textColor:'#3A6880',fontFamily:"'Space Mono',monospace",fontSize:8},
-    grid:{vertLines:{color:'rgba(19,36,53,0.4)'},horzLines:{color:'rgba(19,36,53,0.25)'}},
-    rightPriceScale:{borderColor:'#132435',textColor:'#3A6880',scaleMargins:{top:0.1,bottom:0.1}},
-    leftPriceScale:{visible:false},
-    timeScale:{visible:false,borderColor:'#132435'},
-    crosshair:{horzLine:{visible:false},vertLine:{color:'rgba(0,191,255,0.3)',labelVisible:false}},
-    handleScroll:{mouseWheel:false,pressedMouseMove:false,horzTouchDrag:false,vertTouchDrag:false},
-    handleScale:{mouseWheel:false,pinch:false,axisPressedMouseMove:false}
-  });
-  const rs=rsiChartObj.addLineSeries({
-    color:'#CF9FFF',lineWidth:2,
-    priceScaleId:'right',
-    lastValueVisible:true,
-    priceLineVisible:false,
-    crosshairMarkerVisible:true
-  });
-  rs.setData(candles.map(c=>({time:Math.floor(c.time/1000),value:c.rsi||50})));
-  const rsiOb=rsiChartObj.addLineSeries({color:'rgba(255,94,58,0.5)',lineWidth:1,
-    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OB',
-    priceScaleId:'right',priceLineVisible:false});
-  rsiOb.setData(lwC.map(c=>({time:c.time,value:70})));
-  const rsiOs=rsiChartObj.addLineSeries({color:'rgba(0,255,178,0.5)',lineWidth:1,
-    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OS',
-    priceScaleId:'right',priceLineVisible:false});
-  rsiOs.setData(lwC.map(c=>({time:c.time,value:30})));
+  // ── RSI chart (canvas) ────────────────────────────
+  (function drawRSICanvas(){
+    const canvas=document.getElementById('rsiChart');
+    if(!canvas)return;
+    const dpr=window.devicePixelRatio||1;
+    const W=canvas.offsetWidth||mainW;
+    const H=80;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    const ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#060D15';
+    ctx.fillRect(0,0,W,H);
+    // Grid lines at 70 and 30
+    const toY=v=>H-((v-0)/100)*H;
+    [70,50,30].forEach(level=>{
+      ctx.strokeStyle=level===50?'rgba(58,104,128,0.4)':'rgba(58,104,128,0.25)';
+      ctx.lineWidth=1; ctx.setLineDash(level===50?[]:[3,3]);
+      ctx.beginPath(); ctx.moveTo(0,toY(level)); ctx.lineTo(W,toY(level)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#3A6880'; ctx.font='bold 6px monospace';
+      ctx.fillText(level,2,toY(level)-2);
+    });
+    // RSI fill zones
+    const rsiVals=candles.map(c=>c.rsi||50);
+    ctx.fillStyle='rgba(207,159,255,0.07)';
+    ctx.beginPath();
+    rsiVals.forEach((v,i)=>{
+      const x=i*(W/rsiVals.length);
+      const y=toY(Math.min(100,Math.max(0,v)));
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.lineTo(W,toY(50)); ctx.lineTo(0,toY(50)); ctx.closePath(); ctx.fill();
+    // RSI line
+    ctx.strokeStyle='#CF9FFF'; ctx.lineWidth=1.5; ctx.setLineDash([]);
+    ctx.beginPath();
+    rsiVals.forEach((v,i)=>{
+      const x=i*(W/rsiVals.length);
+      const y=toY(Math.min(100,Math.max(0,v)));
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // OB/OS shading
+    ctx.fillStyle='rgba(255,94,58,0.08)';
+    ctx.fillRect(0,0,W,toY(70));
+    ctx.fillStyle='rgba(0,255,178,0.08)';
+    ctx.fillRect(0,toY(30),W,H-toY(30));
+    // Current RSI label
+    const lastRSI=rsiVals[rsiVals.length-1]||50;
+    const rsiColor=lastRSI>=70?'#FF5E3A':lastRSI<=30?'#00FFB2':'#CF9FFF';
+    ctx.fillStyle=rsiColor; ctx.font='bold 7px monospace';
+    ctx.fillText('RSI '+lastRSI.toFixed(1),4,10);
+    canvas.style.display=layerState.RSI?'block':'none';
+  })();
 
-  // ── DRAW RSI DIVERGENCE LINES ──────────────────────────────────
-  // Find swing points and draw connecting lines on RSI chart
-  (function drawRSIDivergence(){
+  // ── RSI Divergence overlay on canvas ──────────────
+  (function drawRSIDivCanvas(){
+    const canvas=document.getElementById('rsiChart');
+    if(!canvas||canvas.style.display==='none')return;
+    const ctx=canvas.getContext('2d');
+    const W=parseInt(canvas.style.width)||canvas.width;
+    const H=80;
+    const toY=v=>H-((Math.min(100,Math.max(0,v)))/100)*H;
+    const toX=i=>(i/candles.length)*W;
     const{swingHighs,swingLows}=findSwingPoints(candles,80,2);
-    const divLines=[];
-
-    // BEARISH DIV: price HH but RSI LH — draw red line connecting the two RSI swing highs
+    // Bearish div
     if(swingHighs.length>=2){
-      const sh1=swingHighs[swingHighs.length-2];
-      const sh2=swingHighs[swingHighs.length-1];
-      const priceHH=candles[sh2].high>candles[sh1].high;
-      const rsiLH=candles[sh2].rsi<candles[sh1].rsi;
-      if(priceHH&&rsiLH&&(candles.length-1-sh2)<=10){
-        // Draw connecting line between the two RSI highs
-        const divSeries=rsiChartObj.addLineSeries({
-          color:'rgba(255,94,58,0.9)',lineWidth:2,
-          lineStyle:LightweightCharts.LineStyle.Solid,
-          priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:'right'
-        });
-        divSeries.setData([
-          {time:Math.floor(candles[sh1].time/1000),value:candles[sh1].rsi||50},
-          {time:Math.floor(candles[sh2].time/1000),value:candles[sh2].rsi||50}
-        ]);
-        // Also mark on main chart
-        candleSeries.setMarkers([
-          ...candleSeries.markers()||[],
-          {time:Math.floor(candles[sh2].time/1000),position:'aboveBar',color:'#FF5E3A',shape:'circle',text:'BEAR DIV',size:1}
-        ]);
+      const sh1=swingHighs[swingHighs.length-2],sh2=swingHighs[swingHighs.length-1];
+      if(candles[sh2].high>candles[sh1].high&&candles[sh2].rsi<candles[sh1].rsi&&(candles.length-1-sh2)<=10){
+        const dpr=window.devicePixelRatio||1;
+        ctx.save();ctx.scale(dpr,dpr);
+        ctx.strokeStyle='rgba(255,94,58,0.9)';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(toX(sh1),toY(candles[sh1].rsi||50));ctx.lineTo(toX(sh2),toY(candles[sh2].rsi||50));ctx.stroke();
+        ctx.restore();
       }
     }
-
-    // BULLISH DIV: price LL but RSI HL — draw green line connecting the two RSI swing lows
+    // Bullish div
     if(swingLows.length>=2){
-      const sl1=swingLows[swingLows.length-2];
-      const sl2=swingLows[swingLows.length-1];
-      const priceLL=candles[sl2].low<candles[sl1].low;
-      const rsiHL=candles[sl2].rsi>candles[sl1].rsi;
-      if(priceLL&&rsiHL&&(candles.length-1-sl2)<=10){
-        const divSeries=rsiChartObj.addLineSeries({
-          color:'rgba(0,255,178,0.9)',lineWidth:2,
-          lineStyle:LightweightCharts.LineStyle.Solid,
-          priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:'right'
-        });
-        divSeries.setData([
-          {time:Math.floor(candles[sl1].time/1000),value:candles[sl1].rsi||50},
-          {time:Math.floor(candles[sl2].time/1000),value:candles[sl2].rsi||50}
-        ]);
-        candleSeries.setMarkers([
-          ...candleSeries.markers()||[],
-          {time:Math.floor(candles[sl2].time/1000),position:'belowBar',color:'#00FFB2',shape:'circle',text:'BULL DIV',size:1}
-        ]);
-      }
-    }
-
-    // HIDDEN BULL DIV: price HL but RSI LL — orange dashed
-    if(swingLows.length>=2){
-      const sl1=swingLows[swingLows.length-2];
-      const sl2=swingLows[swingLows.length-1];
-      const priceHL=candles[sl2].low>candles[sl1].low;
-      const rsiLL=candles[sl2].rsi<candles[sl1].rsi;
-      if(priceHL&&rsiLL&&(candles.length-1-sl2)<=15){
-        const divSeries=rsiChartObj.addLineSeries({
-          color:'rgba(255,149,0,0.8)',lineWidth:1.5,
-          lineStyle:LightweightCharts.LineStyle.Dashed,
-          priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:'right'
-        });
-        divSeries.setData([
-          {time:Math.floor(candles[sl1].time/1000),value:candles[sl1].rsi||50},
-          {time:Math.floor(candles[sl2].time/1000),value:candles[sl2].rsi||50}
-        ]);
+      const sl1=swingLows[swingLows.length-2],sl2=swingLows[swingLows.length-1];
+      if(candles[sl2].low<candles[sl1].low&&candles[sl2].rsi>candles[sl1].rsi&&(candles.length-1-sl2)<=10){
+        const dpr=window.devicePixelRatio||1;
+        ctx.save();ctx.scale(dpr,dpr);
+        ctx.strokeStyle='rgba(0,255,178,0.9)';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(toX(sl1),toY(candles[sl1].rsi||50));ctx.lineTo(toX(sl2),toY(candles[sl2].rsi||50));ctx.stroke();
+        ctx.restore();
       }
     }
   })();
 
-  // ── Sync timescales ───────────────────────────────
-  mainChartObj.timeScale().subscribeVisibleLogicalRangeChange(range=>{
-    if(range){
-      if(volChartObj&&layerState.VOL) volChartObj.timeScale().setVisibleLogicalRange(range);
-      if(rsiChartObj&&layerState.RSI) rsiChartObj.timeScale().setVisibleLogicalRange(range);
-    }
-  });
+  // ── Sync timescale ────────────────────────────────
   mainChartObj.timeScale().fitContent();
-
-  // Apply VOL/RSI visibility AFTER charts are created (hidden element = 0 size bug)
-  if(!layerState.VOL) volEl.style.display='none';
-  if(!layerState.RSI) rsiEl.style.display='none';
 
   // ── Render toolbar ────────────────────────────────
   renderLayerToolbar();
