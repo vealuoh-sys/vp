@@ -319,7 +319,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 .chart-tooltip{position:absolute;top:10px;left:10px;background:rgba(8,15,24,.92);border:1px solid var(--border2);padding:6px 10px;font-size:.54rem;pointer-events:none;z-index:10;display:none;min-width:140px;}
 .tt-row{display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;}
 .tt-lbl{color:var(--muted);}.tt-val{color:var(--text);font-weight:700;}
-.chart-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;font-size:.6rem;color:var(--muted);}
+#layerToolbar{flex-shrink:0;background:#071220;border-bottom:1px solid #132435;min-height:0;}
+.chart-loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;font-size:.6rem;color:var(--muted);}
 .loading-bar{width:150px;height:2px;background:var(--border2);overflow:hidden;}
 .loading-bar-inner{height:100%;width:30%;background:linear-gradient(90deg,var(--acc2),var(--acc));animation:loadSlide 1.2s ease-in-out infinite;}
 @keyframes loadSlide{0%{transform:translateX(-100%)}100%{transform:translateX(430%)}}
@@ -531,8 +532,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       </div>
     </div>
     <div class="modal-body">
-      <div id="chartLoadingState" class="chart-loading" style="flex:1;"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
       <div id="layerToolbar"></div>
+      <div id="chartLoadingState" class="chart-loading"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
       <div class="chart-container" id="chartContainer" style="display:none;">
         <div class="main-chart-wrap">
           <div id="mainChart" style="position:relative;">
@@ -545,7 +546,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
               <div class="tt-row"><span class="tt-lbl">VOL</span><span class="tt-val" id="ttVol">—</span></div>
             </div>
           </div>
-          <div id="volChart"></div><div id="rsiChart"></div>
+          <div id="volChart" style="flex-shrink:0;height:62px;"></div>
+          <div id="rsiChart" style="flex-shrink:0;height:80px;"></div>
         </div>
         <div class="vp-sidebar">
           <div class="vp-sidebar-title">VOL PROFILE</div>
