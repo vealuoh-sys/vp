@@ -300,11 +300,11 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 #modalNote:focus{border-color:var(--acc2);}
 .note-save-btn{background:transparent;border:1px solid var(--acc2);color:var(--acc2);font-family:'Space Mono',monospace;font-size:.52rem;padding:3px 8px;cursor:pointer;}
 .modal-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.chart-container{flex:1;display:flex;flex-direction:column;min-height:0;}
-.main-chart-wrap{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);overflow:visible;}
-#mainChart{flex:1;min-height:0;position:relative;}
-#volChart{height:62px;border-top:1px solid var(--border);}
-#rsiChart{height:80px;border-top:1px solid var(--border);}
+.chart-container{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+.main-chart-wrap{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);overflow:hidden;}
+#mainChart{flex:1;min-height:0;position:relative;overflow:hidden;}
+#volChart{flex-shrink:0;height:62px;border-top:1px solid var(--border);}
+#rsiChart{flex-shrink:0;height:80px;border-top:1px solid var(--border);}
 #layerToolbar{flex-shrink:0;background:#071220;border-bottom:1px solid #132435;min-height:28px;}
 .vp-sidebar{width:106px;flex-shrink:0;background:var(--s2);display:flex;flex-direction:column;overflow:hidden;}
 .vp-sidebar-title{font-size:.44rem;color:var(--muted);padding:6px 8px 4px;border-bottom:1px solid var(--border);text-align:center;}
@@ -537,7 +537,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div id="chartLoadingState" class="chart-loading" style="flex:1;"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
       <div class="chart-container" id="chartContainer" style="display:none;flex-direction:column;">
         <div id="layerToolbar"></div>
-        <div style="display:flex;flex:1;min-height:0;overflow:visible;align-items:flex-start;">
+        <div style="display:flex;flex:1;min-height:0;">
         <div class="main-chart-wrap">
           <div id="mainChart" style="position:relative;">
             <div class="chart-tooltip" id="chartTooltip">
@@ -549,8 +549,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
               <div class="tt-row"><span class="tt-lbl">VOL</span><span class="tt-val" id="ttVol">—</span></div>
             </div>
           </div>
-          <canvas id="volChart" height="62" style="display:block;width:100%;height:62px;background:#060D15;border-top:1px solid #132435;flex-shrink:0;"></canvas>
-          <canvas id="rsiChart" height="80" style="display:block;width:100%;height:80px;background:#060D15;border-top:1px solid #132435;flex-shrink:0;"></canvas>
+          <canvas id="volChart" style="display:block;background:#060D15;border-top:1px solid #132435;flex-shrink:0;"></canvas>
+          <canvas id="rsiChart" style="display:block;background:#060D15;border-top:1px solid #132435;flex-shrink:0;"></canvas>
         </div>
         <div class="vp-sidebar">
           <div class="vp-sidebar-title">VOL PROFILE</div>
@@ -1912,12 +1912,11 @@ function buildLWChart(candles,vp,sr,obs){
   _srList=sr||[];_obList=obs||[];
 
   const mainEl=document.getElementById('mainChart');
-  const VOL_H=62, RSI_H=80, TOOLBAR_H=30;
-  const availH=Math.max(420, window.innerHeight*.72);
-  const mainH=Math.max(220, availH - VOL_H - RSI_H - TOOLBAR_H);
+  const VOL_H=62, RSI_H=80;
   const vpW=window.innerWidth>700?108:0;
   const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));
-  mainEl.style.height=mainH+'px';
+  // mainEl height is set by CSS flex:1 — read actual clientHeight after layout
+  const mainH=Math.max(200, mainEl.clientHeight||Math.round(window.innerHeight*0.5));
   mainEl.style.width=mainW+'px';
 
   const lastClose=candles[candles.length-1].close;
