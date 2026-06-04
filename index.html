@@ -299,10 +299,10 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 .note-save-btn{background:transparent;border:1px solid var(--acc2);color:var(--acc2);font-family:'Space Mono',monospace;font-size:.52rem;padding:3px 8px;cursor:pointer;}
 .modal-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
 .chart-container{flex:1;display:flex;min-height:0;}
-.main-chart-wrap{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);}
-#mainChart{flex:1;min-height:0;position:relative;}
-#volChart{height:62px;border-top:1px solid var(--border);}
-#rsiChart{height:80px;border-top:1px solid var(--border);}
+.main-chart-wrap{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);overflow:hidden;}
+#mainChart{flex-shrink:0;position:relative;}
+#volChart{flex-shrink:0;height:62px;border-top:1px solid var(--border);}
+#rsiChart{flex-shrink:0;height:80px;border-top:1px solid var(--border);}
 .vp-sidebar{width:106px;flex-shrink:0;background:var(--s2);display:flex;flex-direction:column;overflow:hidden;}
 .vp-sidebar-title{font-size:.44rem;color:var(--muted);padding:6px 8px 4px;border-bottom:1px solid var(--border);text-align:center;}
 .vp-ema-legend{padding:5px 6px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:3px;}
@@ -2029,29 +2029,50 @@ function buildLWChart(candles,vp,sr,obs){
 
   // ── Volume chart ──────────────────────────────────
   volChartObj=LightweightCharts.createChart(volEl,{
-    ...common,width:mainW,height:62,
+    width:mainW, height:62,
+    layout:{background:{type:'solid',color:'#080F18'},textColor:'#3A6880'},
     grid:{vertLines:{color:'rgba(19,36,53,0.4)'},horzLines:{visible:false}},
-    rightPriceScale:{...common.rightPriceScale,scaleMargins:{top:.1,bottom:0}},
-    crosshair:{horzLine:{visible:false},vertLine:{color:'rgba(0,191,255,0.3)'}}
+    rightPriceScale:{borderColor:'#132435',scaleMargins:{top:0.1,bottom:0}},
+    timeScale:{visible:false,borderColor:'#132435'},
+    crosshair:{horzLine:{visible:false},vertLine:{color:'rgba(0,191,255,0.3)',labelVisible:false}},
+    handleScroll:false, handleScale:false
   });
-  const vs=volChartObj.addHistogramSeries({priceFormat:{type:'volume'},priceScaleId:'right'});
-  vs.setData(candles.map(c=>({time:Math.floor(c.time/1000),value:c.volume,
-    color:c.close>=c.open?'rgba(0,255,178,0.4)':'rgba(255,94,58,0.35)'})));
+  const vs=volChartObj.addHistogramSeries({
+    color:'rgba(0,255,178,0.4)',
+    priceFormat:{type:'volume'},
+    priceScaleId:'right'
+  });
+  vs.setData(candles.map(c=>({
+    time:Math.floor(c.time/1000),
+    value:c.volume,
+    color:c.close>=c.open?'rgba(0,255,178,0.45)':'rgba(255,94,58,0.4)'
+  })));
 
   // ── RSI chart ─────────────────────────────────────
   rsiChartObj=LightweightCharts.createChart(rsiEl,{
-    ...common,width:mainW,height:80,
-    grid:{vertLines:{color:'rgba(19,36,53,0.4)'},horzLines:{color:'rgba(19,36,53,0.4)'}},
-    rightPriceScale:{...common.rightPriceScale,scaleMargins:{top:.1,bottom:.1}}
+    width:mainW, height:80,
+    layout:{background:{type:'solid',color:'#080F18'},textColor:'#3A6880'},
+    grid:{vertLines:{color:'rgba(19,36,53,0.4)'},horzLines:{color:'rgba(19,36,53,0.3)'}},
+    rightPriceScale:{borderColor:'#132435',scaleMargins:{top:0.1,bottom:0.1}},
+    timeScale:{visible:false,borderColor:'#132435'},
+    handleScroll:false, handleScale:false
   });
-  const rs=rsiChartObj.addLineSeries({color:'#CF9FFF',lineWidth:2,priceScaleId:'right'});
-  const rsiData=candles.map(c=>({time:Math.floor(c.time/1000),value:c.rsi||50}));
-  rs.setData(rsiData);
-  const rsiOb=rsiChartObj.addLineSeries({color:'rgba(255,94,58,0.5)',lineWidth:1,
-    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OB',priceScaleId:'right'});
+  const rs=rsiChartObj.addLineSeries({
+    color:'#CF9FFF',lineWidth:2,
+    lastValueVisible:true,priceLineVisible:false
+  });
+  rs.setData(candles.map(c=>({time:Math.floor(c.time/1000),value:c.rsi||50})));
+  const rsiOb=rsiChartObj.addLineSeries({
+    color:'rgba(255,94,58,0.5)',lineWidth:1,
+    lineStyle:LightweightCharts.LineStyle.Dashed,
+    lastValueVisible:false,priceLineVisible:false
+  });
   rsiOb.setData(lwC.map(c=>({time:c.time,value:70})));
-  const rsiOs=rsiChartObj.addLineSeries({color:'rgba(0,255,178,0.5)',lineWidth:1,
-    lineStyle:LightweightCharts.LineStyle.Dashed,lastValueVisible:true,title:'OS',priceScaleId:'right'});
+  const rsiOs=rsiChartObj.addLineSeries({
+    color:'rgba(0,255,178,0.5)',lineWidth:1,
+    lineStyle:LightweightCharts.LineStyle.Dashed,
+    lastValueVisible:false,priceLineVisible:false
+  });
   rsiOs.setData(lwC.map(c=>({time:c.time,value:30})));
 
   // ── DRAW RSI DIVERGENCE LINES ──────────────────────────────────
@@ -2072,17 +2093,15 @@ function buildLWChart(candles,vp,sr,obs){
           color:'rgba(255,94,58,0.9)',lineWidth:2,
           lineStyle:LightweightCharts.LineStyle.Solid,
           priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:'right'
+          crosshairMarkerVisible:false
         });
         divSeries.setData([
           {time:Math.floor(candles[sh1].time/1000),value:candles[sh1].rsi||50},
           {time:Math.floor(candles[sh2].time/1000),value:candles[sh2].rsi||50}
         ]);
-        // Also mark on main chart
-        candleSeries.setMarkers([
-          ...candleSeries.markers()||[],
+        try{candleSeries.setMarkers((candleSeries._markers||[]).concat(
           {time:Math.floor(candles[sh2].time/1000),position:'aboveBar',color:'#FF5E3A',shape:'circle',text:'BEAR DIV',size:1}
-        ]);
+        ));}catch(e){}
       }
     }
 
@@ -2097,16 +2116,15 @@ function buildLWChart(candles,vp,sr,obs){
           color:'rgba(0,255,178,0.9)',lineWidth:2,
           lineStyle:LightweightCharts.LineStyle.Solid,
           priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:'right'
+          crosshairMarkerVisible:false
         });
         divSeries.setData([
           {time:Math.floor(candles[sl1].time/1000),value:candles[sl1].rsi||50},
           {time:Math.floor(candles[sl2].time/1000),value:candles[sl2].rsi||50}
         ]);
-        candleSeries.setMarkers([
-          ...candleSeries.markers()||[],
+        try{candleSeries.setMarkers((candleSeries._markers||[]).concat(
           {time:Math.floor(candles[sl2].time/1000),position:'belowBar',color:'#00FFB2',shape:'circle',text:'BULL DIV',size:1}
-        ]);
+        ));}catch(e){}
       }
     }
 
@@ -2121,7 +2139,7 @@ function buildLWChart(candles,vp,sr,obs){
           color:'rgba(255,149,0,0.8)',lineWidth:1.5,
           lineStyle:LightweightCharts.LineStyle.Dashed,
           priceLineVisible:false,lastValueVisible:false,
-          crosshairMarkerVisible:false,priceScaleId:'right'
+          crosshairMarkerVisible:false
         });
         divSeries.setData([
           {time:Math.floor(candles[sl1].time/1000),value:candles[sl1].rsi||50},
