@@ -187,9 +187,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .badge.POC_DIV{background:rgba(255,215,0,.18);color:#FFE55C;border:2px solid var(--poc);font-weight:900;}
 .badge.POC_SPIKE{background:rgba(255,215,0,.18);color:#FFE55C;border:2px solid var(--poc);font-weight:900;}
 .badge.WARNING{background:rgba(255,94,58,.12);color:#ff5e3a;border:1px dashed #ff5e3a;animation:pulse 2s infinite;}
-.badge.EARLY_BULL{background:rgba(255,215,0,.12);color:#FFD700;border:1px solid rgba(255,215,0,.5);font-weight:900;animation:pulse 2s infinite;}
-.badge.BULL_CONFIRM{background:rgba(255,51,51,.15);color:#FF3333;border:2px solid rgba(255,51,51,.6);font-weight:900;}
-.badge.EARLY_BEAR{background:rgba(255,94,58,.1);color:#FF7040;border:1px dashed rgba(255,94,58,.6);}
 .badge.NEW-TAG{background:rgba(0,255,178,.15);color:var(--acc);border:1px solid var(--acc);font-size:.44rem;padding:1px 4px;}
 .badge.MTF-TAG{background:rgba(124,77,255,.15);color:#BF5FFF;border:1px solid rgba(124,77,255,.4);font-size:.44rem;padding:1px 4px;}
 @keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
@@ -301,9 +298,9 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 #modalNote:focus{border-color:var(--acc2);}
 .note-save-btn{background:transparent;border:1px solid var(--acc2);color:var(--acc2);font-family:'Space Mono',monospace;font-size:.52rem;padding:3px 8px;cursor:pointer;}
 .modal-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.chart-container{flex:1;display:flex;min-height:0;}
-.main-chart-wrap{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);overflow:hidden;}
-#mainChart{flex-shrink:0;position:relative;}
+.chart-container{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+.main-chart-wrap{flex:1;display:flex;min-height:0;overflow:hidden;}
+#mainChart{flex:1;min-height:0;position:relative;overflow:hidden;}
 #volChart{flex-shrink:0;height:62px;border-top:1px solid var(--border);}
 #rsiChart{flex-shrink:0;height:80px;border-top:1px solid var(--border);}
 .vp-sidebar{width:106px;flex-shrink:0;background:var(--s2);display:flex;flex-direction:column;overflow:hidden;}
@@ -322,7 +319,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 .chart-tooltip{position:absolute;top:10px;left:10px;background:rgba(8,15,24,.92);border:1px solid var(--border2);padding:6px 10px;font-size:.54rem;pointer-events:none;z-index:10;display:none;min-width:140px;}
 .tt-row{display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;}
 .tt-lbl{color:var(--muted);}.tt-val{color:var(--text);font-weight:700;}
-#layerToolbar{flex-shrink:0;background:#071220;border-bottom:1px solid #132435;min-height:0;}
+#layerToolbar{flex-shrink:0;background:#071220;border-bottom:1px solid #132435;min-height:28px;}
 .chart-loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;font-size:.6rem;color:var(--muted);}
 .loading-bar{width:150px;height:2px;background:var(--border2);overflow:hidden;}
 .loading-bar-inner{height:100%;width:30%;background:linear-gradient(90deg,var(--acc2),var(--acc));animation:loadSlide 1.2s ease-in-out infinite;}
@@ -370,11 +367,6 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   </div>
 </header>
 <div id="domBar" style="display:flex;align-items:center;gap:10px;padding:4px 12px;background:var(--s3);border:1px solid var(--border);border-bottom:none;flex-wrap:wrap;font-size:.5rem;color:var(--muted)">DOM: checking...</div>
-<div id="btcdSparkWrap" style="display:none;align-items:center;gap:8px;padding:3px 12px;background:var(--s3);border:1px solid var(--border);border-top:none;border-bottom:none;">
-  <span style="font-size:.44rem;color:var(--muted);letter-spacing:.1em;flex-shrink:0">BTC.D TREND:</span>
-  <canvas id="btcdSparkline" width="200" height="28" style="display:block;"></canvas>
-  <span id="btcdSparkLabel" style="font-size:.48rem;color:var(--muted)"></span>
-</div>
 <div class="session-bar">
   <span class="session-lbl">SESSION:</span>
   <span class="session-chip" id="sessionChip">—</span>
@@ -534,12 +526,6 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div class="rr-item"><div class="rr-item-lbl">TARGET 2</div><div class="rr-item-val rr-g" id="rrT2">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">R:R</div><div class="rr-item-val" id="rrRatio">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">RISK %</div><div class="rr-item-val rr-b" id="rrRisk">—</div></div>
-      <div style="width:1px;background:var(--border);margin:0 6px;align-self:stretch;"></div>
-      <div class="rr-item"><div class="rr-item-lbl">ACCOUNT $</div><input id="psAccount" type="number" value="10000" style="background:var(--s2);border:1px solid var(--border2);color:var(--acc);font-family:'Space Mono',monospace;font-size:.56rem;padding:2px 5px;width:80px;outline:none;" oninput="calcPositionSize()"></div>
-      <div class="rr-item"><div class="rr-item-lbl">RISK %</div><input id="psRisk" type="number" value="1" min="0.1" max="10" step="0.1" style="background:var(--s2);border:1px solid var(--border2);color:var(--warn);font-family:'Space Mono',monospace;font-size:.56rem;padding:2px 5px;width:50px;outline:none;" oninput="calcPositionSize()"></div>
-      <div class="rr-item"><div class="rr-item-lbl">RISK $</div><div class="rr-item-val rr-b" id="psRiskDollar">—</div></div>
-      <div class="rr-item"><div class="rr-item-lbl">UNITS</div><div class="rr-item-val" style="color:var(--acc2)" id="psUnits">—</div></div>
-      <div class="rr-item"><div class="rr-item-lbl">POS SIZE</div><div class="rr-item-val rr-g" id="psPosSize">—</div></div>
       <div class="note-wrap">
         <input id="modalNote" type="text" placeholder="Trade note…">
         <button class="note-save-btn" onclick="saveNote()">SAVE NOTE</button>
@@ -548,33 +534,35 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     <div class="modal-body">
       <div id="layerToolbar"></div>
       <div id="chartLoadingState" class="chart-loading"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
-      <div class="chart-container" id="chartContainer" style="display:none;">
-        <div class="main-chart-wrap">
-          <div id="mainChart" style="position:relative;">
-            <div class="chart-tooltip" id="chartTooltip">
-              <div class="tt-row"><span class="tt-lbl">TIME</span><span class="tt-val" id="ttTime">—</span></div>
-              <div class="tt-row"><span class="tt-lbl">O</span><span class="tt-val" id="ttOpen">—</span></div>
-              <div class="tt-row"><span class="tt-lbl">H</span><span class="tt-val" id="ttHigh">—</span></div>
-              <div class="tt-row"><span class="tt-lbl">L</span><span class="tt-val" id="ttLow">—</span></div>
-              <div class="tt-row"><span class="tt-lbl">C</span><span class="tt-val" id="ttClose">—</span></div>
-              <div class="tt-row"><span class="tt-lbl">VOL</span><span class="tt-val" id="ttVol">—</span></div>
+      <div class="chart-container" id="chartContainer" style="display:none;flex-direction:column;">
+        <div style="display:flex;flex:1;min-height:0;">
+          <div class="main-chart-wrap">
+            <div id="mainChart" style="position:relative;">
+              <div class="chart-tooltip" id="chartTooltip">
+                <div class="tt-row"><span class="tt-lbl">TIME</span><span class="tt-val" id="ttTime">—</span></div>
+                <div class="tt-row"><span class="tt-lbl">O</span><span class="tt-val" id="ttOpen">—</span></div>
+                <div class="tt-row"><span class="tt-lbl">H</span><span class="tt-val" id="ttHigh">—</span></div>
+                <div class="tt-row"><span class="tt-lbl">L</span><span class="tt-val" id="ttLow">—</span></div>
+                <div class="tt-row"><span class="tt-lbl">C</span><span class="tt-val" id="ttClose">—</span></div>
+                <div class="tt-row"><span class="tt-lbl">VOL</span><span class="tt-val" id="ttVol">—</span></div>
+              </div>
             </div>
           </div>
-          <div id="volChart" style="flex-shrink:0;height:62px;"></div>
-          <div id="rsiChart" style="flex-shrink:0;height:80px;"></div>
-        </div>
-        <div class="vp-sidebar">
-          <div class="vp-sidebar-title">VOL PROFILE</div>
-          <div class="vp-ema-legend">
-            <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#FFD700"></div>MA5</div>
-            <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#FF3333"></div>MA12</div>
-            <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#FF9500"></div>MA16</div>
-            <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#4488FF"></div>MA40</div>
-            <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#EEEEEE"></div>MA53</div>
-            <div class="vp-ema-row"><div class="vp-ema-dot" style="background:var(--ob)"></div>OB</div>
+          <div class="vp-sidebar">
+            <div class="vp-sidebar-title">VOL PROFILE</div>
+            <div class="vp-ema-legend">
+              <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#FFD700"></div>MA5</div>
+              <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#FF3333"></div>MA12</div>
+              <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#FF9500"></div>MA16</div>
+              <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#4488FF"></div>MA40</div>
+              <div class="vp-ema-row"><div class="vp-ema-dot" style="background:#EEEEEE"></div>MA53</div>
+              <div class="vp-ema-row"><div class="vp-ema-dot" style="background:var(--ob)"></div>OB</div>
+            </div>
+            <canvas id="vpHistogram"></canvas>
           </div>
-          <canvas id="vpHistogram"></canvas>
         </div>
+        <div id="volChart" style="flex-shrink:0;height:62px;border-top:1px solid #132435;"></div>
+        <div id="rsiChart" style="flex-shrink:0;height:80px;border-top:1px solid #132435;"></div>
       </div>
       <div class="chart-info-bar" id="chartInfoBar" style="display:none;">
         <div class="info-cell"><div class="info-lbl">VAH</div><div class="info-val vah-c" id="infoVAH">—</div></div>
@@ -628,10 +616,7 @@ const DEFAULT_PAIRS=[
   'VINEUSDT','CHILLGUYUSDT','NEIROUSDT','MOODENGUSDT','GOATUSDT','TRUMPUSDT','MELANIAUSDT','FARTCOINUSDT','DEGOUSDT','LPTUSDT',
   'AEVOUSDT','OMNIUSDT','SAGAUSDT','VANRYUSDT','ETHFIUSDT','XAIUSDT','MANTAUSDT','FRONTUSDT','NFPUSDT','AIUSDT',
   'WOOUSDT','SFPUSDT','BANDUSDT','OCEANUSDT','LRCUSDT','STORJUSDT','ANKRUSDT','BATUSDT','CHZUSDT','ENJUSDT',
-  'ONTUSDT','ZECUSDT','DASHUSDT','QTUMUSDT','IOSTUSDT','RVNUSDT','ZILUSDT','HOTUSDT','SONICUSDT','COSUSDT',
-  'SPELLUSDT','COTIUSDT','XVSUSDT','ALPACAUSDT','IDUSDT','JOEUSDT','HIGHUSDT','CVXUSDT','PENDLEUSDT','PYRUSDT',
-  'NKNUSDT','CKBUSDT','CTSIUSDT','STPTUSDT','VOXELUSDT','SYSUSDT','RADUSDT','KDAUSDT','FLMUSDT','REEFUSDT',
-  'TRUUSDT','BURGERUSDT','ALPINEUSDT','LOOMUSDT','IDEXUSDT','WANUSDT','KAVAUSDT','CELOUSDT','AGLDUSDT','CLVUSDT'
+  'ONTUSDT','ZECUSDT','DASHUSDT','QTUMUSDT','IOSTUSDT','RVNUSDT','ZILUSDT','HOTUSDT','ICPUSDT','SONICUSDT'
 ];
 
 // STATE
@@ -646,10 +631,9 @@ let mainChartObj=null,volChartObj=null,rsiChartObj=null,candleSeries=null;
 const LABEL_MAP={
   VAH:'▲ VAH BREAK',VAH_SPIKE:'▲ VAH+SPIKE',VAL:'▼ VAL RECLAIM',
   VAL_DIV:'▼ VAL+DIV',VAL_SPIKE:'▼ VAL+SPIKE',POC:'◆ POC REACT',
-  POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT',
-  EARLY_BULL:'⚡ EARLY BULL',BULL_CONFIRM:'✔ BULL CONFIRM',EARLY_BEAR:'⚠ EARLY BEAR'
+  POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT'
 };
-function baseType(t){return t.startsWith('VAH')?'VAH':t.startsWith('VAL')?'VAL':t.startsWith('POC')?'POC':t.startsWith('EARLY_BULL')||t.startsWith('BULL_CONFIRM')?'EMA_BULL':t.startsWith('EARLY_BEAR')?'EMA_BEAR':t;}
+function baseType(t){return t.startsWith('VAH')?'VAH':t.startsWith('VAL')?'VAL':t.startsWith('POC')?'POC':t;}
 function sigKey(s){return`${s.symbol}-${s.type}-${s.tf}`;}
 function fp(p){if(!p&&p!==0)return'—';if(p>=10000)return p.toLocaleString('en',{maximumFractionDigits:1});if(p>=1)return p.toFixed(4);return p.toFixed(6);}
 function scanPairs(){return activeGroup?coinGroups.find(g=>g.name===activeGroup)?.coins||DEFAULT_PAIRS:DEFAULT_PAIRS;}
@@ -1068,8 +1052,6 @@ function renderDominanceBar(){
     ${mcChange?`<span style="font-size:.46rem;color:${mcChangeColor}">${mcChange} 24h</span>`:''}
     <span style="font-size:.44rem;color:var(--muted);margin-left:4px">via CoinGecko</span>
   `;
-  // Draw BTC.D sparkline after rendering the bar
-  setTimeout(drawBTCDSparkline,50);
 }
 
 // == 7. VOLUME ANOMALY (market-wide spike) ==
@@ -1516,14 +1498,14 @@ async function triggerAndPoll(){
     const results=[];
     const chg=chgCache[sym]||0;
     const now=Date.now(); // per-coin timestamp so age is accurate
-    if(c1h){candleCache[sym+'-1h']=c1h;try{results.push(...detectSignals(sym,c1h,'1h',chg,now));}catch(e){}try{results.push(...checkEMACrossoverSignals(sym,c1h,'1h',chg));}catch(e){}}
-    if(c4h){candleCache[sym+'-4h']=c4h;try{results.push(...detectSignals(sym,c4h,'4h',chg,now));}catch(e){}try{results.push(...checkEMACrossoverSignals(sym,c4h,'4h',chg));}catch(e){}}
-    if(c1d){candleCache[sym+'-1d']=c1d;try{results.push(...detectSignals(sym,c1d,'1d',chg,now));}catch(e){}try{results.push(...checkEMACrossoverSignals(sym,c1d,'1d',chg));}catch(e){}}
+    if(c1h){candleCache[sym+'-1h']=c1h;try{results.push(...detectSignals(sym,c1h,'1h',chg,now));}catch(e){}}
+    if(c4h){candleCache[sym+'-4h']=c4h;try{results.push(...detectSignals(sym,c4h,'4h',chg,now));}catch(e){}}
+    if(c1d){candleCache[sym+'-1d']=c1d;try{results.push(...detectSignals(sym,c1d,'1d',chg,now));}catch(e){}}
     return results;
   }
 
   const scanStartTs=Date.now();
-  const BATCH=20; // 20 coins × 3 TFs = 60 parallel requests per batch — max speed within Binance limits
+  const BATCH=12; // 12 coins × 3 TFs = 36 parallel requests per batch — fast but safe
 
   for(let i=0;i<pairs.length;i+=BATCH){
     const batch=pairs.slice(i,i+BATCH);
@@ -1532,9 +1514,10 @@ async function triggerAndPoll(){
     done+=batch.length;
     pfg.style.width=Math.round((done/pairs.length)*100)+'%';
     ptxt.textContent=`SCANNING… ${done} / ${pairs.length} COINS`;
-    // 80ms gap between batches: 200 coins / 20 batch = 10 batches × 80ms = ~0.8s pure wait
-    // + network = ~10-15 second total scan. Binance 1200 weight/min limit is safe.
-    if(i+BATCH<pairs.length) await new Promise(r=>setTimeout(r,80));
+    // Short pause between batches to stay within Binance rate limits
+    // Binance allows 1200 weight/min. 24 requests × 1 weight = 24/batch.
+    // 150ms gap = ~160 batches/min max = 3840 requests/min → well under limit
+    if(i+BATCH<pairs.length) await new Promise(r=>setTimeout(r,150));
   }
   const mtfMap=buildMTFMap(newSignals);newSignals.forEach(s=>{s.mtfCount=(mtfMap[s.symbol]?.size||0);});
   const newKeys=new Set(newSignals.map(sigKey));const brandNew=newSignals.filter(s=>!prevSigKeys.has(sigKey(s)));prevSigKeys=newKeys;allSignals=newSignals;
@@ -1559,8 +1542,7 @@ async function triggerAndPoll(){
 function render(){
   document.getElementById('stVAH').textContent=allSignals.filter(s=>baseType(s.type)==='VAH').length;document.getElementById('stVAL').textContent=allSignals.filter(s=>baseType(s.type)==='VAL').length;document.getElementById('stPOC').textContent=allSignals.filter(s=>baseType(s.type)==='POC').length;document.getElementById('stTotal').textContent=allSignals.length;
   const query=(document.getElementById('coinSearch').value||'').toUpperCase().trim();
-  let filtered=allSignals.filter(s=>{const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;if(s.type==='WARNING')return showWarnings;// EMA crossover signals always shown (they are standalone signals)
-    if(s.type==='EARLY_BULL'||s.type==='BULL_CONFIRM'||s.type==='EARLY_BEAR')return true;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;return true;});
+  let filtered=allSignals.filter(s=>{const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;if(s.type==='WARNING')return showWarnings;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;return true;});
   filtered=sortSignals(filtered);document.getElementById('sigCount').textContent=`${filtered.length} SIGNAL${filtered.length!==1?'S':''}`;
   const rows=document.getElementById('rows');
   if(!filtered.length){rows.innerHTML=`<div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">NO SIGNALS MATCH FILTERS</div></div>`;return;}
@@ -1660,8 +1642,6 @@ async function loadChartData(symbol,tf,vpHint){
     const rrEl=document.getElementById('rrRatio');rrEl.textContent='1:'+rr.rr;rrEl.className='rr-item-val '+(parseFloat(rr.rr)>=2?'rr-g':parseFloat(rr.rr)>=1?'rr-m':'rr-b');document.getElementById('rrRisk').textContent=rr.riskPct+'%';
     document.getElementById('chartLoadingState').style.display='none';document.getElementById('chartContainer').style.display='flex';document.getElementById('chartInfoBar').style.display='grid';
     await new Promise(r=>setTimeout(r,150));buildLWChart(candles,vp,sr,obs);drawVPHistogram(candles,vp);
-    // Update position size calc with fresh R:R values
-    setTimeout(calcPositionSize,200);
   }catch(e){document.getElementById('chartLoadingState').innerHTML=`<div style="color:var(--vah);font-size:.6rem;">ERROR: ${e.message}</div>`;}
 }
 
@@ -1748,9 +1728,6 @@ function renderLayerToolbar(){
   html+=btn('VOL','#00BFFF',layerState.VOL,"toggleLyr('VOL')");
   html+=btn('RSI','#CF9FFF',layerState.RSI,"toggleLyr('RSI')");
   html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
-  if(layerState.VPVR===undefined)layerState.VPVR=true;
-  html+=btn('VPVR','#00E5FF',layerState.VPVR,"toggleLyr('VPVR')");
-  html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
   html+=`<button onclick="resetAllLayers()" style="background:transparent;border:1px solid #3A6880;color:#3A6880;font-family:'Space Mono',monospace;font-size:.46rem;padding:2px 8px;cursor:pointer">SHOW ALL</button>`;
   html+='</div>';
   bar.innerHTML=html;
@@ -1785,20 +1762,6 @@ function toggleLyr(key){
     document.getElementById('volChart').style.display=on?'':'none';
   } else if(key==='RSI'){
     document.getElementById('rsiChart').style.display=on?'':'none';
-  } else if(key==='VPVR'){
-    // Toggle VPVR levels
-    ['VPVR_VAH','VPVR_POC','VPVR_VAL'].forEach(vk=>{
-      const s=layerDefs[vk];
-      if(mainChartObj){
-        if(s){try{mainChartObj.removeSeries(s);}catch(e){}}
-        if(on){
-          const d=layerDefs[vk+'_opts'];
-          if(d){const ns=mainChartObj.addLineSeries(d.opts);ns.setData(d.data);layerDefs[vk]=ns;}
-        } else {
-          layerDefs[vk]=null;
-        }
-      }
-    });
   } else {
     const s=layerDefs[key];
     if(s&&mainChartObj){
@@ -1861,7 +1824,7 @@ function toggleOB(idx){
 function resetAllLayers(){
   layerState.VAH=true;layerState.POC=true;layerState.VAL=true;
   layerState.EMA5=true;layerState.EMA12=true;layerState.EMA16=true;layerState.EMA40=false;layerState.EMA53=true;
-  layerState.EMA20=true;layerState.EMA50=true;layerState.VOL=true;layerState.RSI=true;layerState.VPVR=true;
+  layerState.EMA20=true;layerState.EMA50=true;layerState.VOL=true;layerState.RSI=true;
   Object.keys(layerState.SR).forEach(k=>layerState.SR[k]=true);
   Object.keys(layerState.OB).forEach(k=>layerState.OB[k]=true);
   loadChartData(currentSymbol,currentTF,null);
@@ -1873,14 +1836,17 @@ function buildLWChart(candles,vp,sr,obs){
   _srList=sr||[];_obList=obs||[];
 
   const mainEl=document.getElementById('mainChart');
+  const mainEl=document.getElementById('mainChart');
   const volEl=document.getElementById('volChart');
   const rsiEl=document.getElementById('rsiChart');
-  const mainH=Math.max(240,window.innerHeight*.35);
   const vpW=window.innerWidth>700?108:0;
   const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));
-  mainEl.style.height=mainH+'px';
-  [mainEl,volEl,rsiEl].forEach(el=>el.style.width=mainW+'px');
-  // Always show before createChart — LWC reads clientWidth at creation; hidden=0px=broken
+  // mainChart is flex:1 — let CSS determine height, read it back
+  mainEl.style.width=mainW+'px';
+  volEl.style.width=mainW+'px';
+  rsiEl.style.width=mainW+'px';
+  const mainH=Math.max(200, mainEl.clientHeight || Math.round(window.innerHeight*0.45));
+  // Always show before createChart — LWC reads clientWidth; hidden=0px=broken
   volEl.style.display='';
   rsiEl.style.display='';
 
@@ -2190,12 +2156,6 @@ function buildLWChart(candles,vp,sr,obs){
     }
   })();
 
-  // ── VPVR — Visible Range Volume Profile ──────────────────────────
-  // Draw after EMA lines so VPVR levels are visible on top
-  if(layerState.VPVR!==false){
-    try{addVPVRToChart(candles,currentTF);}catch(e){}
-  }
-
   // ── Sync timescales ───────────────────────────────
   mainChartObj.timeScale().subscribeVisibleLogicalRangeChange(range=>{
     if(range){
@@ -2220,256 +2180,6 @@ function handleOverlayClick(e){if(e.target===document.getElementById('modalOverl
 
 window.addEventListener('resize',()=>{if(!mainChartObj)return;const vpW=window.innerWidth>700?108:0;const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));['mainChart','volChart','rsiChart'].forEach(id=>document.getElementById(id).style.width=mainW+'px');mainChartObj.applyOptions({width:mainW});if(volChartObj)volChartObj.applyOptions({width:mainW});if(rsiChartObj)rsiChartObj.applyOptions({width:mainW});});
 
-// ══════════════════════════════════════════════════════════════════
-//  POSITION SIZE CALCULATOR
-// ══════════════════════════════════════════════════════════════════
-function calcPositionSize(){
-  const account=parseFloat(document.getElementById('psAccount')?.value)||10000;
-  const riskPct=parseFloat(document.getElementById('psRisk')?.value)||1;
-  const entryEl=document.getElementById('rrEntry');
-  const stopEl=document.getElementById('rrStop');
-  if(!entryEl||!stopEl){return;}
-  const entry=parseFloat(entryEl.textContent.replace('$','').replace(',',''))||0;
-  const stop=parseFloat(stopEl.textContent.replace('$','').replace(',',''))||0;
-  if(!entry||!stop||stop>=entry){
-    ['psRiskDollar','psUnits','psPosSize'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
-    return;
-  }
-  const riskDollar=account*(riskPct/100);
-  const stopDist=Math.abs(entry-stop);
-  const units=riskDollar/stopDist;
-  const posSize=units*entry;
-  const riskDollarEl=document.getElementById('psRiskDollar');
-  const unitsEl=document.getElementById('psUnits');
-  const posSizeEl=document.getElementById('psPosSize');
-  if(riskDollarEl)riskDollarEl.textContent='$'+riskDollar.toFixed(2);
-  if(unitsEl)unitsEl.textContent=units>=1000?units.toFixed(0):units.toFixed(4);
-  if(posSizeEl)posSizeEl.textContent='$'+posSize.toLocaleString('en',{maximumFractionDigits:0});
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  VPVR — VISIBLE RANGE VOLUME PROFILE
-//  Calculates VP on only the most recent N candles (visible range)
-//  Shows alongside static VP as separate colored lines on chart
-// ══════════════════════════════════════════════════════════════════
-let vpvrState = true; // default ON in layer state
-const VPVR_BINS = 36;
-
-function calcVPVR(candles, tf) {
-  // Visible range: recent candles that would show on a default chart view
-  const count = tf==='1d'?14:tf==='4h'?30:24;
-  const slice = candles.slice(-count);
-  if(slice.length<5) return null;
-  let lo=Infinity, hi=-Infinity;
-  slice.forEach(c=>{if(c.high>hi)hi=c.high;if(c.low<lo)lo=c.low;});
-  const range=hi-lo;
-  if(!range)return null;
-  const binSize=range/VPVR_BINS, vol=new Array(VPVR_BINS).fill(0);
-  slice.forEach(c=>{
-    const idx=Math.min(Math.floor((c.typical-lo)/binSize),VPVR_BINS-1);
-    vol[idx]+=c.volume;
-  });
-  let pocIdx=0;
-  vol.forEach((v,i)=>{if(v>vol[pocIdx])pocIdx=i;});
-  const poc=lo+(pocIdx+0.5)*binSize;
-  const total=vol.reduce((a,b)=>a+b,0);
-  let vaVol=vol[pocIdx], vaLo=pocIdx, vaHi=pocIdx;
-  while(vaVol<total*.70){
-    const nLo=vaLo>0?vol[vaLo-1]:0, nHi=vaHi<VPVR_BINS-1?vol[vaHi+1]:0;
-    if(nLo>=nHi&&vaLo>0){vaLo--;vaVol+=nLo;}
-    else if(vaHi<VPVR_BINS-1){vaHi++;vaVol+=nHi;}
-    else break;
-  }
-  return{poc, vah:lo+(vaHi+1)*binSize, val:lo+vaLo*binSize, bins:vol, binSize, lo, hi, count};
-}
-
-function addVPVRToChart(candles, tf) {
-  if(!mainChartObj||!layerDefs._lwC) return;
-  const vpvr=calcVPVR(candles,tf);
-  if(!vpvr) return;
-  const lwC=layerDefs._lwC;
-  const lastClose=candles[candles.length-1].close;
-  const DEC=getPriceDecimals(lastClose);
-  const MM=getMinMove(lastClose);
-  const flat=val=>lwC.map(c=>({time:c.time,value:val}));
-
-  // VPVR uses cyan/teal palette to distinguish from static VP (red/gold/green)
-  const addVPVRLevel=(storeKey,val,color,label,lineStyle)=>{
-    const vis=layerState[storeKey]!==false;
-    const opts={color,lineWidth:1.5,lineStyle,title:label,
-      priceLineVisible:false,lastValueVisible:vis,crosshairMarkerVisible:false,
-      visible:vis,priceFormat:{type:'price',precision:DEC,minMove:MM}};
-    const data=flat(val);
-    const s=mainChartObj.addLineSeries(opts);
-    s.setData(data);
-    layerDefs[storeKey]=s;
-    layerDefs[storeKey+'_opts']={opts:{...opts,visible:true,lastValueVisible:true},data};
-  };
-  addVPVRLevel('VPVR_VAH',vpvr.vah,'rgba(0,229,255,0.9)','◀ VR-H',LightweightCharts.LineStyle.LargeDashed);
-  addVPVRLevel('VPVR_POC',vpvr.poc,'rgba(0,255,255,0.9)','◀ VR-P',LightweightCharts.LineStyle.LargeDashed);
-  addVPVRLevel('VPVR_VAL',vpvr.val,'rgba(64,255,200,0.9)','◀ VR-L',LightweightCharts.LineStyle.LargeDashed);
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  WEBSOCKET 2 — Covers coins 101-200
-//  Binance allows 200 streams per connection. We use 2 connections.
-// ══════════════════════════════════════════════════════════════════
-let wsConn2=null, wsReconnectTimer2=null;
-
-function startWebSocket2(){
-  if(wsConn2){try{wsConn2.close();}catch(e){}}
-  clearTimeout(wsReconnectTimer2);
-  const syms=DEFAULT_PAIRS.slice(100,200);
-  if(!syms.length)return;
-  const streams=syms.map(s=>s.toLowerCase()+'@miniTicker').join('/');
-  try{
-    wsConn2=new WebSocket(`${WS_BASE}${streams}`);
-    wsConn2.onopen=()=>{};
-    wsConn2.onmessage=(evt)=>{
-      try{
-        const d=(JSON.parse(evt.data)).data||JSON.parse(evt.data);
-        if(d&&d.s&&d.c){
-          const price=parseFloat(d.c),chg=parseFloat(d.P)||0;
-          livePrices[d.s]={price,chg};
-          updateLivePriceCell(d.s,price,chg);
-          updateWlChip(d.s,price,chg);
-          checkPriceAlerts();
-        }
-      }catch(e){}
-    };
-    wsConn2.onerror=()=>{};
-    wsConn2.onclose=()=>{wsReconnectTimer2=setTimeout(startWebSocket2,12000);};
-  }catch(e){}
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  BTC.D SPARKLINE — draws rolling BTC.D history on canvas
-//  Fetches 30 days of history from CoinGecko market_chart endpoint
-// ══════════════════════════════════════════════════════════════════
-let btcdHistoricalData=[];
-
-async function fetchBTCDHistory(){
-  try{
-    const res=await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30&interval=daily',{
-      headers:{'Accept':'application/json'}
-    });
-    if(!res.ok)throw new Error('CoinGecko history '+res.status);
-    const data=await res.json();
-    // We need total market cap to compute BTC.D over time
-    // Use rolling dominanceState.btcDHistory as live data instead if historical unavailable
-    // CoinGecko market_chart doesn't give dominance directly, but we can use the session btcDHistory
-    drawBTCDSparkline();
-  }catch(e){
-    // Fall back to in-session data
-    drawBTCDSparkline();
-  }
-}
-
-function drawBTCDSparkline(){
-  const canvas=document.getElementById('btcdSparkline');
-  const wrap=document.getElementById('btcdSparkWrap');
-  const labelEl=document.getElementById('btcdSparkLabel');
-  if(!canvas||!wrap)return;
-  const history=dominanceState.btcDHistory;
-  if(!history||history.length<3){wrap.style.display='none';return;}
-  wrap.style.display='flex';
-  const W=200, H=28;
-  const dpr=window.devicePixelRatio||1;
-  canvas.width=W*dpr; canvas.height=H*dpr;
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
-  const ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,W,H);
-  const vals=history.map(h=>h.close);
-  const min=Math.min(...vals), max=Math.max(...vals);
-  const range=max-min||0.5;
-  const pad=3;
-  const pts=vals.map((v,i)=>({
-    x:pad+(i/(vals.length-1))*(W-pad*2),
-    y:H-pad-((v-min)/range)*(H-pad*2)
-  }));
-  // Background gradient
-  const grad=ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'rgba(0,191,255,0.18)');
-  grad.addColorStop(1,'rgba(0,191,255,0.02)');
-  ctx.fillStyle=grad;
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x,H);
-  pts.forEach(p=>ctx.lineTo(p.x,p.y));
-  ctx.lineTo(pts[pts.length-1].x,H);
-  ctx.closePath();
-  ctx.fill();
-  // Line
-  const trend=vals[vals.length-1]>vals[0];
-  ctx.strokeStyle=trend?'rgba(255,94,58,0.9)':'rgba(0,255,178,0.9)';
-  ctx.lineWidth=1.5;
-  ctx.beginPath();
-  pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-  ctx.stroke();
-  // Last point dot
-  const last=pts[pts.length-1];
-  ctx.fillStyle=trend?'#FF5E3A':'#00FFB2';
-  ctx.beginPath();
-  ctx.arc(last.x,last.y,2.5,0,Math.PI*2);
-  ctx.fill();
-  // Label
-  const first=vals[0], lastVal=vals[vals.length-1];
-  const delta=(lastVal-first).toFixed(2);
-  const dir=trend?'▲':'▼';
-  const col=trend?'#FF9090':'#90FFD0';
-  if(labelEl){
-    labelEl.textContent=`${lastVal.toFixed(2)}% ${dir}${Math.abs(delta)}% (30d)`;
-    labelEl.style.color=col;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  EARLY BULL SIGNAL — standalone signal when MA5 crosses MA53
-//  Also adds EARLY BEAR warning in signal list
-// ══════════════════════════════════════════════════════════════════
-function checkEMACrossoverSignals(symbol, candles, tf, chg) {
-  const ema5arr=calcEMA(candles,5);
-  const ema12arr=calcEMA(candles,12);
-  const ema53arr=calcEMA(candles,53);
-  const n=candles.length-1;
-  if(n<1)return[];
-  const signals=[];
-  const crossBull5  = ema5arr[n-1]<=ema53arr[n-1] && ema5arr[n]>ema53arr[n];
-  const crossBull12 = ema12arr[n-1]<=ema53arr[n-1] && ema12arr[n]>ema53arr[n];
-  const crossBear5  = ema5arr[n-1]>=ema53arr[n-1] && ema5arr[n]<ema53arr[n];
-  const crossBear12 = ema12arr[n-1]>=ema53arr[n-1] && ema12arr[n]<ema53arr[n];
-  const makeEmaSig=(type,heat,str)=>({
-    symbol,price:candles[n].close,
-    vp:calcVP(candles.slice(0,-1))||{vah:0,val:0,poc:0,bins:[],binSize:0,lo:0,hi:0},
-    tf,type,trend:crossBull5||crossBull12?'UP':'DOWN',
-    volTier:'NORMAL',volRatio:1,
-    ema5:ema5arr[n],ema12:ema12arr[n],ema53:ema53arr[n],
-    crossBullish5:crossBull5,crossBullish12:crossBull12,
-    crossBearish5:crossBear5,crossBearish12:crossBear12,
-    earlyWarning:false,fullBullConfirm:crossBull5&&crossBull12,
-    fullBearConfirm:crossBear5&&crossBear12,
-    chg,strength:str,confluence:50,confluenceFactors:{},
-    heat,ms:'NEUTRAL',msLabel:'→',freshness:'HOT',
-    session:getCurrentSession().session,
-    liqSweep:null,sr:[],obs:[],fvgs:[],volDelta:{buyPct:50,label:'NEUTRAL'},
-    pattern:null,stopHunt:null,adx:0,mtfZones:[],
-    ts:Date.now()
-  });
-  if(crossBull5&&!isDuplicateSignal(symbol,'EARLY_BULL',tf)){
-    signalCooldown.set(symbol+'-EARLY_BULL-'+tf,Date.now());
-    signals.push(makeEmaSig('EARLY_BULL',2,52));
-  }
-  if(crossBull12&&!isDuplicateSignal(symbol,'BULL_CONFIRM',tf)){
-    signalCooldown.set(symbol+'-BULL_CONFIRM-'+tf,Date.now());
-    signals.push(makeEmaSig('BULL_CONFIRM',3,68));
-  }
-  if(crossBear5&&!isDuplicateSignal(symbol,'EARLY_BEAR',tf)){
-    signalCooldown.set(symbol+'-EARLY_BEAR-'+tf,Date.now());
-    signals.push(makeEmaSig('EARLY_BEAR',1,35));
-  }
-  return signals;
-}
-
 // INIT
 window.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('vpTheme')||'dark';document.documentElement.setAttribute('data-theme',saved);document.getElementById('themeBtn').textContent=saved==='dark'?'🌙':'☀️';
@@ -2482,9 +2192,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('warnBtn').style.opacity='0.45';document.getElementById('mtfBtn').style.opacity='0.45';
   renderGroupsPanel();renderWatchlist();renderAlerts();
   updateSessionBar();setInterval(updateSessionBar,30000);
-  startWebSocket();startWebSocket2();checkDominance();triggerAndPoll();setInterval(triggerAndPoll,30*60*1000);
-  // Fetch BTC.D sparkline history from CoinGecko (30 days)
-  setTimeout(fetchBTCDHistory,3000);
+  startWebSocket();checkDominance();triggerAndPoll();setInterval(triggerAndPoll,30*60*1000);
   if(Notification.permission==='default')Notification.requestPermission();
 });
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeAlertModal();}});
