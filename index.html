@@ -301,12 +301,12 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 #modalNote:focus{border-color:var(--acc2);}
 .note-save-btn{background:transparent;border:1px solid var(--acc2);color:var(--acc2);font-family:'Space Mono',monospace;font-size:.52rem;padding:3px 8px;cursor:pointer;}
 .modal-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-.chart-container{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
-.chart-inner-row{flex:1;display:flex;min-height:0;overflow:hidden;}
-.main-chart-wrap{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);overflow:hidden;}
-#mainChart{flex-shrink:0;position:relative;overflow:hidden;}
-#volChart{flex-shrink:0;height:62px;}
-#rsiChart{flex-shrink:0;height:80px;}
+.chart-container{display:block;overflow:hidden;}
+.chart-inner-row{display:flex;overflow:hidden;}
+.main-chart-wrap{flex:1;overflow:hidden;min-width:0;}
+#mainChart{display:block;position:relative;overflow:hidden;}
+#volChart{display:block;height:62px;border-top:1px solid var(--border);}
+#rsiChart{display:block;height:80px;border-top:1px solid var(--border);}
 .vp-sidebar{width:106px;flex-shrink:0;background:var(--s2);display:flex;flex-direction:column;overflow:hidden;}
 .vp-sidebar-title{font-size:.44rem;color:var(--muted);padding:6px 8px 4px;border-bottom:1px solid var(--border);text-align:center;}
 .vp-ema-legend{padding:5px 6px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:3px;}
@@ -550,8 +550,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div id="layerToolbar"></div>
       <div id="chartLoadingState" class="chart-loading"><div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div></div>
       <div class="chart-container" id="chartContainer" style="display:none;">
-        <div class="chart-inner-row">
-          <div class="main-chart-wrap">
+        <div class="chart-inner-row" id="chartInnerRow">
+          <div class="main-chart-wrap" style="border-right:1px solid var(--border);">
             <div id="mainChart" style="position:relative;">
               <div class="chart-tooltip" id="chartTooltip">
                 <div class="tt-row"><span class="tt-lbl">TIME</span><span class="tt-val" id="ttTime">—</span></div>
@@ -576,8 +576,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
           <canvas id="vpHistogram"></canvas>
           </div>
         </div>
-        <div id="volChart" style="flex-shrink:0;height:62px;border-top:1px solid var(--border);"></div>
-        <div id="rsiChart" style="flex-shrink:0;height:80px;border-top:1px solid var(--border);"></div>
+        <div id="volChart"></div>
+        <div id="rsiChart"></div>
       </div>
       <div class="chart-info-bar" id="chartInfoBar" style="display:none;">
         <div class="info-cell"><div class="info-lbl">VAH</div><div class="info-val vah-c" id="infoVAH">—</div></div>
@@ -1878,14 +1878,30 @@ function buildLWChart(candles,vp,sr,obs){
   const mainEl=document.getElementById('mainChart');
   const volEl=document.getElementById('volChart');
   const rsiEl=document.getElementById('rsiChart');
-  const mainH=Math.max(240,window.innerHeight*.35);
+  const innerRow=document.getElementById('chartInnerRow');
+  const container=document.getElementById('chartContainer');
+
+  // Compute heights explicitly — no flex guessing
+  const mainH=Math.max(240,Math.floor(window.innerHeight*.38));
+  const volH=62;
+  const rsiH=80;
   const vpW=window.innerWidth>700?108:0;
   const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));
+
+  // Set ALL heights explicitly on the containers
   mainEl.style.height=mainH+'px';
-  [mainEl,volEl,rsiEl].forEach(el=>el.style.width=mainW+'px');
-  // Always show before createChart — LWC reads clientWidth at creation; hidden=0px=broken
-  volEl.style.display='';
-  rsiEl.style.display='';
+  mainEl.style.width=mainW+'px';
+  if(innerRow){innerRow.style.height=mainH+'px';}
+  container.style.height=(mainH+volH+rsiH)+'px';
+
+  // Set widths on sub-charts
+  volEl.style.width=mainW+'px';
+  rsiEl.style.width=mainW+'px';
+
+  // CRITICAL: ensure vol and rsi are visible BEFORE createChart
+  // LWC reads clientWidth/clientHeight at creation — must be > 0
+  volEl.style.display='block';
+  rsiEl.style.display='block';
 
   const lastClose=candles[candles.length-1].close;
   const DEC=getPriceDecimals(lastClose);
@@ -2221,7 +2237,22 @@ function switchModalTF(btn){document.querySelectorAll('.modal-tf-btn').forEach(b
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');destroyAllCharts();}
 function handleOverlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
 
-window.addEventListener('resize',()=>{if(!mainChartObj)return;const vpW=window.innerWidth>700?108:0;const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));['mainChart','volChart','rsiChart'].forEach(id=>document.getElementById(id).style.width=mainW+'px');mainChartObj.applyOptions({width:mainW});if(volChartObj)volChartObj.applyOptions({width:mainW});if(rsiChartObj)rsiChartObj.applyOptions({width:mainW});});
+window.addEventListener('resize',()=>{
+  if(!mainChartObj)return;
+  const vpW=window.innerWidth>700?108:0;
+  const mainW=Math.max(270,Math.floor(window.innerWidth*.95-vpW-16));
+  const mainH=Math.max(240,Math.floor(window.innerHeight*.38));
+  const mainEl=document.getElementById('mainChart');
+  const innerRow=document.getElementById('chartInnerRow');
+  const container=document.getElementById('chartContainer');
+  if(mainEl)mainEl.style.height=mainH+'px';
+  if(innerRow)innerRow.style.height=mainH+'px';
+  if(container)container.style.height=(mainH+62+80)+'px';
+  ['mainChart','volChart','rsiChart'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.width=mainW+'px';});
+  mainChartObj.applyOptions({width:mainW,height:mainH});
+  if(volChartObj)volChartObj.applyOptions({width:mainW});
+  if(rsiChartObj)rsiChartObj.applyOptions({width:mainW});
+});
 
 // ══════════════════════════════════════════════════════════════════
 //  POSITION SIZE CALCULATOR
