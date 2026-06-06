@@ -1669,7 +1669,51 @@ async function loadChartData(symbol,tf,vpHint){
 }
 
 // VP HISTOGRAM
-function drawVPHistogram(candles,vp){const canvas=document.getElementById('vpHistogram');const wrap=canvas.parentElement;const dpr=window.devicePixelRatio||1;const W=wrap.clientWidth,H=wrap.clientHeight;if(W<=0||H<=0)return;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);let lo=Infinity,hi=-Infinity;candles.forEach(c=>{if(c.high>hi)hi=c.high;if(c.low<lo)lo=c.low;});const range=hi-lo;if(!range)return;const binSize=range/VP_BINS,vol=new Array(VP_BINS).fill(0);candles.forEach(c=>{const idx=Math.min(Math.floor((c.typical-lo)/binSize),VP_BINS-1);vol[idx]+=c.volume;});const maxVol=Math.max(...vol);const pLo=Math.min(lo,vp.val*.999),pHi=Math.max(hi,vp.vah*1.001),pRange=pHi-pLo;const py=p=>H-((p-pLo)/pRange)*H;ctx.fillStyle='rgba(0,255,178,0.05)';ctx.fillRect(0,py(vp.vah),W,py(vp.val)-py(vp.vah));vol.forEach((v,i)=>{const price=lo+(i+.5)*binSize;const barH=Math.max(1,(binSize/pRange)*H-1),barW=maxVol>0?(v/maxVol)*(W-4):0,y=py(lo+(i+1)*binSize);const isPOC=Math.abs(price-vp.poc)<binSize,inVA=price>=vp.val&&price<=vp.vah;ctx.fillStyle=isPOC?'rgba(255,215,0,0.85)':inVA?'rgba(0,255,178,0.5)':'rgba(0,191,255,0.28)';ctx.fillRect(0,y,barW,barH);});const dl=(price,color,label,below)=>{ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.beginPath();ctx.moveTo(0,py(price));ctx.lineTo(W,py(price));ctx.stroke();ctx.setLineDash([]);ctx.font='bold 8px monospace';ctx.textAlign='left';ctx.fillStyle=color;ctx.fillText(label,2,below?py(price)+10:py(price)-3);};dl(vp.vah,'#FF5E3A','VAH',false);dl(vp.poc,'#FFD700','POC',false);dl(vp.val,'#00FFB2','VAL',true);}
+function drawVPHistogram(candles,vp){
+  const canvas=document.getElementById('vpHistogram');
+  const sidebar=canvas.closest('.vp-sidebar');
+  const dpr=window.devicePixelRatio||1;
+  const W=sidebar.clientWidth||106;
+  // Compute remaining height inside sidebar after title + legend
+  const title=sidebar.querySelector('.vp-sidebar-title');
+  const legend=sidebar.querySelector('.vp-ema-legend');
+  const usedH=(title?title.offsetHeight:0)+(legend?legend.offsetHeight:0);
+  const sidebarH=sidebar.offsetHeight||parseInt(sidebar.style.height)||300;
+  const H=Math.max(40, sidebarH-usedH);
+  // Set canvas to exact available size
+  canvas.style.width=W+'px';
+  canvas.style.height=H+'px';
+  canvas.style.display='block';
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  let lo=Infinity,hi=-Infinity;
+  candles.forEach(c=>{if(c.high>hi)hi=c.high;if(c.low<lo)lo=c.low;});
+  const range=hi-lo;if(!range)return;
+  const binSize=range/VP_BINS,vol=new Array(VP_BINS).fill(0);
+  candles.forEach(c=>{const idx=Math.min(Math.floor((c.typical-lo)/binSize),VP_BINS-1);vol[idx]+=c.volume;});
+  const maxVol=Math.max(...vol);
+  const pLo=Math.min(lo,vp.val*.999),pHi=Math.max(hi,vp.vah*1.001),pRange=pHi-pLo;
+  const py=p=>H-((p-pLo)/pRange)*H;
+  ctx.fillStyle='rgba(0,255,178,0.05)';
+  ctx.fillRect(0,py(vp.vah),W,py(vp.val)-py(vp.vah));
+  vol.forEach((v,i)=>{
+    const price=lo+(i+.5)*binSize;
+    const barH=Math.max(1,(binSize/pRange)*H-1),barW=maxVol>0?(v/maxVol)*(W-4):0,y=py(lo+(i+1)*binSize);
+    const isPOC=Math.abs(price-vp.poc)<binSize,inVA=price>=vp.val&&price<=vp.vah;
+    ctx.fillStyle=isPOC?'rgba(255,215,0,0.85)':inVA?'rgba(0,255,178,0.5)':'rgba(0,191,255,0.28)';
+    ctx.fillRect(0,y,barW,barH);
+  });
+  const dl=(price,color,label,below)=>{
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([3,2]);
+    ctx.beginPath();ctx.moveTo(0,py(price));ctx.lineTo(W,py(price));ctx.stroke();
+    ctx.setLineDash([]);ctx.font='bold 8px monospace';ctx.textAlign='left';ctx.fillStyle=color;
+    ctx.fillText(label,2,below?py(price)+10:py(price)-3);
+  };
+  dl(vp.vah,'#FF5E3A','VAH',false);dl(vp.poc,'#FFD700','POC',false);dl(vp.val,'#00FFB2','VAL',true);
+}
 
 // CHART BUILDER
 function destroyAllCharts(){if(mainChartObj){mainChartObj.remove();mainChartObj=null;}if(volChartObj){volChartObj.remove();volChartObj=null;}if(rsiChartObj){rsiChartObj.remove();rsiChartObj=null;}candleSeries=null;}
@@ -1893,9 +1937,13 @@ function buildLWChart(candles,vp,sr,obs){
   mainEl.style.width=mainW+'px';
   if(innerRow){
     innerRow.style.height=mainH+'px';
-    // Also cap the vp-sidebar so it never overflows into vol/rsi area
+    // Sidebar: explicit height so it never overflows into Vol/RSI area
     const sidebar=innerRow.querySelector('.vp-sidebar');
-    if(sidebar){sidebar.style.height=mainH+'px';sidebar.style.maxHeight=mainH+'px';}
+    if(sidebar){
+      sidebar.style.height=mainH+'px';
+      sidebar.style.maxHeight=mainH+'px';
+      sidebar.style.overflow='hidden';
+    }
   }
   container.style.height=(mainH+volH+rsiH)+'px';
 
