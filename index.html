@@ -150,7 +150,31 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .history-sig{display:flex;align-items:center;gap:6px;font-size:.54rem;padding:2px 0;}
 .is-new-dot{width:5px;height:5px;border-radius:50%;background:var(--acc);flex-shrink:0;}
 .is-old-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;}
-.tbl-wrap{background:var(--s1);border:1px solid var(--border);overflow:hidden;}
+.sector-badge{display:inline-flex;align-items:center;font-size:.42rem;font-weight:700;padding:1px 4px;letter-spacing:.06em;border-radius:2px;flex-shrink:0;}
+.sector-filter-wrap{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:5px 0 8px;}
+.sector-filter-lbl{font-size:.52rem;color:var(--muted);letter-spacing:.12em;flex-shrink:0;}
+.sector-btn{background:var(--s1);border:1px solid var(--border);color:var(--muted);font-family:'Space Mono',monospace;font-size:.52rem;padding:3px 8px;cursor:pointer;transition:all .14s;display:flex;align-items:center;gap:4px;}
+.sector-btn.on{background:rgba(0,191,255,.08);border-color:var(--acc2);}
+.sector-btn .sc{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.qa-wrap{display:flex;align-items:center;gap:3px;}
+.qa-btn{background:transparent;border:none;font-size:.78rem;cursor:pointer;padding:0 3px;line-height:1;transition:transform .1s;opacity:.5;}
+.qa-btn:hover{opacity:1;transform:scale(1.2);}
+.qa-btn.star{color:#FFD700;}.qa-btn.dismiss{color:#FF5E3A;}
+.row.dismissed{display:none;}
+.row.starred{border-left:3px solid #FFD700 !important;}
+/* Win rate panel */
+.wr-panel{background:var(--s1);border:1px solid var(--border);margin-bottom:11px;overflow:hidden;display:none;}
+.wr-panel.open{display:block;}
+.wr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;padding:10px 13px;}
+.wr-card{background:var(--s2);border:1px solid var(--border);padding:9px 11px;display:flex;flex-direction:column;gap:4px;}
+.wr-sym{font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;color:var(--text);}
+.wr-meta{font-size:.48rem;color:var(--muted);}
+.wr-result{font-size:.72rem;font-weight:700;}
+.wr-result.win{color:var(--acc);}.wr-result.loss{color:var(--vah);}.wr-result.pending{color:var(--muted);}
+.wr-summary{display:flex;gap:16px;padding:8px 13px;background:var(--s2);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.wr-sum-item{display:flex;flex-direction:column;gap:2px;}
+.wr-sum-lbl{font-size:.46rem;color:var(--muted);letter-spacing:.12em;}
+.wr-sum-val{font-size:.9rem;font-family:'Syne',sans-serif;font-weight:900;}
 .tbl-head{display:grid;grid-template-columns:32px 1fr 88px 58px 78px 78px 78px 112px 54px 88px 50px 68px 66px;padding:8px 13px;background:var(--s2);border-bottom:1px solid var(--border);}
 .th{font-size:.5rem;color:var(--muted);letter-spacing:.13em;text-align:right;cursor:pointer;user-select:none;transition:color .14s;white-space:nowrap;}
 .th:nth-child(-n+2){text-align:left;}
@@ -417,6 +441,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <button class="group-btn" onclick="togglePanel('btPanel','btIco')">📊 BACKTEST</button>
   <button class="group-btn" onclick="togglePanel('corrPanel','corrIco')">⊡ CORR</button>
   <button class="group-btn" onclick="togglePanel('historyWrap','histIco')">📋 HISTORY</button>
+  <button class="group-btn" onclick="togglePanel('wrPanel','wrIco')">🏆 WIN RATE</button>
   <div class="view-toggle">
     <button class="view-btn on" id="viewTable" onclick="setView('table')" title="Table">☰</button>
     <button class="view-btn" id="viewHeat" onclick="setView('heatmap')" title="Heatmap">▦</button>
@@ -460,6 +485,15 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 <div class="panel" id="historyWrap">
   <div class="panel-hdr" onclick="togglePanel('historyWrap','histIco')"><span class="panel-title">📋 SIGNAL HISTORY — LAST 5 SCANS</span><span class="panel-toggle" id="histIco">▼</span></div>
   <div class="panel-body"><div class="history-body-inner" id="historyBody"></div></div>
+</div>
+<div class="panel wr-panel" id="wrPanel">
+  <div class="panel-hdr" onclick="togglePanel('wrPanel','wrIco')"><span class="panel-title" style="color:#FFD700">🏆 WIN RATE TRACKER — LIVE SIGNAL OUTCOMES</span><span class="panel-toggle" id="wrIco">▼</span></div>
+  <div class="wr-summary" id="wrSummary"><span style="font-size:.54rem;color:var(--muted)">Star signals to track. Outcomes checked after 4H and 24H automatically.</span></div>
+  <div class="wr-grid" id="wrGrid"></div>
+</div>
+<div class="sector-filter-wrap" id="sectorFilterWrap">
+  <span class="sector-filter-lbl">SECTOR:</span>
+  <button class="sector-btn on" onclick="setSector(null,this)">ALL</button>
 </div>
 <div class="tbl-wrap" id="tblWrap">
   <div class="tbl-head">
@@ -652,6 +686,62 @@ const LABEL_MAP={
   POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT',
   EARLY_BULL:'⚡ EARLY BULL',BULL_CONFIRM:'✔ BULL CONFIRM',EARLY_BEAR:'⚠ EARLY BEAR'
 };
+
+// ── SECTOR MAP ────────────────────────────────────────────────────
+// Each coin → sector label. Used for sector filter and badge on signal rows.
+const SECTOR_MAP={
+  // Layer 1
+  BTCUSDT:'L1',ETHUSDT:'L1',BNBUSDT:'L1',SOLUSDT:'L1',AVAXUSDT:'L1',
+  ADAUSDT:'L1',DOTUSDT:'L1',NEARUSDT:'L1',APTUSDT:'L1',SUIUSDT:'L1',
+  ATOMUSDT:'L1',ALGOUSDT:'L1',ICPUSDT:'L1',FILUSDT:'L1',ARUSDT:'L1',
+  KASUSDT:'L1',SEIUSDT:'L1',INJUSDT:'L1',TONUSDT:'L1',XLMUSDT:'L1',
+  XRPUSDT:'L1',TRXUSDT:'L1',HBARUSDT:'L1',VETUSDT:'L1',EGLDUSDT:'L1',
+  FLOWUSDT:'L1',ONEUSDT:'L1',ZILUSDT:'L1',ONTUSDT:'L1',QTUMUSDT:'L1',
+  KDAUSDT:'L1',CKBUSDT:'L1',SONICUSDT:'L1',BERAUSDT:'L1',STORYUSDT:'L1',
+  INITUSDT:'L1',MANTAUSDT:'L1',SYSUSDT:'L1',WANUSDT:'L1',
+  // DeFi
+  UNIUSDT:'DEFI',AAVEUSDT:'DEFI',MKRUSDT:'DEFI',CRVUSDT:'DEFI',LDOUSDT:'DEFI',
+  SNXUSDT:'DEFI',COMPUSDT:'DEFI',BALUSDT:'DEFI',YFIUSDT:'DEFI',SUSHIUSDT:'DEFI',
+  RUNEUSDT:'DEFI',JUPUSDT:'DEFI',RAYDIUMUSDT:'DEFI',PENDLEUSDT:'DEFI',CVXUSDT:'DEFI',
+  JOEUSDT:'DEFI',HIGHUSDT:'DEFI',WOOUSDT:'DEFI',XVSUSDT:'DEFI',KAVAUSDT:'DEFI',
+  CELOUSDT:'DEFI',COTIUSDT:'DEFI',ONDOUSDT:'DEFI',AEVOUSDT:'DEFI',ETHFIUSDT:'DEFI',
+  ALPACAUSDT:'DEFI',CLVUSDT:'DEFI',AGLDUSDT:'DEFI',BANDUSDT:'DEFI',LRCUSDT:'DEFI',
+  // AI
+  FETUSDT:'AI',AGIXUSDT:'AI',WLDUSDT:'AI',RENDERUSDT:'AI',TAOAUSDT:'AI',
+  AIUSDT:'AI',NFPUSDT:'AI',VANRYUSDT:'AI',GRASSUSDT:'AI',BIOUSDT:'AI',
+  OCEANUSDT:'AI',
+  // L2
+  MATICUSDT:'L2',OPUSDT:'L2',ARBUSDT:'L2',LRCUSDT:'L2',IMXUSDT:'L2',
+  METISUSDT:'L2',STRKUSDT:'L2',SCRUSDT:'L2',LAYERUSDT:'L2',POLUSDT:'L2',
+  XDCUSDT:'L2',OMNIUSDT:'L2',SAGAUSDT:'L2',AEROUSDT:'L2',MORPHOUSDT:'L2',
+  // Gaming / NFT
+  SANDUSDT:'GAME',MANAUSDT:'GAME',AXSUSDT:'GAME',ENJUSDT:'GAME',CHZUSDT:'GAME',
+  GALAUSDT:'GAME',GMTUSDT:'GAME',XAIUSDT:'GAME',VOXELUSDT:'GAME',MOVEUSDT:'GAME',
+  MEUSDT:'GAME',ALTUSDT:'GAME',BEAMUSDT:'GAME',PAXGUSDT:'GAME',
+  // Meme
+  DOGEUSDT:'MEME',SHIBUSDT:'MEME',PEPEUSDT:'MEME',BONKUSDT:'MEME',FLOKIUSDT:'MEME',
+  WIFUSDT:'MEME',BOMEUSDT:'MEME',NEIROUSDT:'MEME',MOODENGUSDT:'MEME',GOATUSDT:'MEME',
+  PNUTUSDT:'MEME',CHILLGUYUSDT:'MEME',FARTCOINUSDT:'MEME',TRUMPUSDT:'MEME',MELANIAUSDT:'MEME',
+  ACTUSDT:'MEME',VINEUSDT:'MEME',DEGOUSDT:'MEME',COSUSDT:'MEME',SPELLUSDT:'MEME',
+  // Infra / Storage
+  LINKUSDT:'INFRA',GRTUSDT:'INFRA',APIUSDT:'INFRA',STORJUSDT:'INFRA',ANKRUSDT:'INFRA',
+  HOTUSDT:'INFRA',IOSTUSDT:'INFRA',NKNUSDT:'INFRA',CTSIUSDT:'INFRA',RVNUSDT:'INFRA',
+  BATUSDT:'INFRA',LPTUSDT:'INFRA',RADUSDT:'INFRA',REEFUSDT:'INFRA',FLMUSDT:'INFRA',
+  STPTUSDT:'INFRA',TRUUSDT:'INFRA',LOOMUSDT:'INFRA',SFPUSDT:'INFRA',
+  // Exchange tokens
+  OKBUSDT:'CEX',HTUSDT:'CEX',CROCUSDT:'CEX',SOLVUSDT:'CEX',HYPEUSDT:'CEX',
+  UXLINKUSDT:'CEX',
+  // Privacy
+  XMRUSDT:'PRIV',ZECUSDT:'PRIV',DASHUSDT:'PRIV',
+};
+const SECTOR_COLORS={
+  L1:'#00BFFF',DEFI:'#BF5FFF',AI:'#00FFB2',L2:'#FF9500',
+  GAME:'#FF4081',MEME:'#FFD700',INFRA:'#69F0AE',CEX:'#FF5E3A',PRIV:'#A0A0A0'
+};
+function getSector(sym){return SECTOR_MAP[sym]||'OTHER';}
+
+// Active sector filter (null = show all)
+let activeSector=null;
 function baseType(t){return t.startsWith('VAH')?'VAH':t.startsWith('VAL')?'VAL':t.startsWith('POC')?'POC':t.startsWith('EARLY_BULL')||t.startsWith('BULL_CONFIRM')?'EMA_BULL':t.startsWith('EARLY_BEAR')?'EMA_BEAR':t;}
 function sigKey(s){return`${s.symbol}-${s.type}-${s.tf}`;}
 function fp(p){if(!p&&p!==0)return'—';if(p>=10000)return p.toLocaleString('en',{maximumFractionDigits:1});if(p>=1)return p.toFixed(4);return p.toFixed(6);}
@@ -1552,6 +1642,7 @@ async function triggerAndPoll(){
   pushHistory(newSignals,new Date().toISOString());updateMarketStructureBar(newSignals);renderBacktest();renderCorrTable();renderWatchlist();
   document.getElementById('stScanned').textContent=pairs.length;document.getElementById('scanTime').textContent='LAST: '+new Date().toLocaleTimeString('en-GB');document.getElementById('stHeat').textContent=newSignals.filter(s=>(s.heat||0)>=4).length;document.getElementById('stMTF').textContent=newSignals.filter(s=>s.mtfCount>=2).length;
   if(brandNew.length>0)playAlertSound();updateTabBadge(newSignals.length);render();
+  renderWinRate();setTimeout(wrCheckOutcomes,2000);
   if(document.getElementById('heatmapView').classList.contains('active'))renderHeatmap();
   setTimeout(()=>prog.classList.remove('show'),800);btn.disabled=false;icon.className='';icon.textContent='⟳';
   if(brandNew.length>0)showToast(`🔔 ${brandNew.length} NEW SIGNAL${brandNew.length>1?'S':''}!`);
@@ -1563,13 +1654,35 @@ function render(){
   document.getElementById('stVAH').textContent=allSignals.filter(s=>baseType(s.type)==='VAH').length;document.getElementById('stVAL').textContent=allSignals.filter(s=>baseType(s.type)==='VAL').length;document.getElementById('stPOC').textContent=allSignals.filter(s=>baseType(s.type)==='POC').length;document.getElementById('stTotal').textContent=allSignals.length;
   const query=(document.getElementById('coinSearch').value||'').toUpperCase().trim();
   let filtered=allSignals.filter(s=>{const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;if(s.type==='WARNING')return showWarnings;// EMA crossover signals always shown (they are standalone signals)
-    if(s.type==='EARLY_BULL'||s.type==='BULL_CONFIRM'||s.type==='EARLY_BEAR')return true;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;return true;});
+    if(s.type==='EARLY_BULL'||s.type==='BULL_CONFIRM'||s.type==='EARLY_BEAR')return true;if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;if(query&&!s.symbol.includes(query))return false;if(mtfOnly&&(s.mtfCount||0)<2)return false;
+    // Sector filter
+    if(activeSector&&getSector(s.symbol)!==activeSector)return false;
+    // Dismissed filter
+    const dkey=s.symbol+'-'+s.tf+'-'+s.type;if(dismissedSignals.has(dkey))return false;
+    return true;});
+  renderSectorFilter(allSignals.filter(s=>{// same filters minus sector
+    const bt=baseType(s.type);if(!activeTFs.has(s.tf))return false;
+    if(s.type==='WARNING')return showWarnings;
+    if(s.type==='EARLY_BULL'||s.type==='BULL_CONFIRM'||s.type==='EARLY_BEAR')return true;
+    if(!activeSigs.has(bt))return false;if(s.strength<minStrength)return false;
+    const dkey=s.symbol+'-'+s.tf+'-'+s.type;if(dismissedSignals.has(dkey))return false;
+    return true;
+  }));
   filtered=sortSignals(filtered);document.getElementById('sigCount').textContent=`${filtered.length} SIGNAL${filtered.length!==1?'S':''}`;
   const rows=document.getElementById('rows');
   if(!filtered.length){rows.innerHTML=`<div class="empty"><div class="empty-ico">◈</div><div class="empty-txt">NO SIGNALS MATCH FILTERS</div></div>`;return;}
   const isMobile=window.innerWidth<=600;
   rows.innerHTML=filtered.map((s,i)=>{
     const sym=s.symbol.replace('USDT',''),bl=LABEL_MAP[s.type]||s.type,vpStr=JSON.stringify(s.vp).replace(/"/g,"'");
+    const rowKey=s.symbol+'-'+s.tf+'-'+s.type;
+    const isStarred=starredSignals.has(rowKey);
+    const sector=getSector(s.symbol);
+    const secCol=SECTOR_COLORS[sector]||'#666';
+    const sectorBadge=`<span class="sector-badge" style="background:${secCol}18;color:${secCol};border:1px solid ${secCol}33">${sector}</span>`;
+    const qaButtons=`<div class="qa-wrap" onclick="event.stopPropagation()">
+      <button class="qa-btn star" title="Star & track" onclick="starSignal('${s.symbol}','${s.tf}','${s.type}',event)">${isStarred?'⭐':'☆'}</button>
+      <button class="qa-btn dismiss" title="Dismiss" onclick="dismissSignal('${s.symbol}','${s.tf}','${s.type}',event)">✕</button>
+    </div>`;
     const trendLbl=s.trend==='UP'?(s.fullBullConfirm?'↑ BULL RUN':'↑ UP'):s.trend==='DOWN'?(s.fullBearConfirm?'↓ BEAR RUN':'↓ DOWN'):s.trend==='WARN'?'⚠ WARN':'→ NEUT';
     const volLbl=s.volTier==='SPIKE'?'🔥 3x+':s.volTier==='CONFIRMED'?'✦ 2x+':s.volTier==='STRONG'?'▲ 1.5x':'○ NORM';
     const lp=livePrices[s.symbol];const dispPrice=lp?lp.price:s.price;const dispChg=lp?lp.chg:(s.chg||0);
@@ -1590,11 +1703,11 @@ function render(){
     const heatBar=renderHeatBar(s.heat||1);const age=getSignalAge(s.ts||Date.now());
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:.48rem" title="${note}">📝</span>`:'';
-    const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}`;
-    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${msBadge}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
-    return`<div class="${rowClass}" data-sym="${s.symbol}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
-      <div class="td rank">${i+1}</div>
-      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${noteDot}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span></div></div></div>
+    const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}${isStarred?' starred':''}`;
+    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span><span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
+    return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
+      <div class="td rank">${qaButtons}</div>
+      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${noteDot}</div><div class="pair">${s.symbol}${sectorBadge}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span></div></div></div>
       <div class="td"><span class="price-cell price-live">$${fp(dispPrice)}</span></div>
       <div class="td"><span class="chg chg-live ${chgCls}">${chgStr}</span></div>
       <div class="td lvl">$${fp(s.vp.vah)}</div><div class="td lvl">$${fp(s.vp.val)}</div><div class="td lvl">$${fp(s.vp.poc)}</div>
@@ -2239,7 +2352,192 @@ window.addEventListener('resize',()=>{
 });
 
 // ══════════════════════════════════════════════════════════════════
-//  POSITION SIZE CALCULATOR
+//  FEATURE 5 — SECTOR GROUPING & FILTER
+// ══════════════════════════════════════════════════════════════════
+function renderSectorFilter(signals){
+  const wrap=document.getElementById('sectorFilterWrap');
+  if(!wrap)return;
+  // Count signals per sector
+  const counts={};
+  signals.forEach(s=>{const sec=getSector(s.symbol);counts[sec]=(counts[sec]||0)+1;});
+  let html=`<span class="sector-filter-lbl">SECTOR:</span>
+    <button class="sector-btn${activeSector===null?' on':''}" onclick="setSector(null,this)">ALL <span style="color:var(--muted)">${signals.length}</span></button>`;
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([sec,cnt])=>{
+    const col=SECTOR_COLORS[sec]||'#888';
+    html+=`<button class="sector-btn${activeSector===sec?' on':''}" onclick="setSector('${sec}',this)" style="${activeSector===sec?`border-color:${col};color:${col};background:${col}18`:''}">
+      <span class="sc" style="background:${col}"></span>${sec} <span style="color:var(--muted)">${cnt}</span></button>`;
+  });
+  wrap.innerHTML=html;
+}
+
+function setSector(sec,btn){
+  activeSector=sec;
+  render();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FEATURE 8 — QUICK STAR / DISMISS ACTIONS
+// ══════════════════════════════════════════════════════════════════
+const starredSignals=new Set(JSON.parse(localStorage.getItem('vpStarred')||'[]'));
+const dismissedSignals=new Set(JSON.parse(localStorage.getItem('vpDismissed')||'[]'));
+
+function starSignal(sym,tf,type,e){
+  e.stopPropagation();
+  const key=sym+'-'+tf+'-'+type;
+  if(starredSignals.has(key)){starredSignals.delete(key);}
+  else{
+    starredSignals.add(key);
+    // Auto-add to win rate tracker
+    const sig=allSignals.find(s=>s.symbol===sym&&s.tf===tf&&s.type===type);
+    if(sig)wrTrackSignal(sig);
+    // Add to watchlist if not already there
+    if(!watchlist.includes(sym)){watchlist.push(sym);localStorage.setItem('vpWatchlist',JSON.stringify(watchlist));renderWatchlist();}
+    showToast(`⭐ ${sym} starred — tracking outcome`,'#FFD700');
+  }
+  localStorage.setItem('vpStarred',JSON.stringify([...starredSignals]));
+  render();
+}
+
+function dismissSignal(sym,tf,type,e){
+  e.stopPropagation();
+  const key=sym+'-'+tf+'-'+type;
+  dismissedSignals.add(key);
+  localStorage.setItem('vpDismissed',JSON.stringify([...dismissedSignals]));
+  // Remove row immediately
+  const row=document.querySelector(`.row[data-rowkey="${key}"]`);
+  if(row){row.style.animation='fadeOut .2s ease forwards';setTimeout(()=>row.remove(),200);}
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FEATURE 10 — WIN RATE TRACKER
+//  Stars a signal → logs entry price + time.
+//  Checks Binance for price 4H and 24H later.
+//  Calculates % move and win/loss. Persists in localStorage.
+// ══════════════════════════════════════════════════════════════════
+let wrLog=JSON.parse(localStorage.getItem('vpWinRate')||'[]');
+
+function wrTrackSignal(sig){
+  const key=sig.symbol+'-'+sig.tf+'-'+sig.type+'-'+sig.ts;
+  if(wrLog.find(e=>e.key===key))return; // already logged
+  const entry={
+    key,symbol:sig.symbol,tf:sig.tf,type:sig.type,
+    entryPrice:sig.price,ts:sig.ts||Date.now(),
+    sector:getSector(sig.symbol),
+    target:sig.vp?sig.vp.vah:null,stop:null,
+    result4h:null,result24h:null,
+    checked4h:false,checked24h:false
+  };
+  wrLog.push(entry);
+  if(wrLog.length>200)wrLog=wrLog.slice(-200); // keep last 200
+  localStorage.setItem('vpWinRate',JSON.stringify(wrLog));
+  renderWinRate();
+}
+
+async function wrCheckOutcomes(){
+  let changed=false;
+  const now=Date.now();
+  for(const entry of wrLog){
+    const age=now-entry.ts;
+    // Check 4H outcome
+    if(!entry.checked4h&&age>=4*3600*1000){
+      try{
+        const res=await fetch(`${BINANCE}/api/v3/klines?symbol=${entry.symbol}&interval=4h&limit=2`);
+        const raw=await res.json();
+        if(Array.isArray(raw)&&raw.length){
+          const closePrice=parseFloat(raw[raw.length-1][4]);
+          const pct=((closePrice-entry.entryPrice)/entry.entryPrice*100);
+          const isBull=entry.type.startsWith('VAH')||entry.type==='EARLY_BULL'||entry.type==='BULL_CONFIRM';
+          entry.result4h={price:closePrice,pct:pct.toFixed(2),win:isBull?pct>0:pct<0};
+          entry.checked4h=true;changed=true;
+        }
+      }catch(e){}
+    }
+    // Check 24H outcome
+    if(!entry.checked24h&&age>=24*3600*1000){
+      try{
+        const res=await fetch(`${BINANCE}/api/v3/klines?symbol=${entry.symbol}&interval=1d&limit=2`);
+        const raw=await res.json();
+        if(Array.isArray(raw)&&raw.length){
+          const closePrice=parseFloat(raw[raw.length-1][4]);
+          const pct=((closePrice-entry.entryPrice)/entry.entryPrice*100);
+          const isBull=entry.type.startsWith('VAH')||entry.type==='EARLY_BULL'||entry.type==='BULL_CONFIRM';
+          entry.result24h={price:closePrice,pct:pct.toFixed(2),win:isBull?pct>0:pct<0};
+          entry.checked24h=true;changed=true;
+        }
+      }catch(e){}
+    }
+  }
+  if(changed){localStorage.setItem('vpWinRate',JSON.stringify(wrLog));renderWinRate();}
+}
+
+function renderWinRate(){
+  const grid=document.getElementById('wrGrid');
+  const summary=document.getElementById('wrSummary');
+  if(!grid||!summary)return;
+  if(!wrLog.length){
+    summary.innerHTML='<span style="font-size:.54rem;color:var(--muted)">Star signals on the table to track outcomes. Results appear here after 4H and 24H.</span>';
+    grid.innerHTML='';return;
+  }
+  // Compute summary stats from resolved 24H results
+  const resolved=wrLog.filter(e=>e.result24h);
+  const wins=resolved.filter(e=>e.result24h.win).length;
+  const wr=resolved.length?Math.round((wins/resolved.length)*100):null;
+  const avgWin=resolved.filter(e=>e.result24h.win).reduce((a,e)=>a+parseFloat(e.result24h.pct),0)/(wins||1);
+  const losses=resolved.length-wins;
+  const avgLoss=resolved.filter(e=>!e.result24h.win).reduce((a,e)=>a+parseFloat(e.result24h.pct),0)/((losses)||1);
+  // By sector
+  const bySector={};
+  resolved.forEach(e=>{
+    const s=e.sector||'OTHER';
+    if(!bySector[s])bySector[s]={wins:0,total:0};
+    bySector[s].total++;if(e.result24h.win)bySector[s].wins++;
+  });
+  const bestSector=Object.entries(bySector).sort((a,b)=>(b[1].wins/b[1].total)-(a[1].wins/a[1].total))[0];
+  const wrColor=wr===null?'var(--muted)':wr>=60?'var(--acc)':wr>=45?'var(--poc)':'var(--vah)';
+  summary.innerHTML=`
+    <div class="wr-sum-item"><div class="wr-sum-lbl">WIN RATE (24H)</div><div class="wr-sum-val" style="color:${wrColor}">${wr!==null?wr+'%':'—'}</div></div>
+    <div class="wr-sum-item"><div class="wr-sum-lbl">SIGNALS</div><div class="wr-sum-val">${wrLog.length}</div></div>
+    <div class="wr-sum-item"><div class="wr-sum-lbl">RESOLVED</div><div class="wr-sum-val">${resolved.length}</div></div>
+    <div class="wr-sum-item"><div class="wr-sum-lbl">AVG WIN</div><div class="wr-sum-val" style="color:var(--acc)">${wins?'+'+avgWin.toFixed(1)+'%':'—'}</div></div>
+    <div class="wr-sum-item"><div class="wr-sum-lbl">AVG LOSS</div><div class="wr-sum-val" style="color:var(--vah)">${losses?avgLoss.toFixed(1)+'%':'—'}</div></div>
+    <div class="wr-sum-item"><div class="wr-sum-lbl">BEST SECTOR</div><div class="wr-sum-val" style="font-size:.7rem;color:${bestSector?SECTOR_COLORS[bestSector[0]]||'var(--acc2)':'var(--muted)'}">${bestSector?bestSector[0]+' '+Math.round(bestSector[1].wins/bestSector[1].total*100)+'%':'—'}</div></div>
+    <div class="wr-sum-item" style="margin-left:auto"><button onclick="wrClearAll()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Space Mono',monospace;font-size:.5rem;padding:3px 8px;cursor:pointer">CLEAR ALL</button></div>
+  `;
+  // Sort: pending first, then by ts desc
+  const sorted=[...wrLog].sort((a,b)=>{
+    const aPending=!a.result24h,bPending=!b.result24h;
+    if(aPending&&!bPending)return -1;if(!aPending&&bPending)return 1;
+    return b.ts-a.ts;
+  });
+  grid.innerHTML=sorted.slice(0,40).map(e=>{
+    const sym=e.symbol.replace('USDT','');
+    const age=Math.round((Date.now()-e.ts)/3600000);
+    const r4=e.result4h,r24=e.result24h;
+    const secCol=SECTOR_COLORS[e.sector]||'#888';
+    const r4html=r4?`<span style="color:${r4.win?'var(--acc)':'var(--vah)'}">${r4.pct>0?'+':''}${r4.pct}% 4H</span>`:'<span style="color:var(--muted)">4H pending</span>';
+    const r24html=r24?`<span style="color:${r24.win?'var(--acc)':'var(--vah)'}">${r24.pct>0?'+':''}${r24.pct}% 24H</span>`:'<span style="color:var(--muted)">24H pending</span>';
+    const statusCls=r24?(r24.win?'win':'loss'):'pending';
+    const statusTxt=r24?(r24.win?'✓ WIN':'✗ LOSS'):`${age}h ago`;
+    return`<div class="wr-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="wr-sym">${sym}</div>
+        <span class="sector-badge" style="background:${secCol}22;color:${secCol};border:1px solid ${secCol}44">${e.sector}</span>
+      </div>
+      <div class="wr-meta">${LABEL_MAP[e.type]||e.type} · ${e.tf.toUpperCase()} · $${fp(e.entryPrice)}</div>
+      <div style="display:flex;flex-direction:column;gap:2px;font-size:.52rem;">${r4html}${r24html}</div>
+      <div class="wr-result ${statusCls}">${statusTxt}</div>
+      <button onclick="wrRemove('${e.key}')" style="align-self:flex-end;background:transparent;border:none;color:var(--muted);font-size:.56rem;cursor:pointer;padding:0">✕ remove</button>
+    </div>`;
+  }).join('');
+}
+
+function wrRemove(key){wrLog=wrLog.filter(e=>e.key!==key);localStorage.setItem('vpWinRate',JSON.stringify(wrLog));renderWinRate();}
+function wrClearAll(){if(!confirm('Clear all win rate data?'))return;wrLog=[];localStorage.setItem('vpWinRate','[]');renderWinRate();}
+
+// Check outcomes every 15 minutes
+setInterval(wrCheckOutcomes,15*60*1000);
+
+// ══════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════════
 function calcPositionSize(){
   const account=parseFloat(document.getElementById('psAccount')?.value)||10000;
@@ -2504,9 +2802,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   const tgT=localStorage.getItem('tgToken'),tgC=localStorage.getItem('tgChat');
   if(tgT)document.getElementById('tgToken').value=tgT;if(tgC)document.getElementById('tgChat').value=tgC;
   document.getElementById('warnBtn').style.opacity='0.45';document.getElementById('mtfBtn').style.opacity='0.45';
-  renderGroupsPanel();renderWatchlist();renderAlerts();
+  renderGroupsPanel();renderWatchlist();renderAlerts();renderWinRate();
   updateSessionBar();setInterval(updateSessionBar,30000);
   startWebSocket();startWebSocket2();checkDominance();triggerAndPoll();setInterval(triggerAndPoll,30*60*1000);
+  // Check win rate outcomes on load
+  setTimeout(wrCheckOutcomes,5000);
   // Fetch BTC.D sparkline history from CoinGecko (30 days)
   setTimeout(fetchBTCDHistory,3000);
   if(Notification.permission==='default')Notification.requestPermission();
