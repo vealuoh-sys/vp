@@ -2039,18 +2039,19 @@ function render(){
     const huntBadge=s.stopHunt?`<span style="font-size:.46rem;padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite">${s.stopHunt.label}</span>`:'';
     const emaCrossBadge=s.crossBullish12?'<span style="font-size:.44rem;padding:1px 5px;color:#FF3333;border:1px solid rgba(255,51,51,.5);background:rgba(255,51,51,.1);font-weight:900">BULL CONFIRM</span>':s.crossBullish5?'<span style="font-size:.44rem;padding:1px 5px;color:#FFD700;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.08)">EARLY BULL</span>':s.crossBearish12?'<span style="font-size:.44rem;padding:1px 5px;color:#FF5E3A;border:1px solid rgba(255,94,58,.5);background:rgba(255,94,58,.1);font-weight:900">BEAR CONFIRM</span>':s.earlyWarning?'<span style="font-size:.44rem;padding:1px 5px;color:#FF9500;border:1px solid rgba(255,149,0,.4)">WARN</span>':''
     const adxBadge=s.adx?`<span style="font-size:.44rem;color:${s.adx>25?'var(--acc)':s.adx<20?'var(--vah)':'var(--muted)'}">${s.adx>25?'ADX:TREND':'ADX:CHOP'}</span>`:''
-    // NEW: OI, Funding, BTC Corr, Vol Delta, Liq Cluster badges
+    // OI, Funding, BTC Corr, Vol Delta, Liq Cluster badges — dedicated row
     const oiBadge=getOIBadge(s.symbol);
     const fundBadge=getFundingBadge(s.symbol);
     const btcCorrBadge=getBTCCorrBadge(s.symbol);
     const volDeltaBadge=getVolDeltaBadge(s);
     const liqClusterBadge=getLiqClusterLabel(s);
-    const extraRow=`<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:2px">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`;
+    const hasBadges=oiBadge||fundBadge||btcCorrBadge||volDeltaBadge||liqClusterBadge;
+    const extraRow=hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px;padding-top:2px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:'';
     const heatBar=renderHeatBar(s.heat||1);const age=getSignalAge(s.ts||Date.now());
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:.48rem" title="${note}">📝</span>`:'';
     const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}${isStarred?' starred':''}${s.counterTrend?' counter-trend':''}`;
-    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span>${(s.extraBadges||[]).map(t=>`<span class="badge ${t}" style="font-size:.4rem;padding:1px 3px">${LABEL_MAP[t]||t}</span>`).join('')}${counterBadge}<span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div><div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
+    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span>${(s.extraBadges||[]).map(t=>`<span class="badge ${t}" style="font-size:.4rem;padding:1px 3px">${LABEL_MAP[t]||t}</span>`).join('')}${counterBadge}<span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div>${hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;padding:3px 8px 4px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:''}<div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
     return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
       <div class="td rank">${qaButtons}</div>
       <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${noteDot}</div><div class="pair">${s.symbol}${sectorBadge}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span>${(()=>{const cd=getCooldownRemaining(s.symbol,s.tf);return cd?`<span style="font-size:.4rem;color:var(--muted);margin-left:3px">⏱${cd}</span>`:'';})()}</div>${extraRow}</div></div>
@@ -3380,35 +3381,17 @@ function getOIBadge(sym){
   if(!d)return'';
   const col=d.oiDir==='UP'?'#00FFB2':d.oiDir==='DOWN'?'#FF5E3A':'#888';
   const arrow=d.oiDir==='UP'?'▲':d.oiDir==='DOWN'?'▼':'→';
-  return`<span style="font-size:.42rem;padding:1px 4px;background:${col}15;color:${col};border:1px solid ${col}40" title="Open Interest ${d.oiChg>0?'+':''}${d.oiChg}%">OI ${arrow}${Math.abs(d.oiChg)}%</span>`;
+  return`<span style="font-size:.5rem;padding:2px 5px;background:${col}20;color:${col};border:1px solid ${col}60;font-weight:700" title="Open Interest ${d.oiChg>0?'+':''}${d.oiChg}%">OI ${arrow}${Math.abs(d.oiChg)}%</span>`;
 }
 
 function getFundingBadge(sym){
   const d=fundCache[sym];
   if(!d)return'';
   const r=d.rate;
-  // Positive funding = overcrowded long = dangerous for longs
-  // Negative funding = overcrowded short = good for longs
-  const col=r>0.08?'#FF5E3A':r>0.03?'#FFB800':r<-0.03?'#00FFB2':'#888';
+  const col=r>0.08?'#FF3333':r>0.03?'#FFB800':r<-0.03?'#00FFB2':'#888';
   const warn=r>0.08?' ⚠':'';
-  return`<span style="font-size:.42rem;padding:1px 4px;background:${col}15;color:${col};border:1px solid ${col}40" title="Funding Rate: ${r>0?'+':''}${r.toFixed(4)}%">F:${r>0?'+':''}${r.toFixed(3)}%${warn}</span>`;
-}
-
-// ── BTC CORRELATION PER SIGNAL ────────────────────────────────────
-const btcCorrCache={};  // sym → corr value
-
-function updateBTCCorrelations(){
-  const btcCandles=candleCache['BTCUSDT-1h'];
-  if(!btcCandles||btcCandles.length<20)return;
-  const btcCloses=btcCandles.map(c=>c.close);
-  Object.keys(candleCache).filter(k=>k.endsWith('-1h')).forEach(key=>{
-    const sym=key.replace('-1h','');
-    if(sym==='BTCUSDT')return;
-    const closes=(candleCache[key]||[]).map(c=>c.close);
-    const minLen=Math.min(btcCloses.length,closes.length);
-    if(minLen<15)return;
-    btcCorrCache[sym]=calcCorrelation(btcCloses.slice(-minLen),closes.slice(-minLen));
-  });
+  const bg=r>0.08?'rgba(255,51,51,.15)':r<-0.03?'rgba(0,255,178,.12)':'rgba(128,128,128,.1)';
+  return`<span style="font-size:.5rem;padding:2px 5px;background:${bg};color:${col};border:1px solid ${col}55;font-weight:700" title="Funding Rate">F:${r>0?'+':''}${r.toFixed(3)}%${warn}</span>`;
 }
 
 function getBTCCorrBadge(sym){
@@ -3416,39 +3399,33 @@ function getBTCCorrBadge(sym){
   const corr=btcCorrCache[sym];
   if(corr===undefined)return'';
   const v=corr.toFixed(2);
-  // High corr = dangerous to trade against BTC direction
   const col=corr>0.8?'#FF5E3A':corr>0.5?'#FFB800':'#00FFB2';
   const label=corr>0.8?'HIGH':corr>0.5?'MED':'LOW';
-  return`<span style="font-size:.42rem;padding:1px 4px;background:${col}12;color:${col};border:1px solid ${col}35" title="BTC Correlation: ${v}">BTC${label}</span>`;
+  return`<span style="font-size:.5rem;padding:2px 5px;background:${col}15;color:${col};border:1px solid ${col}50;font-weight:700" title="BTC Correlation: ${v}">₿${label}</span>`;
 }
 
-// ── LIQUIDATION CLUSTER ───────────────────────────────────────────
-// Approximate liq cluster from OI + price action
-// Real liq data = where stops are sitting = high OI zones near key levels
-function getLiqClusterLabel(s){
-  if(!s.vp||!s.price)return'';
-  const oi=oiCache[s.symbol];
-  if(!oi)return'';
-  // If OI rising and price approaching VAH = liq cluster above
-  if(oi.oiDir==='UP'&&Math.abs(s.price-s.vp.vah)/s.price<0.02){
-    return`<span style="font-size:.42rem;padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.07)" title="Liquidation cluster near VAH">LIQ✦</span>`;
-  }
-  // If OI rising and price near VAL = liq cluster below
-  if(oi.oiDir==='UP'&&Math.abs(s.price-s.vp.val)/s.price<0.02){
-    return`<span style="font-size:.42rem;padding:1px 4px;color:#FF9500;border:1px solid rgba(255,149,0,.4);background:rgba(255,149,0,.07)" title="Liquidation cluster near VAL">LIQ✦</span>`;
-  }
-  return'';
-}
-
-// ── VOLUME DELTA BADGE ────────────────────────────────────────────
 function getVolDeltaBadge(s){
   if(!s.volDelta)return'';
   const{buyPct,label}=s.volDelta;
   if(!buyPct||label==='NEUTRAL')return'';
   const isBuy=buyPct>65;
   const col=isBuy?'#00FFB2':'#FF5E3A';
+  const bg=isBuy?'rgba(0,255,178,.12)':'rgba(255,94,58,.12)';
   const arrow=isBuy?'▲':'▼';
-  return`<span style="font-size:.42rem;padding:1px 4px;background:${col}12;color:${col};border:1px solid ${col}35" title="Volume Delta: ${buyPct}% buy pressure">${arrow}${buyPct}% ${isBuy?'BUY':'SELL'}</span>`;
+  return`<span style="font-size:.5rem;padding:2px 5px;background:${bg};color:${col};border:1px solid ${col}55;font-weight:700" title="Volume Delta: ${buyPct}% buy pressure">${arrow}${buyPct}%${isBuy?' BUY':' SELL'}</span>`;
+}
+
+function getLiqClusterLabel(s){
+  if(!s.vp||!s.price)return'';
+  const oi=oiCache[s.symbol];
+  if(!oi)return'';
+  if(oi.oiDir==='UP'&&Math.abs(s.price-s.vp.vah)/s.price<0.02){
+    return`<span style="font-size:.5rem;padding:2px 5px;color:#FF4081;border:1px solid rgba(255,64,129,.5);background:rgba(255,64,129,.1);font-weight:700" title="Liquidation cluster near VAH">LIQ✦VAH</span>`;
+  }
+  if(oi.oiDir==='UP'&&Math.abs(s.price-s.vp.val)/s.price<0.02){
+    return`<span style="font-size:.5rem;padding:2px 5px;color:#FF9500;border:1px solid rgba(255,149,0,.5);background:rgba(255,149,0,.1);font-weight:700" title="Liquidation cluster near VAL">LIQ✦VAL</span>`;
+  }
+  return'';
 }
 
 // ══════════════════════════════════════════════════════════════════
