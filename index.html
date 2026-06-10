@@ -1615,6 +1615,24 @@ function renderBacktest(){const keys=Object.keys(candleCache).filter(k=>k.endsWi
 
 // 9. CORRELATION
 function calcCorrelation(a,b){if(a.length!==b.length||a.length<2)return 0;const ra=a.slice(1).map((v,i)=>(v-a[i])/a[i]),rb=b.slice(1).map((v,i)=>(v-b[i])/b[i]);const ma=ra.reduce((s,v)=>s+v,0)/ra.length,mb=rb.reduce((s,v)=>s+v,0)/rb.length;let num=0,da=0,db=0;ra.forEach((v,i)=>{const a2=v-ma,b2=rb[i]-mb;num+=a2*b2;da+=a2*a2;db+=b2*b2;});return(da&&db)?num/Math.sqrt(da*db):0;}
+
+// BTC correlation cache — populated after each scan from candleCache
+const btcCorrCache={};
+function updateBTCCorrelations(){
+  try{
+    const btcCandles=candleCache['BTCUSDT-1h'];
+    if(!btcCandles||btcCandles.length<15)return;
+    const btcCloses=btcCandles.map(c=>c.close);
+    Object.keys(candleCache).filter(k=>k.endsWith('-1h')).forEach(key=>{
+      const sym=key.replace('-1h','');
+      if(sym==='BTCUSDT')return;
+      const closes=(candleCache[key]||[]).map(c=>c.close);
+      const minLen=Math.min(btcCloses.length,closes.length);
+      if(minLen<15)return;
+      btcCorrCache[sym]=calcCorrelation(btcCloses.slice(-minLen),closes.slice(-minLen));
+    });
+  }catch(e){}
+}
 function renderCorrTable(){const keys=Object.keys(candleCache).filter(k=>k.endsWith('-1h')).slice(0,10);if(keys.length<2){document.getElementById('corrTable').innerHTML='<span style="font-size:.52rem;color:var(--muted)">Need ≥2 coins.</span>';return;}const syms=keys.map(k=>k.replace('-1h',''));const closes=syms.map(sym=>(candleCache[sym+'-1h']||[]).map(c=>c.close));let html='<table class="corr-table"><tr><th></th>'+syms.map(s=>`<th>${s.replace('USDT','')}</th>`).join('')+'</tr>';syms.forEach((sa,i)=>{html+=`<tr><th>${sa.replace('USDT','')}</th>`;syms.forEach((sb,j)=>{const corr=i===j?1:calcCorrelation(closes[i],closes[j]);const v=corr.toFixed(2);const r=Math.round(Math.abs(corr)*255),g=corr>0?Math.round(corr*180):0,bl=corr<0?Math.round(Math.abs(corr)*220):0;html+=`<td style="background:rgba(${r},${g},${bl},.3);color:var(--text)">${v}</td>`;});html+='</tr>';});html+='</table>';document.getElementById('corrTable').innerHTML=html;}
 
 // TELEGRAM — FIXED
@@ -1948,36 +1966,44 @@ async function triggerAndPoll(){
     if(i+BATCH<pairs.length) await new Promise(r=>setTimeout(r,60));
   }
   const mtfMap=buildMTFMap(newSignals);newSignals.forEach(s=>{s.mtfCount=(mtfMap[s.symbol]?.size||0);});
-  // Merge duplicate signals: same symbol+TF → one row with extra badges
   const mergedSignals=mergeSignals(newSignals);
   const newKeys=new Set(mergedSignals.map(sigKey));const brandNew=mergedSignals.filter(s=>!prevSigKeys.has(sigKey(s)));prevSigKeys=newKeys;allSignals=mergedSignals;
-  // Volume anomaly warning
-  const isAnomaly=detectVolumeAnomaly(newSignals);
-  if(isAnomaly){
-    showToast('⚠ MARKET-WIDE VOL SPIKE — Multiple signals may be lower quality','var(--warn)');
-    document.getElementById('marketStruct').textContent+=' ⚠ VOL ANOMALY';
+  try{
+    const isAnomaly=detectVolumeAnomaly(newSignals);
+    if(isAnomaly){showToast('⚠ MARKET-WIDE VOL SPIKE — Multiple signals may be lower quality','var(--warn)');document.getElementById('marketStruct').textContent+=' ⚠ VOL ANOMALY';}
+    newSignals.filter(s=>(s.heat||0)>=4).forEach(s=>alertViaTelegram(s));
+    pushHistory(newSignals,new Date().toISOString());
+    updateMarketStructureBar(newSignals);
+    renderWatchlist();
+    document.getElementById('stScanned').textContent=pairs.length;
+    document.getElementById('scanTime').textContent='LAST: '+new Date().toLocaleTimeString('en-GB');
+    document.getElementById('stHeat').textContent=newSignals.filter(s=>(s.heat||0)>=4).length;
+    document.getElementById('stMTF').textContent=newSignals.filter(s=>s.mtfCount>=2).length;
+    if(brandNew.length>0)playAlertSound();
+    updateTabBadge(newSignals.length);
+    pickBestSetups(allSignals);
+    updateBTCCorrelations();
+    render();
+    const topSyms=[...new Set(allSignals.slice(0,20).map(s=>s.symbol))];
+    setTimeout(()=>fetchOIAndFunding(topSyms),2000);
+    setTimeout(()=>{
+      try{renderBacktest();}catch(e){}
+      try{renderCorrTable();}catch(e){}
+      try{updateMarketConditionBar();}catch(e){}
+      try{renderWinRate();wrCheckOutcomes();}catch(e){}
+      try{renderPortfolioPanel();}catch(e){}
+      try{if(document.getElementById('heatmapView').classList.contains('active'))renderHeatmap();}catch(e){}
+    },300);
+    if(brandNew.length>0)showToast(`🔔 ${brandNew.length} NEW SIGNAL${brandNew.length>1?'S':''}!`);
+    checkDominance();
+  }catch(e){
+    console.error('Post-scan error:',e);
+    showToast('⚠ Scan error: '+e.message,'var(--vah)');
+  }finally{
+    // ALWAYS reset button — even if something crashes
+    setTimeout(()=>prog.classList.remove('show'),800);
+    btn.disabled=false;icon.className='';icon.textContent='⟳';
   }
-  // Telegram alerts — only heat>=4, with cooldown
-  newSignals.filter(s=>(s.heat||0)>=4).forEach(s=>alertViaTelegram(s));
-  pushHistory(newSignals,new Date().toISOString());updateMarketStructureBar(newSignals);renderBacktest();renderCorrTable();renderWatchlist();
-  document.getElementById('stScanned').textContent=pairs.length;document.getElementById('scanTime').textContent='LAST: '+new Date().toLocaleTimeString('en-GB');document.getElementById('stHeat').textContent=newSignals.filter(s=>(s.heat||0)>=4).length;document.getElementById('stMTF').textContent=newSignals.filter(s=>s.mtfCount>=2).length;
-  if(brandNew.length>0)playAlertSound();updateTabBadge(newSignals.length);
-  pickBestSetups(allSignals);
-  updateBTCCorrelations();
-  render(); // render immediately — OI/funding badges appear when background fetch completes
-  // Fire OI+funding fetch completely in background — never await, never block
-  const topSyms=[...new Set(allSignals.slice(0,20).map(s=>s.symbol))];
-  setTimeout(()=>fetchOIAndFunding(topSyms),2000); // 2s delay — scan UI is already shown
-  setTimeout(()=>{
-    renderBacktest();renderCorrTable();
-    updateMarketConditionBar();
-    renderWinRate();wrCheckOutcomes();
-    renderPortfolioPanel();
-    if(document.getElementById('heatmapView').classList.contains('active'))renderHeatmap();
-  },200);
-  setTimeout(()=>prog.classList.remove('show'),800);btn.disabled=false;icon.className='';icon.textContent='⟳';
-  if(brandNew.length>0)showToast(`🔔 ${brandNew.length} NEW SIGNAL${brandNew.length>1?'S':''}!`);
-  checkDominance(); // update BTC/USDT dominance after scan
 }
 
 // RENDER TABLE
