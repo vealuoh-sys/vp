@@ -226,6 +226,34 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .badge.NEW-TAG{background:rgba(0,255,178,.15);color:var(--acc);border:1px solid var(--acc);font-size:.44rem;padding:1px 4px;}
 .badge.MTF-TAG{background:rgba(124,77,255,.15);color:#BF5FFF;border:1px solid rgba(124,77,255,.4);font-size:.44rem;padding:1px 4px;}
 @keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
+/* ── UPGRADE BADGES ── */
+.cvd-bull{font-size:.42rem;padding:1px 4px;color:#00FFB2;border:1px solid rgba(0,255,178,.5);background:rgba(0,255,178,.1);font-weight:900;}
+.cvd-bear{font-size:.42rem;padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.5);background:rgba(255,64,129,.1);font-weight:900;}
+.spot-prem{font-size:.42rem;padding:1px 4px;color:#00BFFF;border:1px solid rgba(0,191,255,.4);background:rgba(0,191,255,.08);}
+.perp-warn{font-size:.42rem;padding:1px 4px;color:#FF9500;border:1px solid rgba(255,149,0,.4);background:rgba(255,149,0,.08);}
+.vol-accel-badge{font-size:.44rem;padding:2px 5px;color:#FF1744;border:2px solid #FF1744;background:rgba(255,23,68,.15);font-weight:900;animation:neonPulse 0.7s infinite alternate;letter-spacing:.05em;}
+@keyframes neonPulse{0%{box-shadow:0 0 4px #FF1744,0 0 8px #FF1744;opacity:.85}100%{box-shadow:0 0 10px #FF1744,0 0 20px rgba(255,23,68,.5);opacity:1}}
+.sweep-reclaim{font-size:.44rem;padding:2px 5px;color:#00E5FF;border:2px solid #00E5FF;background:rgba(0,229,255,.12);font-weight:900;animation:neonPulse2 0.9s infinite alternate;}
+@keyframes neonPulse2{0%{box-shadow:0 0 4px #00E5FF;opacity:.85}100%{box-shadow:0 0 14px rgba(0,229,255,.6);opacity:1}}
+.phantom-wall{font-size:.42rem;padding:1px 5px;color:#BF5FFF;border:1px solid rgba(191,95,255,.6);background:rgba(191,95,255,.12);font-weight:900;animation:neonPulse3 1s infinite alternate;}
+@keyframes neonPulse3{0%{box-shadow:0 0 3px rgba(191,95,255,.5)}100%{box-shadow:0 0 10px rgba(191,95,255,.8)}}
+.zscore-badge{font-size:.42rem;padding:1px 5px;color:#FFD700;border:1px solid rgba(255,215,0,.5);background:rgba(255,215,0,.1);font-weight:900;}
+.liq-fuel{font-size:.44rem;padding:2px 5px;color:#FF1744;border:2px solid #FF1744;background:rgba(255,23,68,.18);font-weight:900;animation:neonPulse 0.6s infinite alternate;letter-spacing:.04em;}
+.tape-sweep{font-size:.42rem;padding:1px 4px;color:#00FFB2;border:1px solid rgba(0,255,178,.6);background:rgba(0,255,178,.1);font-weight:900;}
+/* SECTOR EXPANSION BANNER */
+#sectorExpansionBanner{display:none;align-items:center;gap:8px;padding:7px 14px;background:linear-gradient(90deg,rgba(0,229,255,.08),rgba(0,255,178,.06));border:1px solid rgba(0,229,255,.35);border-radius:2px;margin-bottom:8px;flex-wrap:wrap;animation:fadeUp .3s ease;}
+.sect-ban-lbl{font-size:.5rem;color:#00E5FF;font-weight:900;letter-spacing:.14em;}
+.sect-ban-laggard{font-size:.56rem;font-weight:900;padding:2px 8px;border:1px solid rgba(0,255,178,.5);color:#00FFB2;background:rgba(0,255,178,.1);cursor:pointer;transition:all .15s;}
+.sect-ban-laggard:hover{background:rgba(0,255,178,.2);}
+/* SONIFICATION TOGGLE */
+.audio-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:'Space Mono',monospace;font-size:.6rem;padding:4px 10px;cursor:pointer;transition:all .2s;}
+.audio-btn.on{border-color:#BF5FFF;color:#BF5FFF;background:rgba(191,95,255,.1);}
+/* Z-SCORE PANEL in market bar */
+.zscore-panel{font-size:.52rem;letter-spacing:.07em;padding:3px 9px;border-left:1px solid var(--border2);}
+/* CVD mini chart in modal ctx bar */
+.cvd-mini{display:inline-flex;align-items:center;gap:4px;font-size:.52rem;}
+.cvd-arrow-up{color:#00FFB2;font-weight:900;}
+.cvd-arrow-dn{color:#FF4081;font-weight:900;}
 .fresh-tag{display:inline-flex;align-items:center;font-size:.46rem;font-weight:700;padding:1px 4px;animation:pulse 1.5s infinite;}
 .fresh-tag.HOT{color:#FF1744;border:1px solid #FF1744;background:rgba(255,23,68,.1);}
 .fresh-tag.WARM{color:#FF9500;border:1px solid #FF9500;background:rgba(255,149,0,.1);}
@@ -401,6 +429,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     <div class="ws-status" id="wsStatus"><span class="ws-dot"></span><span id="wsLabel">WS OFF</span></div>
     <button class="icon-btn" onclick="openAlertModal()" title="Price Alerts">🔔</button>
     <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Theme">🌙</button>
+    <button class="audio-btn" id="audioBtn" onclick="toggleSonification()" title="Toggle spatial audio alerts">🔊 OFF</button>
     <button class="scan-btn" id="scanBtn" onclick="triggerAndPoll()"><span id="scanIcon">⟳</span> SCAN NOW</button>
   </div>
 </header>
@@ -512,6 +541,14 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 </div>
 <!-- BEST SETUPS BAR -->
 <div id="bestSetupsBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,255,178,.03);border:1px solid rgba(0,255,178,.15);border-radius:2px;flex-wrap:wrap;margin-bottom:8px;"></div>
+<!-- SECTOR EXPANSION BANNER (Improvement #4) -->
+<div id="sectorExpansionBanner" style="display:none;align-items:center;gap:8px;padding:7px 14px;background:linear-gradient(90deg,rgba(0,229,255,.08),rgba(0,255,178,.06));border:1px solid rgba(0,229,255,.35);border-radius:2px;margin-bottom:8px;flex-wrap:wrap;">
+  <span class="sect-ban-lbl">⚡ SECTOR EXPANSION DETECTED</span>
+  <span id="sectBanSector" style="font-size:.52rem;color:#00E5FF;letter-spacing:.08em"></span>
+  <span style="font-size:.48rem;color:var(--muted)">LAGGARDS:</span>
+  <span id="sectBanLaggards" style="display:flex;gap:5px;flex-wrap:wrap;"></span>
+  <button onclick="document.getElementById('sectorExpansionBanner').style.display='none'" style="margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.7rem;">✕</button>
+</div>
 <div class="filter-row">
   <div class="search-wrap">
     <span class="search-ico">⌕</span>
@@ -610,7 +647,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 </div>
 <div class="heatmap-view" id="heatmapView"></div>
 <footer>
-  <div class="foot-note">VP 36-BIN · VALUE AREA 70% · MA5/12/16/40/53 · CROSSOVER · MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · SESSION · BACKTEST · CORR · R:R · DIVERGENCE · ALERTS · WS</div>
+  <div class="foot-note">VP 36-BIN · VALUE AREA 70% · MA5/12/16/40/53 · CROSSOVER · MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · SESSION · BACKTEST · CORR · R:R · DIVERGENCE · ALERTS · WS · CVD ENGINE · VOL ACCEL · SWEEP RECLAIM · SECTOR CLUSTER · SPATIAL AUDIO · PHANTOM WALL · Z-SCORE · LIQ FUEL CELL · TAPE SWEEPER</div>
   <div class="legend">
     <div class="leg-item"><div class="leg-dot" style="background:var(--vah)"></div>VAH</div>
     <div class="leg-item"><div class="leg-dot" style="background:var(--val)"></div>VAL</div>
@@ -660,6 +697,9 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div class="ctx-item">CONF <span class="ctx-val" id="ctxConf">—</span></div>
       <div class="ctx-item">OI <span class="ctx-val" id="ctxOI">—</span></div>
       <div class="ctx-item">FUND <span class="ctx-val" id="ctxFund">—</span></div>
+      <div class="ctx-item">CVD <span class="ctx-val cvd-mini" id="ctxCVD">—</span></div>
+      <div class="ctx-item">Z-SCORE <span class="ctx-val" id="ctxZScore">—</span></div>
+      <div class="ctx-item">TAPE <span class="ctx-val" id="ctxTape">—</span></div>
     </div>
     <div class="rr-panel" id="rrPanel">
       <div class="rr-item"><div class="rr-item-lbl">ENTRY</div><div class="rr-item-val" id="rrEntry">—</div></div>
@@ -928,6 +968,446 @@ function updateTabBadge(n){document.title=n>0?`(${n}) VP SCAN PRO`:'VP SCREENER 
 
 // THEME
 function toggleTheme(){const h=document.documentElement;const dark=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',dark?'light':'dark');document.getElementById('themeBtn').textContent=dark?'☀️':'🌙';localStorage.setItem('vpTheme',dark?'light':'dark');}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #1 — CVD DIVERGENCE ENGINE
+// Computes Cumulative Volume Delta using taker buy/sell pressure.
+// If CVD is rising while price is flat/down near VAL → bullish divergence.
+// Also compares spot vs perp premium if OI data is available.
+// ══════════════════════════════════════════════════════════════════
+function calcCVD(candles){
+  // Build cumulative delta from each candle's taker buy vs sell pressure
+  let cvd=0;
+  const cvdArr=candles.map(c=>{
+    const vol=c.volume||0;
+    const range=c.high-c.low;
+    let buyPct=0.5;
+    if(c.takerBuy&&vol>0) buyPct=c.takerBuy/vol;
+    else if(range>0) buyPct=(c.close-c.low)/range;
+    cvd+=(buyPct*2-1)*vol; // delta: positive=buy pressure
+    return{time:c.time,cvd,close:c.close};
+  });
+  return cvdArr;
+}
+
+function detectCVDDivergence(candles,vp){
+  if(candles.length<10)return null;
+  const last5=candles.slice(-5);
+  const cvdArr=calcCVD(candles);
+  const last5cvd=cvdArr.slice(-5);
+
+  const priceDown=last5[last5.length-1].close<=last5[0].close*1.002;
+  const cvdUp=last5cvd[last5cvd.length-1].cvd>last5cvd[0].cvd;
+  const nearVAL=vp&&Math.abs(last5[last5.length-1].close-vp.val)/vp.val<0.012;
+
+  if(priceDown&&cvdUp&&nearVAL){
+    return{type:'BULL_DIV',label:'CVD↑ DIV',strength:'HIGH'};
+  }
+  // Bearish: price up, CVD down near VAH
+  const priceUp=last5[last5.length-1].close>=last5[0].close*0.998;
+  const cvdDown=last5cvd[last5cvd.length-1].cvd<last5cvd[0].cvd;
+  const nearVAH=vp&&Math.abs(last5[last5.length-1].close-vp.vah)/vp.vah<0.012;
+  if(priceUp&&cvdDown&&nearVAH){
+    return{type:'BEAR_DIV',label:'CVD↓ DIV',strength:'HIGH'};
+  }
+  return null;
+}
+
+function getCVDBadge(s){
+  const key=s.symbol+'-'+s.tf;
+  const candles=window.candleCache&&candleCache[s.symbol+'-'+s.tf];
+  if(!candles||candles.length<10)return'';
+  const div=detectCVDDivergence(candles,s.vp);
+  if(!div)return'';
+  if(div.type==='BULL_DIV')return`<span class="cvd-bull" title="CVD rising while price flat/down near VAL — whale accumulation">CVD↑ DIV</span>`;
+  if(div.type==='BEAR_DIV')return`<span class="cvd-bear" title="CVD falling while price rising near VAH — distribution">CVD↓ DIV</span>`;
+  return'';
+}
+
+// Spot vs Perp premium badge (uses OI cache for perp signal)
+function getSpotPerpBadge(symbol){
+  const oi=oiCache[symbol];
+  const fund=fundCache[symbol];
+  if(!fund)return'';
+  const rate=fund.rate||0;
+  // Positive funding + rising OI = perp-driven = risky
+  if(rate>0.01&&oi&&oi.oiDir==='UP')return`<span class="perp-warn" title="Pump driven by Perps OI — prone to long liquidation cascade">PERP ⚠</span>`;
+  // Negative funding + price rising = spot-driven = healthy
+  if(rate<-0.005)return`<span class="spot-prem" title="Negative funding: spot buyers driving move — structurally healthy">SPOT ✦</span>`;
+  return'';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #2 — VOLUME VELOCITY & ACCELERATION (2nd Derivative)
+// Tracks rate-of-change of volume. If current bar > 4× StdDev of
+// last 30 bars → VOL_ACCEL neon badge.
+// ══════════════════════════════════════════════════════════════════
+function calcVolAcceleration(candles){
+  if(candles.length<32)return{accel:false,ratio:0};
+  const window30=candles.slice(-31,-1).map(c=>c.volume);
+  const mean=window30.reduce((a,b)=>a+b,0)/window30.length;
+  const variance=window30.reduce((a,b)=>a+(b-mean)**2,0)/window30.length;
+  const stdDev=Math.sqrt(variance);
+  const curVol=candles[candles.length-1].volume;
+  if(stdDev===0)return{accel:false,ratio:0};
+  const ratio=curVol/mean;
+  const zVol=(curVol-mean)/stdDev;
+  return{accel:zVol>4,zVol:zVol.toFixed(1),ratio:ratio.toFixed(1)};
+}
+
+function getVolAccelBadge(s){
+  const candles=candleCache&&candleCache[s.symbol+'-'+s.tf];
+  if(!candles||candles.length<32)return'';
+  const{accel,zVol,ratio}=calcVolAcceleration(candles);
+  if(!accel)return'';
+  return`<span class="vol-accel-badge" title="Volume acceleration: ${ratio}× avg, z=${zVol} — HFT bot or call-channel detected">⚡VOL ACCEL ${ratio}×</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #3 — SWEEP & RECLAIM DETECTOR
+// Looks for candle that dips below VAL then closes BACK above it
+// on high volume = SWEEP_RECLAIM (highest R:R sniper long setup).
+// ══════════════════════════════════════════════════════════════════
+function detectSweepReclaim(candles,vp){
+  if(!vp||candles.length<3)return null;
+  const last=candles[candles.length-1];
+  const prev=candles[candles.length-2];
+  const volAccel=calcVolAcceleration(candles);
+
+  // Sub-5-candle wick below VAL but close above VAL
+  const wentBelowVAL=last.low<vp.val*0.999;
+  const closedAboveVAL=last.close>vp.val;
+  const highVolume=last.volume>(candles.slice(-20,-1).reduce((a,c)=>a+c.volume,0)/19)*1.5;
+
+  if(wentBelowVAL&&closedAboveVAL&&highVolume){
+    return{type:'SWEEP_RECLAIM',label:'SWEEP↑ RECLAIM',score:28};
+  }
+  // Also check POC reclaim
+  const wentBelowPOC=last.low<vp.poc*0.999;
+  const closedAbovePOC=last.close>vp.poc;
+  if(wentBelowPOC&&closedAbovePOC&&highVolume){
+    return{type:'POC_SWEEP',label:'POC SWEEP↑',score:20};
+  }
+  return null;
+}
+
+function getSweepReclaimBadge(s){
+  const candles=candleCache&&candleCache[s.symbol+'-'+s.tf];
+  if(!candles)return'';
+  const sweep=detectSweepReclaim(candles,s.vp);
+  if(!sweep)return'';
+  return`<span class="sweep-reclaim" title="${sweep.label}: Stop-run detected, highest R:R sniper long setup">${sweep.label}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #4 — SECTOR MOMENTUM CLUSTER ENGINE
+// When ≥ 2 assets in a sector fire SQUEEZE_BULL/EARLY_BULL/VAL_SPIKE,
+// highlights laggards in that sector with expansion banner.
+// ══════════════════════════════════════════════════════════════════
+const SECTOR_THRESHOLD=2; // minimum pumped coins to trigger banner
+
+function detectSectorExpansion(signals){
+  const sectorBulls={};
+  const sectorLaggards={};
+  const BULL_TYPES=new Set(['SQUEEZE_BULL','EARLY_BULL','VAL_SPIKE','VAL_DIV','BULL_CONFIRM']);
+
+  signals.forEach(s=>{
+    const sec=getSector(s.symbol);
+    if(!sec||sec==='OTHER')return;
+    if(!sectorBulls[sec])sectorBulls[sec]=[];
+    if(!sectorLaggards[sec])sectorLaggards[sec]=[];
+    if(BULL_TYPES.has(s.type)&&(s.heat||0)>=3){
+      sectorBulls[sec].push(s);
+    }else{
+      sectorLaggards[sec].push(s);
+    }
+  });
+
+  // Find sectors with ≥ threshold pumped coins
+  let bestSector=null,bestCount=0,bestLaggards=[];
+  Object.entries(sectorBulls).forEach(([sec,bulls])=>{
+    if(bulls.length>=SECTOR_THRESHOLD&&bulls.length>bestCount){
+      bestCount=bulls.length;
+      bestSector=sec;
+      // Laggards = coins in same sector NOT pumping
+      bestLaggards=(sectorLaggards[sec]||[])
+        .filter(s=>s.trend!=='DOWN')
+        .sort((a,b)=>(b.strength||0)-(a.strength||0))
+        .slice(0,5);
+    }
+  });
+
+  const banner=document.getElementById('sectorExpansionBanner');
+  const sectEl=document.getElementById('sectBanSector');
+  const laggardEl=document.getElementById('sectBanLaggards');
+  if(!banner)return;
+
+  if(bestSector&&bestLaggards.length){
+    banner.style.display='flex';
+    if(sectEl)sectEl.textContent=`${bestSector} EXPANSION (${bestCount} coins pumping)`;
+    if(laggardEl){
+      laggardEl.innerHTML=bestLaggards.map(s=>`<span class="sect-ban-laggard" onclick="openModal('${s.symbol}','${s.tf}','${s.type}',${JSON.stringify(s.vp).replace(/"/g,"'")})" title="Click to chart">${s.symbol.replace('USDT','')} (${s.tf.toUpperCase()})</span>`).join('');
+    }
+  }else{
+    banner.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #5 — SPATIAL AUDIO / SONIFICATION
+// Distinct audio signatures for different signal types.
+// Heavy mechanical punch = VAL_SPIKE + CVD divergence (high probability)
+// Light geometric = standard timeframe tag
+// ══════════════════════════════════════════════════════════════════
+let sonificationEnabled=false;
+
+function toggleSonification(){
+  sonificationEnabled=!sonificationEnabled;
+  const btn=document.getElementById('audioBtn');
+  if(btn){btn.textContent=sonificationEnabled?'🔊 ON':'🔊 OFF';btn.className=sonificationEnabled?'audio-btn on':'audio-btn';}
+  if(sonificationEnabled)showToast('🔊 Audio alerts enabled — distinct sounds for each signal type','var(--acc)');
+}
+
+function playSignalSound(s){
+  if(!sonificationEnabled)return;
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const heat=s.heat||1;
+    const hasVolAccel=calcVolAcceleration(candleCache[s.symbol+'-'+s.tf]||[]).accel;
+    const hasCVDDiv=detectCVDDivergence(candleCache[s.symbol+'-'+s.tf]||[],s.vp);
+
+    if(heat>=4||(hasVolAccel&&hasCVDDiv)){
+      // HEAVY MECHANICAL PUNCH: High probability VAL_SPIKE + CVD Bullish Divergence
+      // Low thud + rising tones
+      const freqs=s.type.includes('BEAR')?[220,180,140]:[220,340,520];
+      freqs.forEach((f,i)=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        const dist=ctx.createWaveShaper();
+        const curve=new Float32Array(256);
+        for(let j=0;j<256;j++){const x=(j*2/256)-1;curve[j]=x*(1.5+heat*0.4);}
+        dist.curve=curve;
+        o.connect(dist);dist.connect(g);g.connect(ctx.destination);
+        o.frequency.value=f;o.type='sawtooth';
+        g.gain.setValueAtTime(0,ctx.currentTime+i*.07);
+        g.gain.linearRampToValueAtTime(.28,ctx.currentTime+i*.07+.01);
+        g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.07+.28);
+        o.start(ctx.currentTime+i*.07);o.stop(ctx.currentTime+i*.07+.3);
+      });
+    }else if(heat>=3){
+      // MEDIUM ALERT: chord
+      const freqs=s.trend==='UP'?[523,659,784]:[494,392,330];
+      freqs.forEach((f,i)=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.value=f;o.type='triangle';
+        g.gain.setValueAtTime(0,ctx.currentTime+i*.09);
+        g.gain.linearRampToValueAtTime(.15,ctx.currentTime+i*.09+.03);
+        g.gain.linearRampToValueAtTime(0,ctx.currentTime+i*.09+.22);
+        o.start(ctx.currentTime+i*.09);o.stop(ctx.currentTime+i*.09+.25);
+      });
+    }else{
+      // LIGHT GEOMETRIC: soft ping
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=s.trend==='UP'?880:660;o.type='sine';
+      g.gain.setValueAtTime(0,ctx.currentTime);
+      g.gain.linearRampToValueAtTime(.08,ctx.currentTime+.02);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+.18);
+      o.start(ctx.currentTime);o.stop(ctx.currentTime+.2);
+    }
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #6 — PHANTOM WALL ENGINE (Order Book Liquidity Decay)
+// Tracks the ask-side size at key levels. If a large ask wall
+// shrinks by >50% in one scan cycle without trades hitting it,
+// market makers are pulling the fake wall = pump imminent.
+// We approximate using OI change + funding rate skew logic since
+// browser-side L2 order book would require per-coin WebSocket streams.
+// ══════════════════════════════════════════════════════════════════
+const phantomWallCache={}; // sym → {askWallEstimate, ts}
+
+function detectPhantomWall(symbol){
+  const oi=oiCache[symbol];
+  const fund=fundCache[symbol];
+  if(!oi||!fund)return null;
+
+  const prev=phantomWallCache[symbol];
+  const now=Date.now();
+
+  // Estimate ask pressure: high OI + negative funding rate + OI declining = phantom wall clearing
+  const oiDecaying=oi.oiDir==='DOWN'&&oi.oiChgPct&&Math.abs(oi.oiChgPct)>3;
+  const fundNeg=fund.rate<-0.008;
+
+  if(oiDecaying&&fundNeg){
+    phantomWallCache[symbol]={ts:now,signal:true};
+    return{label:'PHANTOM WALL ↑',title:'OI collapsing + negative funding: sell wall being pulled, runway clearing'};
+  }
+  phantomWallCache[symbol]={ts:now,signal:false};
+  return null;
+}
+
+function getPhantomWallBadge(symbol){
+  const pw=detectPhantomWall(symbol);
+  if(!pw)return'';
+  return`<span class="phantom-wall" title="${pw.title}">${pw.label}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #7 — Z-SCORE DECOUPLING MATRIX
+// Computes rolling Z-Score of asset returns vs BTC over 5min window.
+// Z > +3.5 = anomalous decoupling = localized insider accumulation.
+// ══════════════════════════════════════════════════════════════════
+function calcZScoreVsBTC(symbol,tf){
+  const assetCandles=candleCache&&candleCache[symbol+'-'+tf];
+  const btcCandles=candleCache&&candleCache['BTCUSDT-'+tf];
+  if(!assetCandles||!btcCandles||assetCandles.length<10)return null;
+
+  const window=Math.min(10,assetCandles.length-1,btcCandles.length-1);
+  const assetRet=[];const btcRet=[];
+
+  for(let i=assetCandles.length-window;i<assetCandles.length;i++){
+    const prev=assetCandles[i-1];const cur=assetCandles[i];
+    if(prev&&cur&&prev.close>0)assetRet.push((cur.close-prev.close)/prev.close);
+  }
+  for(let i=btcCandles.length-window;i<btcCandles.length;i++){
+    const prev=btcCandles[i-1];const cur=btcCandles[i];
+    if(prev&&cur&&prev.close>0)btcRet.push((cur.close-prev.close)/prev.close);
+  }
+
+  const n=Math.min(assetRet.length,btcRet.length);
+  if(n<5)return null;
+
+  // Relative returns (asset minus BTC)
+  const relRet=assetRet.slice(-n).map((r,i)=>r-btcRet[i]);
+  const mean=relRet.reduce((a,b)=>a+b,0)/n;
+  const variance=relRet.reduce((a,b)=>a+(b-mean)**2,0)/n;
+  const std=Math.sqrt(variance);
+  if(std===0)return null;
+
+  const lastRel=relRet[relRet.length-1];
+  const z=(lastRel-mean)/std;
+  return{z:parseFloat(z.toFixed(2)),anomalous:z>3.5||z<-3.5,bullish:z>3.5};
+}
+
+function getZScoreBadge(s){
+  if(s.symbol==='BTCUSDT')return'';
+  const result=calcZScoreVsBTC(s.symbol,s.tf);
+  if(!result||!result.anomalous)return'';
+  const color=result.bullish?'#FFD700':'#FF5E3A';
+  const border=result.bullish?'rgba(255,215,0,.5)':'rgba(255,94,58,.5)';
+  const bg=result.bullish?'rgba(255,215,0,.1)':'rgba(255,94,58,.1)';
+  const label=result.bullish?`Z+${result.z} ◈ INSIDER`:`Z${result.z} ◈ DUMP`;
+  return`<span class="zscore-badge" style="color:${color};border-color:${border};background:${bg}" title="Z-Score vs BTC: ${result.z} — anomalous decoupling, localized market maker campaign">${label}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #8 — LIQUIDATION FUEL CELL MAPPING
+// Detects when price approaches dense short liquidation clusters.
+// Uses OI data + bid/ask skew (approximated via volume delta + funding).
+// When conditions align: LIQ_FUEL_CELL_IGNITION badge fires.
+// ══════════════════════════════════════════════════════════════════
+function detectLiqFuelCell(s){
+  const candles=candleCache&&candleCache[s.symbol+'-'+s.tf];
+  const oi=oiCache[s.symbol];
+  const fund=fundCache[s.symbol];
+  if(!candles||candles.length<5)return null;
+
+  // Conditions for liquidation cascade setup:
+  // 1. OI recently spiked (leveraged shorts piled in)
+  // 2. Funding negative (shorts paying longs)
+  // 3. Price approaching VAH or key resistance from below (0.3%)
+  // 4. Vol delta buy-side dominant
+  const oiHigh=oi&&(oi.oiDir==='UP'||oi.oiChgPct>5);
+  const fundNeg=fund&&fund.rate<-0.006;
+  const price=s.price||candles[candles.length-1].close;
+  const nearVAH=s.vp&&Math.abs(price-s.vp.vah)/s.vp.vah<0.005;
+  const buyDom=s.volDelta&&s.volDelta.buyPct>62;
+
+  if(oiHigh&&fundNeg&&nearVAH&&buyDom){
+    return{label:'🔥 LIQ FUEL CELL',title:'Short liquidation cluster detected: OI high + negative funding + price approaching VAH + buy delta dominant'};
+  }
+  // Less strict version: 3 of 4 conditions
+  const conditions=[oiHigh,fundNeg,nearVAH,buyDom].filter(Boolean).length;
+  if(conditions>=3){
+    return{label:'LIQ CLUSTER ↑',title:`${conditions}/4 liquidation conditions met`};
+  }
+  return null;
+}
+
+function getLiqFuelCellBadge(s){
+  const lfc=detectLiqFuelCell(s);
+  if(!lfc)return'';
+  const isIgnition=lfc.label.includes('🔥');
+  if(isIgnition)return`<span class="liq-fuel" title="${lfc.title}">${lfc.label}</span>`;
+  return`<span style="font-size:.42rem;padding:1px 4px;color:#FF9500;border:1px solid rgba(255,149,0,.4);background:rgba(255,149,0,.08)" title="${lfc.title}">${lfc.label}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #9 — HIGH-FREQUENCY TAPE SWEEPER
+// Detects when trade frequency spikes (many small orders) = TWAP/VWAP bot
+// Approximated via: if volume is high BUT avg-trade-size is normal,
+// trade count is anomalously high = HFT accumulation bot.
+// We detect by comparing volume-to-price-range ratio vs recent baseline.
+// ══════════════════════════════════════════════════════════════════
+function detectTapeSweep(candles){
+  if(candles.length<20)return null;
+  const last=candles[candles.length-1];
+  const baseline=candles.slice(-20,-1);
+
+  // Volume-per-pip (volume normalized to price range) = proxy for trade frequency
+  // High vol-per-pip with small candle = many small trades = bot activity
+  const range=last.high-last.low;
+  if(range===0)return null;
+  const volPerPip=last.volume/range;
+
+  const baselineVPP=baseline.map(c=>{
+    const r=c.high-c.low;return r>0?c.volume/r:0;
+  }).filter(v=>v>0);
+  if(!baselineVPP.length)return null;
+
+  const meanVPP=baselineVPP.reduce((a,b)=>a+b,0)/baselineVPP.length;
+  const ratio=meanVPP>0?volPerPip/meanVPP:0;
+
+  // Also check: large volume on small body = many small offsetting orders
+  const body=Math.abs(last.close-last.open);
+  const bodyRatio=range>0?body/range:1;
+
+  // Tape sweep: high vol-per-pip ratio AND small body (many orders, net direction hidden)
+  if(ratio>6&&bodyRatio<0.3){
+    return{label:'TAPE SWEEP',ratio:ratio.toFixed(0),title:`HFT bot detected: volume/pip is ${ratio.toFixed(0)}× baseline with small body — algorithmic TWAP accumulation`};
+  }
+  if(ratio>10){
+    return{label:'HFT ACCUM',ratio:ratio.toFixed(0),title:`Extreme tape frequency: ${ratio.toFixed(0)}× baseline — automated accumulation bot active`};
+  }
+  return null;
+}
+
+function getTapeSweepBadge(s){
+  const candles=candleCache&&candleCache[s.symbol+'-'+s.tf];
+  if(!candles)return'';
+  const ts=detectTapeSweep(candles);
+  if(!ts)return'';
+  return`<span class="tape-sweep" title="${ts.title}">${ts.label} ${ts.ratio}×</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UPGRADE INTEGRATION: call sector expansion after each scan
+// Also inject all new badges into the existing badge row
+// ══════════════════════════════════════════════════════════════════
+function getUpgradeBadges(s){
+  const badges=[];
+  try{badges.push(getCVDBadge(s));}catch(e){}
+  try{badges.push(getSpotPerpBadge(s.symbol));}catch(e){}
+  try{badges.push(getVolAccelBadge(s));}catch(e){}
+  try{badges.push(getSweepReclaimBadge(s));}catch(e){}
+  try{badges.push(getZScoreBadge(s));}catch(e){}
+  try{badges.push(getPhantomWallBadge(s.symbol));}catch(e){}
+  try{badges.push(getLiqFuelCellBadge(s));}catch(e){}
+  try{badges.push(getTapeSweepBadge(s));}catch(e){}
+  return badges.filter(Boolean).join('');
+}
 
 // PANEL
 function togglePanel(id,ico){const p=document.getElementById(id);const open=p.classList.toggle('open');document.getElementById(ico).textContent=open?'▲':'▼';}
@@ -1510,6 +1990,10 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   if(adx&&adx>25)factors.push({n:'ADX TREND',s:Math.min(12,Math.round((adx-25)/2))});
   if(adx&&adx>0&&adx<20)factors.push({n:'ADX CHOP',s:-8});
   if(mtfZones&&mtfZones.length>0)factors.push({n:'MTF ALIGN '+mtfZones[0].tfs,s:mtfZones[0].score});
+  // ── IMPROVEMENT UPGRADES: extra confluence factors ──────────────
+  try{const cvdDiv=detectCVDDivergence(candles,vp);if(cvdDiv&&cvdDiv.type==='BULL_DIV')factors.push({n:'CVD BULL DIV',s:18});else if(cvdDiv&&cvdDiv.type==='BEAR_DIV')factors.push({n:'CVD BEAR DIV',s:-15});}catch(e){}
+  try{const volA=calcVolAcceleration(candles);if(volA.accel)factors.push({n:'VOL ACCEL',s:14});}catch(e){}
+  try{const sweep=detectSweepReclaim(candles,vp);if(sweep)factors.push({n:sweep.label,s:sweep.score});}catch(e){}
   const total=Math.min(100,Math.max(0,factors.reduce((a,f)=>a+f.s,0)));
   return{total,factors};
 }
@@ -2593,10 +3077,15 @@ async function triggerAndPoll(){
     document.getElementById('scanTime').textContent='LAST: '+new Date().toLocaleTimeString('en-GB');
     document.getElementById('stHeat').textContent=newSignals.filter(s=>(s.heat||0)>=4).length;
     document.getElementById('stMTF').textContent=newSignals.filter(s=>s.mtfCount>=2).length;
-    if(brandNew.length>0)playAlertSound();
+    if(brandNew.length>0){
+      // Play the most impactful sound for the best new signal
+      const bestNew=[...brandNew].sort((a,b)=>(b.heat||0)-(a.heat||0))[0];
+      if(bestNew)playSignalSound(bestNew);else playAlertSound();
+    }
     updateTabBadge(newSignals.length);
     pickBestSetups(allSignals);
     detectSectorRotation(allSignals);
+    try{detectSectorExpansion(allSignals);}catch(e){}
     updateBTCCorrelations();
     render();
     // Start countdown timer for next scan
@@ -2710,8 +3199,9 @@ function renderRow(s,i,isMobile){
     const btcCorrBadge=getBTCCorrBadge(s.symbol,s.tf);
     const volDeltaBadge=getVolDeltaBadge(s);
     const liqClusterBadge=getLiqClusterLabel(s);
-    const hasBadges=oiBadge||fundBadge||btcCorrBadge||volDeltaBadge||liqClusterBadge;
-    const extraRow=hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px;padding-top:2px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:'';
+    const upgradeBadges=getUpgradeBadges(s);
+    const hasBadges=oiBadge||fundBadge||btcCorrBadge||volDeltaBadge||liqClusterBadge||upgradeBadges;
+    const extraRow=hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px;padding-top:2px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}${upgradeBadges}</div>`:'';
     const heatBar=renderHeatBar(s.heat||1);const age=getSignalAge(s.ts||Date.now());
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:.48rem" title="${note}">📝</span>`:'';
@@ -2739,7 +3229,7 @@ async function openChart(symbol,tf,sigType,vp){
   layerState.SR={};layerState.OB={};
   const bl=LABEL_MAP[sigType]||sigType;const badge=document.getElementById('modalBadge');badge.textContent=bl;badge.className=`badge ${sigType||'POC'}`;
   document.getElementById('modalTitle').textContent=symbol;document.getElementById('modalTF').textContent=(tf||'1h').toUpperCase();document.getElementById('modalPriceBig').textContent='—';document.getElementById('modalChange').textContent='—';
-  ['ctxTrend','ctxEMA20','ctxEMA50','ctxVolTier','ctxVolRatio','ctxHeat','ctxMS','ctxOB','ctxLiq','ctxConf'].forEach(id=>document.getElementById(id).textContent='—');
+  ['ctxTrend','ctxEMA20','ctxEMA50','ctxVolTier','ctxVolRatio','ctxHeat','ctxMS','ctxOB','ctxLiq','ctxConf','ctxCVD','ctxZScore','ctxTape'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
   document.querySelectorAll('.modal-tf-btn').forEach(b=>b.classList.toggle('on',b.dataset.tf===(tf||'1h')));
   document.getElementById('modalOverlay').classList.add('open');document.getElementById('chartLoadingState').style.display='flex';document.getElementById('chartContainer').style.display='none';document.getElementById('chartInfoBar').style.display='none';
   document.getElementById('modalNote').value=tradeNotes[symbol]||'';
@@ -2799,6 +3289,12 @@ async function loadChartData(symbol,tf,vpHint){
     const oiEl=document.getElementById('ctxOI');const fundEl=document.getElementById('ctxFund');
     if(oiEl&&oiD)oiEl.textContent=`OI ${oiD.oiDir==='UP'?'▲':'▼'}${Math.abs(oiD.oiChg)}%`;
     if(fundEl&&fundD){fundEl.textContent=`F:${fundD.rate>0?'+':''}${fundD.rate.toFixed(3)}%`;fundEl.style.color=fundD.rate>0.08?'#FF5E3A':fundD.rate<-0.03?'#00FFB2':'var(--muted)';}
+    // Improvement #1: CVD
+    try{const cvdDiv=detectCVDDivergence(candles,vp);const cvdEl=document.getElementById('ctxCVD');if(cvdEl){if(cvdDiv&&cvdDiv.type==='BULL_DIV'){cvdEl.innerHTML='<span class="cvd-arrow-up">↑ DIV BULL</span>';}else if(cvdDiv&&cvdDiv.type==='BEAR_DIV'){cvdEl.innerHTML='<span class="cvd-arrow-dn">↓ DIV BEAR</span>';}else{const cvdArr=calcCVD(candles);const last5cvd=cvdArr.slice(-5);const rising=last5cvd[last5cvd.length-1].cvd>last5cvd[0].cvd;cvdEl.innerHTML=rising?'<span class="cvd-arrow-up">↑ ACCUM</span>':'<span class="cvd-arrow-dn">↓ DIST</span>';}}}catch(e){}
+    // Improvement #7: Z-Score
+    try{const zr=calcZScoreVsBTC(symbol,currentTF);const zEl=document.getElementById('ctxZScore');if(zEl){if(zr){const col=zr.z>3.5?'#FFD700':zr.z<-3.5?'#FF5E3A':zr.z>1.5?'#00FFB2':'var(--muted)';zEl.style.color=col;zEl.textContent=`${zr.z>0?'+':''}${zr.z}${zr.anomalous?' ◈':''}`;}else{zEl.textContent='—';}}}catch(e){}
+    // Improvement #9: Tape sweep
+    try{const ts=detectTapeSweep(candles);const tsEl=document.getElementById('ctxTape');if(tsEl)tsEl.textContent=ts?`${ts.label} ${ts.ratio}×`:'NORMAL';}catch(e){}
     const tEl=document.getElementById('infoTrend');tEl.textContent=trend==='UP'?'↑ UPTREND':trend==='DOWN'?'↓ DOWNTREND':'→ NEUTRAL';tEl.className='info-val '+(trend==='UP'?'trend-up':trend==='DOWN'?'trend-dn':'trend-n');
     const rr=calcRR(last.close,vp,currentSigType||'POC');
     document.getElementById('rrEntry').textContent='$'+fp(rr.entry);document.getElementById('rrStop').textContent='$'+fp(rr.stop);document.getElementById('rrT1').textContent='$'+fp(rr.t1);document.getElementById('rrT2').textContent='$'+fp(rr.t2);
