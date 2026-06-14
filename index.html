@@ -457,8 +457,9 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     <select id="selMinVol" onchange="setMinVol(this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--acc2);font-family:'Space Mono',monospace;font-size:.52rem;padding:2px 5px;outline:none;">
       <option value="ALL">ALL</option>
       <option value="STRONG">STRONG 1.5x+</option>
-      <option value="CONFIRMED" selected>CONFIRMED 2x+</option>
-      <option value="SPIKE">SPIKE 3x+</option>
+      <option value="CONFIRMED" selected>CONFIRMED 2.5x+</option>
+      <option value="SPIKE">SPIKE 4x+</option>
+      <option value="MEGA_SPIKE">MEGA SPIKE 7x+</option>
     </select>
   </div>
   <div style="display:flex;align-items:center;gap:4px;font-size:.54rem;color:var(--muted)">
@@ -495,6 +496,15 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <option value="ALL" selected>ALL</option>
       <option value="NEG">NEGATIVE (shorts crowded)</option>
       <option value="EXTREME_POS">EXTREME+ &gt;0.08%</option>
+    </select>
+  </div>
+  <div style="display:flex;align-items:center;gap:4px;font-size:.54rem;color:var(--muted)">
+    <span>MIN UPSIDE:</span>
+    <select id="selMinUpside" onchange="setMinUpsideFilter(this.value)" style="background:var(--s2);border:1px solid var(--border2);color:#00FFB2;font-family:'Space Mono',monospace;font-size:.52rem;padding:2px 5px;outline:none;">
+      <option value="0" selected>OFF</option>
+      <option value="1.0">1× ATR</option>
+      <option value="1.5">1.5× ATR</option>
+      <option value="2.0">2× ATR</option>
     </select>
   </div>
   <button id="btnVPWeight" onclick="toggleVPWeighting()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Space Mono',monospace;font-size:.5rem;padding:3px 8px;cursor:pointer" title="Weight recent candles more in VP calculation">◎ WEIGHTED VP</button>
@@ -657,6 +667,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div class="rr-item"><div class="rr-item-lbl">TARGET 1</div><div class="rr-item-val rr-g" id="rrT1">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">TARGET 2</div><div class="rr-item-val rr-g" id="rrT2">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">R:R</div><div class="rr-item-val" id="rrRatio">—</div></div>
+      <div id="rrUpsideWarn" style="display:none;grid-column:1/-1;font-size:.48rem;color:#FF9500;background:rgba(255,149,0,.1);border:1px solid rgba(255,149,0,.35);padding:3px 8px;border-radius:3px;align-items:center;gap:4px"></div>
       <div class="rr-item"><div class="rr-item-lbl">RISK %</div><div class="rr-item-val rr-b" id="rrRisk">—</div></div>
       <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;"></div>
       <div class="rr-item" style="flex-direction:column;align-items:flex-start;gap:1px">
@@ -836,6 +847,7 @@ const LABEL_MAP={
   VAL_DIV:'▼ VAL+DIV',VAL_SPIKE:'▼ VAL+SPIKE',POC:'◆ POC REACT',
   POC_DIV:'◆ POC+DIV',POC_SPIKE:'◆ POC+SPIKE',WARNING:'⚠ VAH FAKEOUT',
   EARLY_BULL:'⚡ EARLY BULL',BULL_CONFIRM:'✔ BULL CONFIRM',EARLY_BEAR:'⚠ EARLY BEAR',
+  MEGA_SPIKE:'🔥 MEGA SPIKE',
   SQUEEZE_BULL:'◎ SQUEEZE↑',SQUEEZE_BEAR:'◎ SQUEEZE↓'
 };
 
@@ -995,7 +1007,20 @@ function detectTrend(candles){
     fullBearConfirm:v5<v53&&v12<v53
   };
 }
-function classifyVol(candles){const avg=candles.slice(-21,-1).reduce((a,c)=>a+c.volume,0)/20;const cur=candles[candles.length-1].volume,ratio=avg>0?cur/avg:1;if(ratio>=3)return{volTier:'SPIKE',volRatio:ratio};if(ratio>=2)return{volTier:'CONFIRMED',volRatio:ratio};if(ratio>=1.5)return{volTier:'STRONG',volRatio:ratio};return{volTier:'NORMAL',volRatio:ratio};}
+function classifyVol(candles){
+  // FIX-B: 50-candle baseline, exclude last 3 candles to avoid spike contamination of baseline
+  const n=candles.length;
+  const baseSlice=candles.slice(Math.max(0,n-53),n-3); // up to 50 candles, skip last 3
+  const avg=baseSlice.length>5?baseSlice.reduce((a,c)=>a+c.volume,0)/baseSlice.length:candles[n-1].volume;
+  const cur=candles[n-1].volume; // still measure the confirmed candle (n-1, which is curr after FIX-F)
+  const ratio=avg>0?cur/avg:1;
+  if(ratio>=7)return{volTier:'MEGA_SPIKE',volRatio:ratio}; // institutional accumulation
+  if(ratio>=4)return{volTier:'SPIKE',volRatio:ratio};      // raised from 3x to 4x
+  if(ratio>=2.5)return{volTier:'CONFIRMED',volRatio:ratio};
+  if(ratio>=1.5)return{volTier:'STRONG',volRatio:ratio};
+  if(ratio>=0.8)return{volTier:'NORMAL',volRatio:ratio};
+  return{volTier:'WEAK',volRatio:ratio}; // below 80% avg = distribution/low interest
+}
 function calcRSI(candles,period=14){const rsi=new Array(candles.length).fill(50);if(candles.length<=period)return rsi;let avgG=0,avgL=0;for(let i=1;i<=period;i++){const d=candles[i].close-candles[i-1].close;if(d>0)avgG+=d;else avgL-=d;}avgG/=period;avgL/=period;rsi[period]=avgL===0?100:100-(100/(1+avgG/avgL));for(let i=period+1;i<candles.length;i++){const d=candles[i].close-candles[i-1].close;avgG=(avgG*(period-1)+(d>0?d:0))/period;avgL=(avgL*(period-1)+(d<0?-d:0))/period;rsi[i]=avgL===0?100:100-(100/(1+avgG/avgL));}for(let i=0;i<period;i++)rsi[i]=rsi[period];return rsi;}
 // ══ PROPER RSI DIVERGENCE — swing high to swing high, swing low to swing low ══
 // Finds the TWO most recent swing highs/lows and compares them
@@ -1435,7 +1460,7 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   if(nearVAH||nearVAL||nearPOC)factors.push({n:'VP LEVEL',s:20});
   if(trend==='UP'&&(nearVAL||nearPOC))factors.push({n:'TREND ALIGN',s:18});
   if(trend==='DOWN'&&nearVAH)factors.push({n:'TREND ALIGN',s:18});
-  if(volTier==='SPIKE')factors.push({n:'VOL SPIKE',s:20});else if(volTier==='CONFIRMED')factors.push({n:'VOL CONF',s:12});else if(volTier==='STRONG')factors.push({n:'VOL STRONG',s:7});
+  if(volTier==='MEGA_SPIKE')factors.push({n:'MEGA SPIKE',s:28});else if(volTier==='SPIKE')factors.push({n:'VOL SPIKE',s:20});else if(volTier==='CONFIRMED')factors.push({n:'VOL CONF',s:12});else if(volTier==='STRONG')factors.push({n:'VOL STRONG',s:7});else if(volTier==='WEAK')factors.push({n:'LOW VOL',s:-10});
   const lastRSI=rsi[last];
   if(nearVAL&&lastRSI<40)factors.push({n:'RSI OS',s:12});if(nearVAH&&lastRSI>60)factors.push({n:'RSI OB',s:12});
   // RSI Divergence — upgraded scoring: context-aware weights
@@ -1519,7 +1544,8 @@ function setADXMin(v){filterADXMin=v;render();}
 function setPOCDist(v){filterPOCDistMax=v;render();}
 function resetQualityFilters(){
   filterTrendAligned=true;filterMinVol='CONFIRMED';filterADXMin=20;filterPOCDistMax=6;
-  filterBTCCorr=1;filterFunding='ALL';
+  filterBTCCorr=1;filterFunding='ALL';filterMinUpsideATR=0;
+  const smue=document.getElementById('selMinUpside');if(smue)smue.value='0';
   document.getElementById('selMinVol').value='CONFIRMED';
   document.getElementById('selADX').value='20';
   document.getElementById('selPOCDist').value='6';
@@ -1531,6 +1557,30 @@ function resetQualityFilters(){
 }
 
 // Signal passes all quality filters?
+// FIX-E: Minimum upside potential filter
+let filterMinUpsideATR=0; // 0 = OFF, 1.5 = require 1.5×ATR to nearest resistance
+
+function calcPotentialUpside(s){
+  if(!s||!s.price||!s.atr)return null;
+  const price=s.price;
+  const atr=s.atr;
+  // Find nearest resistance above entry price from sr[]
+  const resistancesAbove=(s.sr||[])
+    .filter(l=>(l.type==='RESISTANCE'||l.flipped)&&l.price>price*1.002)
+    .map(l=>l.price).sort((a,b)=>a-b);
+  // Fallback order: nearest S/R → VAH → VAH+range*0.5
+  let nearestResistance=resistancesAbove[0]||null;
+  if(!nearestResistance&&s.vp){
+    nearestResistance=s.vp.vah>price*1.002?s.vp.vah:null;
+  }
+  if(!nearestResistance)return null;
+  const distToResistance=nearestResistance-price;
+  const atrMultiple=distToResistance/atr;
+  return{nearestResistance,distPct:(distToResistance/price*100).toFixed(2),atrMultiple:atrMultiple.toFixed(2)};
+}
+
+function setMinUpsideFilter(v){filterMinUpsideATR=parseFloat(v);render();}
+
 function passesQualityFilters(s){
   // 1. Trend aligned filter
   if(filterTrendAligned){
@@ -1541,7 +1591,7 @@ function passesQualityFilters(s){
   }
   // 2. Volume minimum filter
   if(filterMinVol!=='ALL'){
-    const volOrder={ALL:0,NORMAL:1,STRONG:2,CONFIRMED:3,SPIKE:4};
+    const volOrder={ALL:0,WEAK:0,NORMAL:1,STRONG:2,CONFIRMED:3,SPIKE:4,MEGA_SPIKE:5};
     if((volOrder[s.volTier]||0)<(volOrder[filterMinVol]||0))return false;
   }
   // 3. ADX chop filter
@@ -1566,9 +1616,20 @@ function passesQualityFilters(s){
       if(filterFunding==='EXTREME_POS'&&fd.rate<=0.08)return false;
     }
   }
+  // 8. FIX-E: Minimum upside potential filter
+  if(filterMinUpsideATR>0){
+    const up=calcPotentialUpside(s);
+    if(up&&parseFloat(up.atrMultiple)<filterMinUpsideATR)return false;
+    // If no resistance found above, allow through (can't compute)
+  }
+  // 9. FIX-C: Block HTF-gated signals from Grade A/B display (they show with low strength anyway)
+  if(s.htfGated&&s.strength<=40){
+    // Still show, but they will naturally sort to bottom and grade D
+    // Do NOT hide — trader may still want to see counter-trend signals
+  }
   return true;
 }
-function resolveType(bt,div,volTier){if(bt==='WARNING')return'WARNING';if(div==='BULLISH'){if(bt==='VAL')return'VAL_DIV';if(bt==='POC')return'POC_DIV';}if(volTier==='SPIKE'||volTier==='CONFIRMED'){if(bt==='VAH')return'VAH_SPIKE';if(bt==='VAL')return'VAL_SPIKE';if(bt==='POC')return'POC_SPIKE';}return bt;}
+function resolveType(bt,div,volTier){if(bt==='WARNING')return'WARNING';if(div==='BULLISH'){if(bt==='VAL')return'VAL_DIV';if(bt==='POC')return'POC_DIV';}if(volTier==='SPIKE'||volTier==='CONFIRMED'||volTier==='MEGA_SPIKE'){if(bt==='VAH')return'VAH_SPIKE';if(bt==='VAL')return'VAL_SPIKE';if(bt==='POC')return'POC_SPIKE';}return bt;}
 
 // 1. MTF MAP
 function buildMTFMap(signals){const map={};signals.forEach(s=>{if(!map[s.symbol])map[s.symbol]=new Set();map[s.symbol].add(s.tf);});return map;}
@@ -1615,7 +1676,7 @@ function mergeSignals(signals){
 // ── SIGNAL GRADE A/B/C/D ─────────────────────────────────────────
 function calcGrade(s){
   // A: Pro setup — all boxes ticked
-  const volOk=s.volTier==='SPIKE'||s.volTier==='CONFIRMED';
+  const volOk=s.volTier==='MEGA_SPIKE'||s.volTier==='SPIKE'||s.volTier==='CONFIRMED';
   const trendOk=s.trend==='UP'&&(baseType(s.type)==='VAL'||baseType(s.type)==='POC')||
                 s.trend==='UP'&&baseType(s.type)==='VAH'||
                 s.trend==='DOWN'&&baseType(s.type)==='VAH';
@@ -1722,33 +1783,63 @@ function calcEntryZone(price, vp, sigType, atr){
 }
 
 // 7. R:R CALCULATOR — stop/target based on signal type
-function calcRR(price,vp,sigType){
+function calcRR(price,vp,sigType,sr,atr){
+  // FIX-D: Structure-based targets — use nearest S/R resistance above entry
   const bt=baseType(sigType||'POC');
   const range=vp.vah-vp.val;
-  let stop,t1,t2;
+  const atrVal=atr||price*0.015;
+  let stop,t1,t2,t1Label='',t2Label='';
+
+  // Find structural resistance levels above price from sr[] (sorted ascending)
+  const resistancesAbove=(sr||[])
+    .filter(l=>(l.type==='RESISTANCE'||l.flipped)&&l.price>price*1.002)
+    .map(l=>l.price).sort((a,b)=>a-b);
+  const supportsBelow=(sr||[])
+    .filter(l=>(l.type==='SUPPORT')&&l.price<price*0.998)
+    .map(l=>l.price).sort((a,b)=>b-a);
+
+  // Pick nearest resistance as T1, second as T2
+  const srT1=resistancesAbove[0]||null;
+  const srT2=resistancesAbove[1]||null;
+
   if(bt==='VAL'){
-    // Long at VAL: stop below VAL, targets POC then VAH
-    stop=vp.val*(1-0.003);       // 0.3% below VAL
-    t1=vp.poc;                   // Target 1 = POC
-    t2=vp.vah;                   // Target 2 = VAH
+    stop=vp.val*(1-0.003);
+    // T1: nearest S/R resistance above, fallback to POC
+    t1=srT1&&srT1<vp.vah*1.01?srT1:vp.poc;
+    t1Label=srT1&&srT1<vp.vah*1.01?'S/R':'POC';
+    // T2: next resistance or VAH
+    t2=srT2&&srT2>t1?srT2:vp.vah;
+    t2Label=srT2&&srT2>t1?'S/R':'VAH';
   } else if(bt==='POC'){
-    // Long at POC bounce: stop below POC, targets above
     stop=vp.poc*(1-0.003);
-    t1=vp.vah;
-    t2=vp.vah+range*0.5;
+    t1=srT1&&srT1<vp.vah*1.05?srT1:vp.vah;
+    t1Label=srT1&&srT1<vp.vah*1.05?'S/R':'VAH';
+    t2=srT2&&srT2>t1?srT2:vp.vah+range*0.5;
+    t2Label=srT2&&srT2>t1?'S/R':'EXT';
   } else if(bt==='VAH'){
-    // Breakout above VAH: stop just below VAH, targets above
-    stop=vp.vah*(1-0.003);       // just below VAH
-    t1=vp.vah+range*0.5;         // 50% of value area above VAH
-    t2=vp.vah+range*1.0;         // full value area above VAH
+    stop=vp.vah*(1-0.003);
+    // For breakouts above VAH: S/R above is the real target
+    t1=srT1||(vp.vah+range*0.5);
+    t1Label=srT1?'S/R':'EXT';
+    t2=srT2&&srT2>t1?srT2:(vp.vah+range*1.0);
+    t2Label=srT2&&srT2>t1?'S/R':'EXT';
   } else {
-    stop=price*0.98;t1=price*1.02;t2=price*1.04;
+    stop=price*0.985;
+    t1=srT1||(price+atrVal*2);
+    t1Label=srT1?'S/R':'ATR';
+    t2=srT2&&srT2>t1?srT2:(price+atrVal*3.5);
+    t2Label=srT2&&srT2>t1?'S/R':'ATR';
   }
+
+  // Minimum upside check: if T1 is less than 1.5×ATR from entry, warn
+  const upsidePct=((t1-price)/price*100);
+  const minUpsideOk=upsidePct>=(atrVal/price*100)*1.5;
+
   const risk=Math.abs(price-stop);
   const reward=Math.abs(t1-price);
   const rr=risk>0?(reward/risk).toFixed(2):'0';
   const riskPct=((risk/price)*100).toFixed(2);
-  return{entry:price,stop,t1,t2,rr,riskPct};
+  return{entry:price,stop,t1,t2,rr,riskPct,t1Label,t2Label,upsidePct:upsidePct.toFixed(2),minUpsideOk};
 }
 
 // 6. BACKTEST — full signal-pipeline engine with per-type breakdown + equity curve
@@ -2178,6 +2269,29 @@ function detectSqueeze(candles, atrVal){
   return null;
 }
 
+// FIX-A helpers: consolidation context for VAL/VAH signals
+function countCandlesBelowLevel(candles, curr, level){
+  let count=0;
+  for(let i=curr-1;i>=Math.max(0,curr-20);i--){
+    if(candles[i].close<level)count++;
+    else break;
+  }
+  return count;
+}
+function countCandlesAboveLevel(candles, curr, level){
+  let count=0;
+  for(let i=curr-1;i>=Math.max(0,curr-20);i--){
+    if(candles[i].close>level)count++;
+    else break;
+  }
+  return count;
+}
+function hasHigherLowBefore(candles, curr){
+  if(curr<2)return false;
+  // Check if the candle just before the break formed a higher low than the one before it
+  return candles[curr-1].low>candles[curr-2].low;
+}
+
 function detectSignals(symbol,candles,tf,chg,ts){
   const vp=calcVP(candles.slice(0,-1));if(!vp)return[];
   const rsiArr=calcRSI(candles),div=checkDiv(candles,rsiArr);
@@ -2199,9 +2313,21 @@ function detectSignals(symbol,candles,tf,chg,ts){
   const ema40arr=calcEMA(candles,40),ema53arr=calcEMA(candles,53);
   const ema20arr=ema12arr,ema50arr=ema53arr; // compat aliases
   candles.forEach((c,i)=>{c.ema5=ema5arr[i];c.ema12=ema12arr[i];c.ema16=ema16arr[i];c.ema40=ema40arr[i];c.ema53=ema53arr[i];c.ema20=ema12arr[i];c.ema50=ema53arr[i];});
-  const curr=candles.length-1,cur=candles[curr],prev=candles[curr-1];
+  const curr=candles.length-2,cur=candles[curr],prev=candles[curr-1]; // FIX-F: use CONFIRMED closed candle, not live forming candle
   const atrVal=calcATR(candles); // compute ONCE, reused by all signals
   const squeeze=detectSqueeze(candles,atrVal);
+
+  // FIX-C: Higher timeframe trend gate
+  // 1H → check 4H, 4H → check 1D, 1D → no gate
+  let htfTrend='NEUTRAL';
+  try{
+    const htfTF=tf==='1h'?'4h':tf==='4h'?'1d':null;
+    if(htfTF&&candleCache[symbol+'-'+htfTF]&&candleCache[symbol+'-'+htfTF].length>=10){
+      const htfCandles=candleCache[symbol+'-'+htfTF];
+      const htfTrendObj=detectTrend(htfCandles);
+      htfTrend=htfTrendObj.trend||'NEUTRAL';
+    }
+  }catch(e){htfTrend='NEUTRAL';}
 
   // Proximity detection (approaching but not yet triggered)
   const prox=detectProximity(symbol,candles,tf);
@@ -2219,7 +2345,7 @@ function detectSignals(symbol,candles,tf,chg,ts){
     else if(trend==='UP'&&bt==='VAH')str+=12;
     else if(trend==='DOWN'&&bt==='VAH')str+=10;
     else if(trend==='DOWN')str-=10;
-    if(volTier==='SPIKE')str+=18;else if(volTier==='CONFIRMED')str+=10;else if(volTier==='STRONG')str+=5;else str-=5;
+    if(volTier==='MEGA_SPIKE')str+=25;else if(volTier==='SPIKE')str+=18;else if(volTier==='CONFIRMED')str+=10;else if(volTier==='STRONG')str+=5;else if(volTier==='WEAK')str-=12;else str-=5;
     if(div==='BULLISH')str+=10;if(div==='BEARISH')str-=15;
     if(['BOS','HH'].includes(ms)&&bt!=='WARNING')str+=8;
     if(['CHOCH','LL'].includes(ms))str-=8;
@@ -2244,7 +2370,16 @@ function detectSignals(symbol,candles,tf,chg,ts){
     str-=getFalseBreakPenalty(symbol,type,tf);
     str+=Math.round(conf.total*0.12);
     str=Math.min(99,Math.max(15,str));
-    return{symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,ema5,ema12,ema16,ema53,ema20,ema50,crossBullish5,crossBullish12,crossBearish5,crossBearish12,earlyWarning,fullBullConfirm,fullBearConfirm,chg,
+    // FIX-C: Hard HTF trend gate — applied AFTER all other scoring
+    const isLong=bt==='VAL'||bt==='POC'||(bt==='VAH'&&div!=='BEARISH');
+    let htfGated=false;
+    if(htfTrend==='DOWN'&&isLong){
+      str=Math.min(40,str); // hard cap — don't trade longs against HTF downtrend
+      htfGated=true;
+    }else if(htfTrend==='UP'&&isLong){
+      str=Math.min(99,str+15); // bonus for trading WITH HTF trend
+    }
+    return{symbol,price:cur.close,vp,tf,type,trend,volTier,volRatio,htfTrend,htfGated,ema5,ema12,ema16,ema53,ema20,ema50,crossBullish5,crossBullish12,crossBearish5,crossBearish12,earlyWarning,fullBullConfirm,fullBearConfirm,chg,
       strength:str,confluence:conf.total,confluenceFactors:conf.factors,
       heat,ms,msLabel,freshness,session:session.session,
       liqSweep,sr,obs,fvgs,volDelta,
@@ -2256,32 +2391,50 @@ function detectSignals(symbol,candles,tf,chg,ts){
       ts:ts||Date.now()};
   };
 
-  // VAH BREAK — requires close above VAH AND prev candle was below VAH (real break, not gap)
-  if(prev.close<=vp.vah&&cur.close>vp.vah&&cur.open<cur.close*1.08){    // Check for false break (same level reversed recently)
+  // VAH BREAK — FIX-A: require 3+ candles consolidated BELOW VAH before the break
+  if(prev.close<=vp.vah&&cur.close>vp.vah&&cur.open<cur.close*1.08){
     if(checkForFalseBreak(candles,vp,'VAH')){
       const key=symbol+'-VAH-'+tf;
       falseBreakMemory.set(key,(falseBreakMemory.get(key)||0)+1);
     }
-    if(div==='BEARISH'){
-      const s=makeSig('WARNING','WARNING');
-      if(s)sigs.push({...s,strength:10,heat:1});
-    }else{
-      const s=makeSig('VAH',resolveType('VAH',div,volTier));
-      if(s)sigs.push(s);
+    const consolidationCount=countCandlesBelowLevel(candles,curr,vp.vah);
+    const higherLow=hasHigherLowBefore(candles,curr);
+    if(consolidationCount>=3){
+      if(div==='BEARISH'){
+        const s=makeSig('WARNING','WARNING');
+        if(s)sigs.push({...s,strength:10,heat:1});
+      }else{
+        const s=makeSig('VAH',resolveType('VAH',div,volTier));
+        if(s){
+          s.consolidationCount=consolidationCount;
+          s.higherLow=higherLow;
+          if(higherLow)s.strength=Math.min(99,s.strength+10);
+          if(consolidationCount>=6)s.strength=Math.min(99,s.strength+6);
+          sigs.push(s);
+        }
+      }
     }
   }
-  // VAL RECLAIM — suppress in strong downtrend (LL market structure = dead cat bounce, not a long)
+  // VAL RECLAIM — FIX-A: require min 3 candles of consolidation below VAL
   if(prev.close<vp.val&&cur.close>=vp.val){
-    const counterTrend=trend==='DOWN'&&['LL','LH','CHOCH'].includes(ms);
-    const s=makeSig('VAL',resolveType('VAL',div,volTier));
-    if(s){
-      if(counterTrend){
-        // Still show it but heavily penalise and mark as counter-trend
-        s.strength=Math.max(15,Math.round(s.strength*0.6));
-        s.counterTrend=true;
+    const consolidationCount=countCandlesBelowLevel(candles,curr,vp.val);
+    const higherLow=hasHigherLowBefore(candles,curr);
+    // Minimum 3 candles below VAL — anything less is a wick/noise, not a real reclaim
+    if(consolidationCount>=3){
+      const counterTrend=trend==='DOWN'&&['LL','LH','CHOCH'].includes(ms);
+      const s=makeSig('VAL',resolveType('VAL',div,volTier));
+      if(s){
+        s.consolidationCount=consolidationCount;
+        s.higherLow=higherLow;
+        // Higher low before break = accumulation pattern = big bonus
+        if(higherLow){s.strength=Math.min(99,s.strength+12);s.confluence=Math.min(100,s.confluence+15);}
+        // Bonus for longer consolidation (more energy stored)
+        if(consolidationCount>=6)s.strength=Math.min(99,s.strength+8);
+        if(counterTrend){s.strength=Math.max(15,Math.round(s.strength*0.6));s.counterTrend=true;}
+        sigs.push(s);
       }
-      sigs.push(s);
     }
+    // If < 3 candles below VAL, track as proximity/forming but don't signal
   }
   // POC REACT — suppress counter-trend same way
   if(cur.low<=vp.poc*1.003&&cur.close>vp.poc){
@@ -2524,6 +2677,10 @@ function renderRow(s,i,isMobile){
     const grade=calcGrade(s);
     const gradeHtml=`<span style="font-size:.44rem;padding:1px 5px;margin-left:3px;${GRADE_CSS[grade]}">${grade}</span>`;
     const pocDistPct=s.vp&&s.price?Math.abs((s.price-s.vp.poc)/s.vp.poc*100):null;
+    // FIX-E: potential upside badge
+    const upside=calcPotentialUpside(s);
+    const upsideBadge=upside?`<span style="font-size:.42rem;padding:1px 4px;margin-left:2px;color:${parseFloat(upside.atrMultiple)>=2?'#00FFB2':parseFloat(upside.atrMultiple)>=1.5?'#FFB800':'#FF5E3A'};border:1px solid ${parseFloat(upside.atrMultiple)>=2?'rgba(0,255,178,.35)':parseFloat(upside.atrMultiple)>=1.5?'rgba(255,184,0,.35)':'rgba(255,94,58,.35)'}" title="Potential upside to nearest resistance">↑${upside.distPct}%(${upside.atrMultiple}R)</span>`:'';    // FIX-C: HTF gate badge
+    const htfBadge=s.htfGated?'<span style="font-size:.41rem;padding:1px 4px;margin-left:2px;color:#FF9500;border:1px solid rgba(255,149,0,.4);background:rgba(255,149,0,.08)" title="Signal against higher timeframe trend">HTF↓</span>':''
     const pocDistBadge=pocDistPct!==null?`<span style="font-size:.42rem;padding:1px 4px;margin-left:2px;color:${pocDistPct<2?'#00FFB2':pocDistPct<4?'#FFB800':'#FF5E3A'};border:1px solid ${pocDistPct<2?'rgba(0,255,178,.35)':pocDistPct<4?'rgba(255,184,0,.35)':'rgba(255,94,58,.35)'};background:${pocDistPct<2?'rgba(0,255,178,.06)':pocDistPct<4?'rgba(255,184,0,.06)':'rgba(255,94,58,.06)'}">POC:${pocDistPct.toFixed(1)}%</span>`:'';
     const counterBadge=s.counterTrend?`<span style="font-size:.4rem;padding:1px 4px;background:rgba(255,94,58,.12);color:#FF5E3A;border:1px dashed #FF5E3A;margin-left:2px">CT</span>`:'';
     const qaButtons=`<div class="qa-wrap" onclick="event.stopPropagation()">
@@ -2562,7 +2719,7 @@ function renderRow(s,i,isMobile){
     if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span>${(s.extraBadges||[]).map(t=>`<span class="badge ${t}" style="font-size:.4rem;padding:1px 3px">${LABEL_MAP[t]||t}</span>`).join('')}${counterBadge}<span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div>${hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;padding:3px 8px 4px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:''}<div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
     return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
       <div class="td rank">${qaButtons}</div>
-      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${pocDistBadge}${getPendingBadge(s.symbol,s.tf,s.type)}${noteDot}</div><div class="pair">${s.symbol}${sectorBadge}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span>${(()=>{const cd=getCooldownRemaining(s.symbol,s.tf);return cd?`<span style="font-size:.4rem;color:var(--muted);margin-left:3px">⏱${cd}</span>`:'';})()}</div>${extraRow}</div></div>
+      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${pocDistBadge}${upsideBadge}${htfBadge}${getPendingBadge(s.symbol,s.tf,s.type)}${s.consolidationCount>=3?`<span style="font-size:.41rem;padding:1px 4px;margin-left:2px;color:#BF9FFF;border:1px solid rgba(191,159,255,.4)" title="${s.consolidationCount} candles consolidation before break">${s.consolidationCount}C${s.higherLow?" HL":""}</span>`:""}}${noteDot}</div><div class="pair">${s.symbol}${sectorBadge}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span>${(()=>{const cd=getCooldownRemaining(s.symbol,s.tf);return cd?`<span style="font-size:.4rem;color:var(--muted);margin-left:3px">⏱${cd}</span>`:'';})()}</div>${extraRow}</div></div>
       <div class="td"><span class="price-cell price-live">$${fp(dispPrice)}</span></div>
       <div class="td"><span class="chg chg-live ${chgCls}">${chgStr}</span></div>
       <div class="td lvl">$${fp(s.vp.vah)}</div><div class="td lvl">$${fp(s.vp.val)}</div><div class="td lvl">$${fp(s.vp.poc)}</div>
@@ -3080,6 +3237,16 @@ function buildLWChart(candles,vp,sr,obs){
       layerDefs[key+'_bot_opts']={opts:{...botOpts,visible:true},data:botData};
     });
   }
+
+  // ── FIX-D: Structure target lines on chart ─────────────────
+  try{
+    const atrForLines=calcATR(candles);
+    const srForLines=detectSR(candles);
+    const rrLines=calcRR(candles[candles.length-1].close,vp,currentSigType||'POC',srForLines,atrForLines);
+    mainChartObj.addPriceLine({price:rrLines.t1,color:'rgba(0,255,178,0.85)',lineWidth:1,lineStyle:2,title:'T1'+(rrLines.t1Label?' ['+rrLines.t1Label+']':'')});
+    mainChartObj.addPriceLine({price:rrLines.t2,color:'rgba(0,255,178,0.5)',lineWidth:1,lineStyle:2,title:'T2'+(rrLines.t2Label?' ['+rrLines.t2Label+']':'')});
+    mainChartObj.addPriceLine({price:rrLines.stop,color:'rgba(255,94,58,0.75)',lineWidth:1,lineStyle:2,title:'STOP'});
+  }catch(e){}
 
   // ── EMA lines ─────────────────────────────────────
   // ── EMA Strategy Lines: 5/12/16/40/53 ─────────────────────────
