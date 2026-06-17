@@ -631,6 +631,17 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <span class="sector-filter-lbl">SECTOR:</span>
   <button class="sector-btn on" onclick="setSector(null,this)">ALL</button>
 </div>
+<!-- INST WATCHLIST TAB TOGGLE -->
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+  <button id="btnInstWatch" onclick="toggleInstWatchlist()" style="background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.4);color:#FFD700;font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;padding:5px 14px;cursor:pointer;transition:all .2s">🏦 INSTITUTIONAL WATCHLIST <span id="instCount" style="margin-left:4px;background:rgba(255,215,0,.2);padding:1px 5px;border-radius:2px">0</span></button>
+  <button id="btnSortRR" onclick="setSortRR()" style="background:var(--s1);border:1px solid var(--border);color:var(--muted);font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.1em;padding:5px 14px;cursor:pointer;transition:all .2s" title="Sort by Risk:Reward ratio">SORT BY R:R</button>
+  <span id="narrativeBar" style="font-size:.52rem;color:var(--muted);letter-spacing:.08em;padding:3px 8px;background:var(--s1);border:1px solid var(--border)">MARKET: —</span>
+</div>
+<div id="instPanel" style="display:none;margin-bottom:12px;background:rgba(255,215,0,.03);border:1px solid rgba(255,215,0,.25);padding:10px 12px;">
+  <div style="font-size:.55rem;color:#FFD700;letter-spacing:.16em;margin-bottom:8px;font-weight:700">🏦 INSTITUTIONAL WATCHLIST — HIGH CONVICTION ONLY</div>
+  <div style="font-size:.48rem;color:var(--muted);margin-bottom:8px">Gates: Narrative≥60 · OI Confirmed · Vol Spike · RS>BTC · Grade A/B</div>
+  <div id="instRows" style="display:flex;flex-direction:column;gap:6px"><div style="color:var(--muted);font-size:.52rem">Run a scan first…</div></div>
+</div>
 <div class="tbl-wrap" id="tblWrap">
   <div class="tbl-head">
     <div class="th">#</div>
@@ -644,6 +655,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     <div class="th" onclick="setSort('heat')">HEAT</div>
     <div class="th">R:R</div>
     <div class="th sort-desc" id="thStr" onclick="setSort('strength')">STR</div>
+    <div class="th" onclick="setSort('rr')" id="thRR" title="Sort by Risk:Reward">RR↕</div>
   </div>
   <div class="click-hint">CLICK ROW → CHART + R:R CALC + NOTES · 🔥HOT=fresh · ◈=MTF · OB=Orderblock · LIQ=Liquidity Sweep</div>
   <div class="prog-wrap" id="progWrap"><span id="progTxt">SCANNING…</span><div class="prog-bg"><div class="prog-fg" id="progFg" style="width:0%"></div></div></div>
@@ -1452,6 +1464,12 @@ function getUpgradeBadges(s){
       badges.push(`<span style="font-size:.42rem;padding:1px 4px;color:#FFD700;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.08)" title="RSI cascade across 4 timeframes">🪜 5m:${r.rsi5m.toFixed(0)} 15m:${r.rsi15m.toFixed(0)} 1h:${r.rsi1h.toFixed(0)} 4h:${r.rsi4h.toFixed(0)}</span>`);
     }
   }catch(e){}
+  // ── Improvement badges: Narrative, OI Delta, RS, POC Migration, Absorption ──
+  try{badges.push(getNarrativeBadge(s));}catch(e){}
+  try{badges.push(getOIDeltaBadge(s.symbol,s.chg||0));}catch(e){}
+  try{badges.push(getRSBadge(s.symbol));}catch(e){}
+  try{badges.push(getPOCMigrationBadge(s.symbol));}catch(e){}
+  try{badges.push(getAbsorptionBadge(s));}catch(e){}
   return badges.filter(Boolean).join('');
 }
 
@@ -1468,7 +1486,8 @@ function setView(v){document.getElementById('viewTable').classList.toggle('on',v
 
 // SORT
 function setSort(k){if(sortKey===k){sortDir=sortDir==='desc'?'asc':'desc';}else{sortKey=k;sortDir='desc';}document.querySelectorAll('.th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));if(k==='strength')document.getElementById('thStr').classList.add(sortDir==='desc'?'sort-desc':'sort-asc');render();}
-function sortSignals(arr){return[...arr].sort((a,b)=>{let av,bv;switch(sortKey){case'price':av=a.price;bv=b.price;break;case'chg':av=a.chg||0;bv=b.chg||0;break;case'type':av=a.type;bv=b.type;break;case'tf':av=a.tf;bv=b.tf;break;case'trend':av=a.trend;bv=b.trend;break;case'sym':av=a.symbol;bv=b.symbol;break;case'heat':av=a.heat||0;bv=b.heat||0;break;default:av=a.strength;bv=b.strength;}if(av<bv)return sortDir==='desc'?1:-1;if(av>bv)return sortDir==='desc'?-1:1;return 0;});}
+function setSortRR(){sortKey='rr';sortDir='desc';document.querySelectorAll('.th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));const th=document.getElementById('thRR');if(th)th.classList.add('sort-desc');const btn=document.getElementById('btnSortRR');if(btn){btn.style.background='rgba(0,255,178,.1)';btn.style.borderColor='rgba(0,255,178,.5)';btn.style.color='#00FFB2';}render();}
+function sortSignals(arr){return[...arr].sort((a,b)=>{let av,bv;switch(sortKey){case'price':av=a.price;bv=b.price;break;case'chg':av=a.chg||0;bv=b.chg||0;break;case'type':av=a.type;bv=b.type;break;case'tf':av=a.tf;bv=b.tf;break;case'trend':av=a.trend;bv=b.trend;break;case'sym':av=a.symbol;bv=b.symbol;break;case'heat':av=a.heat||0;bv=b.heat||0;break;case'rr':av=parseFloat(calcRR(a.price,a.vp,a.type,a.sr,a.atr).rr)||0;bv=parseFloat(calcRR(b.price,b.vp,b.type,b.sr,b.atr).rr)||0;break;default:av=a.strength;bv=b.strength;}if(av<bv)return sortDir==='desc'?1:-1;if(av>bv)return sortDir==='desc'?-1:1;return 0;});}
 
 // SESSION
 function getCurrentSession(){const now=new Date();const h=now.getUTCHours(),m=now.getUTCMinutes();const mins=h*60+m;let session='CLOSED',weight=1;if(mins>=780&&mins<960){session='OVERLAP';weight=1.35;}else if(mins>=420&&mins<540){session='OVERLAP';weight=1.2;}else if(mins>=780&&mins<1320){session='US';weight=1.2;}else if(mins>=420&&mins<960){session='EUROPE';weight=1.1;}else if(mins>=0&&mins<540){session='ASIA';weight=1.0;}const pad=n=>String(n).padStart(2,'0');return{session,weight,utcStr:`UTC ${pad(h)}:${pad(m)}`};}
@@ -2238,6 +2257,81 @@ function pickBestSetups(signals){
   renderBestSetups();
 }
 
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #10: INSTITUTIONAL WATCHLIST
+// Strict gate: Narrative≥60 AND OI confirms (NEW_LONGS state) AND
+// Volume spike/confirmed AND RS>BTC AND Grade A/B. Usually surfaces
+// 2-5 signals instead of 40 — these are where the real money is.
+// ══════════════════════════════════════════════════════════════════
+let instWatchVisible=false;
+let instWatchSignals=[];
+
+function passesInstGate(s){
+  const narrative=calcNarrativeScore(s);
+  if(narrative.total<60)return false;
+  const grade=calcGrade(s);
+  if(grade!=='A'&&grade!=='B')return false;
+  const volOk=s.volTier==='SPIKE'||s.volTier==='MEGA_SPIKE'||s.volTier==='CONFIRMED';
+  if(!volOk)return false;
+  const oiState=getOIDeltaState(s.symbol,s.chg||0);
+  const oiOk=oiState&&(oiState.state==='NEW_LONGS'||oiState.state==='SHORT_COVER');
+  const rs=s.relStrength;
+  const rsOk=rs&&rs.rs>0;
+  // Require at least narrative+grade+vol, plus ONE of (OI confirm, RS positive) since OI/funding data background-loads
+  if(!oiOk&&!rsOk)return false;
+  return{narrative,grade,oiState,rs};
+}
+
+function computeInstWatchlist(signals){
+  const candidates=[];
+  signals.forEach(s=>{
+    const gate=passesInstGate(s);
+    if(gate)candidates.push({...s,_gate:gate});
+  });
+  // Dedup by symbol — keep highest narrative score per coin
+  const bySymbol={};
+  candidates.forEach(s=>{
+    if(!bySymbol[s.symbol]||s._gate.narrative.total>bySymbol[s.symbol]._gate.narrative.total)bySymbol[s.symbol]=s;
+  });
+  instWatchSignals=Object.values(bySymbol).sort((a,b)=>b._gate.narrative.total-a._gate.narrative.total);
+  const countEl=document.getElementById('instCount');
+  if(countEl)countEl.textContent=instWatchSignals.length;
+  if(instWatchVisible)renderInstWatchlist();
+}
+
+function toggleInstWatchlist(){
+  instWatchVisible=!instWatchVisible;
+  const panel=document.getElementById('instPanel');
+  const btn=document.getElementById('btnInstWatch');
+  if(panel)panel.style.display=instWatchVisible?'block':'none';
+  if(btn){btn.style.background=instWatchVisible?'rgba(255,215,0,.18)':'rgba(255,215,0,.08)';}
+  if(instWatchVisible)renderInstWatchlist();
+}
+
+function renderInstWatchlist(){
+  const el=document.getElementById('instRows');
+  if(!el)return;
+  if(!instWatchSignals.length){
+    el.innerHTML='<div style="color:var(--muted);font-size:.52rem">No coins currently pass all institutional gates. This is normal — it means no obvious high-conviction setup right now.</div>';
+    return;
+  }
+  el.innerHTML=instWatchSignals.map(s=>{
+    const sym=s.symbol.replace('USDT','');
+    const g=s._gate;
+    const rr=calcRR(s.price,s.vp,s.type,s.sr,s.atr);
+    const narrCol=g.narrative.total>=80?'#00FFB2':'#FFB800';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s1);border:1px solid rgba(255,215,0,.18);cursor:pointer" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${JSON.stringify(s.vp).replace(/"/g,"'")})">
+      <div style="font-weight:800;font-size:.62rem;min-width:60px">${sym}</div>
+      <span style="font-size:.46rem;padding:1px 5px;color:${narrCol};border:1px solid ${narrCol}66;background:${narrCol}14;font-weight:800">📖 ${g.narrative.total}</span>
+      <span style="font-size:.46rem;padding:1px 5px;${GRADE_CSS[g.grade]}">GRADE ${g.grade}</span>
+      ${g.oiState?`<span style="font-size:.46rem;padding:1px 5px;background:${g.oiState.bg};color:${g.oiState.col};border:1px solid ${g.oiState.col}55;font-weight:700">${g.oiState.label}</span>`:''}
+      ${g.rs?`<span style="font-size:.46rem;color:#00BFFF">RS:+${g.rs.rs}%</span>`:''}
+      <span style="font-size:.5rem;color:var(--muted);margin-left:auto">$${fp(s.price)}</span>
+      <span style="font-size:.5rem;color:${parseFloat(rr.rr)>=2?'#00FFB2':'var(--muted)'}">R:R 1:${rr.rr}</span>
+    </div>`;
+  }).join('');
+}
+
 function renderBestSetups(){
   const el=document.getElementById('bestSetupsBar');
   if(!el)return;
@@ -2516,6 +2610,79 @@ function detectSectorRotation(signals){
       rotEl.textContent='ROTATION: STABLE';rotEl.style.color='var(--muted)';
     }
   }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #1: NARRATIVE SCORE — Market → Sector → Coin → Signal
+// Replaces pure additive confluence with a hierarchical conviction
+// score. A signal only scores high if BTC, the sector, AND the coin
+// itself all agree on direction. This is the single highest-impact
+// change — it filters out "indicator soup" false positives.
+//
+//   Market Direction   (BTC trend)        max 30 pts
+//   Sector Direction    (sector momentum)  max 25 pts
+//   Coin Direction      (own trend+RS)     max 25 pts
+//   Signal Confluence   (existing engine)  max 20 pts (scaled down)
+//   ────────────────────────────────────────────────
+//   Total                                  max 100
+// ══════════════════════════════════════════════════════════════════
+let lastSectorAvgScores={}; // updated by detectSectorRotation via prevSectorScores
+
+function calcNarrativeScore(s){
+  let marketPts=0,sectorPts=0,coinPts=0,signalPts=0;
+  const notes=[];
+
+  // 1) MARKET DIRECTION (BTC regime) — max 30
+  const btcRegime=getBTCRegime();
+  if(btcRegime==='UP'){marketPts=30;notes.push('BTC BULL');}
+  else if(btcRegime==='NEUTRAL'){marketPts=15;notes.push('BTC NEUTRAL');}
+  else if(btcRegime==='DOWN'){marketPts=0;notes.push('BTC BEAR');}
+  else{marketPts=12;} // UNKNOWN — neutral-ish default
+
+  // 2) SECTOR DIRECTION — max 25
+  const sec=getSector(s.symbol);
+  const sectorAvg=prevSectorScores[sec];
+  if(sectorAvg!==undefined){
+    if(sectorAvg>=60){sectorPts=25;notes.push(sec+' LEADING');}
+    else if(sectorAvg>=45){sectorPts=15;notes.push(sec+' NEUTRAL');}
+    else{sectorPts=5;notes.push(sec+' LAGGING');}
+  }else{
+    sectorPts=12; // no data yet — neutral default, avoid double-penalizing
+  }
+
+  // 3) COIN DIRECTION — max 25 (own trend + relative strength vs BTC)
+  if(s.trend==='UP')coinPts+=14;
+  else if(s.trend==='DOWN')coinPts-=6;
+  const rs=s.relStrength;
+  if(rs){
+    if(rs.rs>=6){coinPts+=11;notes.push('RS+'+rs.rs+'%');}
+    else if(rs.rs>=2){coinPts+=6;}
+    else if(rs.rs<=-6){coinPts-=8;notes.push('RS'+rs.rs+'%');}
+  }
+  coinPts=Math.max(0,Math.min(25,coinPts));
+
+  // 4) SIGNAL CONFLUENCE — existing engine, scaled to max 20 (was max 100)
+  signalPts=Math.round((s.confluence||0)*0.20);
+
+  const total=Math.max(0,Math.min(100,Math.round(marketPts+sectorPts+coinPts+signalPts)));
+  return{total,marketPts,sectorPts,coinPts,signalPts,notes,btcRegime,sector:sec};
+}
+
+function getNarrativeBadge(s){
+  const n=calcNarrativeScore(s);
+  const col=n.total>=70?'#00FFB2':n.total>=50?'#FFB800':n.total>=30?'#FF8A65':'#FF5E3A';
+  const label=n.total>=70?'STRONG NARRATIVE':n.total>=50?'BUILDING':n.total>=30?'WEAK':'NO STORY';
+  return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800" title="Market:${n.marketPts} Sector:${n.sectorPts} Coin:${n.coinPts} Signal:${n.signalPts} — ${n.notes.join(' · ')}">📖 ${n.total} ${label}</span>`;
+}
+
+function updateNarrativeBar(){
+  const el=document.getElementById('narrativeBar');
+  if(!el)return;
+  const btcRegime=getBTCRegime();
+  const btcCol=btcRegime==='UP'?'#00FFB2':btcRegime==='DOWN'?'#FF5E3A':'#888';
+  const sectors=Object.entries(prevSectorScores).sort((a,b)=>b[1]-a[1]).slice(0,2);
+  const secStr=sectors.length?sectors.map(([s,v])=>`${s}(${Math.round(v)})`).join(' '):'—';
+  el.innerHTML=`MARKET: <span style="color:${btcCol};font-weight:700">BTC ${btcRegime}</span> · LEADING SECTORS: ${secStr}`;
 }
 
 function updateBTCCorrelations(){
@@ -3039,6 +3206,7 @@ function detectSignals(symbol,candles,tf,chg,ts){
   const curr=candles.length-2,cur=candles[curr],prev=candles[curr-1]; // FIX-F: use CONFIRMED closed candle, not live forming candle
   const atrVal=calcATR(candles); // compute ONCE, reused by all signals
   const squeeze=detectSqueeze(candles,atrVal);
+  const absorption=detectAbsorption(candles,vp); // IMPROVEMENT #6
 
   // FIX-C: Higher timeframe trend gate
   // 1H → check 4H, 4H → check 1D, 1D → no gate
@@ -3270,7 +3438,7 @@ function detectSignals(symbol,candles,tf,chg,ts){
     }
   }
 
-  return sigs;
+  return sigs.map(s=>({...s,absorption:absorption||null,relStrength:calcRelativeStrength(symbol),pocMigration:getPOCMigrationState(symbol)}));
 }
 
 // MAIN SCAN
@@ -3282,7 +3450,7 @@ async function triggerAndPoll(){
   document.getElementById('rows').innerHTML=Array.from({length:8}).map(()=>`<div class="skel-row">${Array.from({length:13}).map(()=>'<div class="skel" style="width:50px"></div>').join('')}</div>`).join('');
   const newSignals=[],pairs=scanPairs(),tfs=['1h','4h','1d'];
   proximitySignals=[];
-  let done=0;const chgCache={};
+  let done=0;chgCache={};
   try{const res=await fetch(`${BINANCE}/api/v3/ticker/24hr`);const tickers=await res.json();tickers.forEach(t=>{chgCache[t.symbol]=parseFloat(t.priceChangePercent)||0;livePrices[t.symbol]={price:parseFloat(t.lastPrice)||0,chg:parseFloat(t.priceChangePercent)||0};});}catch(e){}
   // ── FAST SCAN ENGINE ──────────────────────────────
   // Key insight: fetch all 3 TFs for one coin in parallel (3 requests at once).
@@ -3323,7 +3491,8 @@ async function triggerAndPoll(){
     const results=[];
     const chg=chgCache[sym]||0;
     const now=Date.now(); // per-coin timestamp so age is accurate
-    if(c1h){candleCache[sym+'-1h']=c1h;try{results.push(...detectSignals(sym,c1h,'1h',chg,now));}catch(e){}}
+    if(c1h){candleCache[sym+'-1h']=c1h;try{results.push(...detectSignals(sym,c1h,'1h',chg,now));}catch(e){}
+      try{const vpTrack=calcVP(c1h.slice(0,-1));if(vpTrack)trackPOCMigration(sym,vpTrack.poc);}catch(e){}}
 
     // ── PUMP ENGINE #3: Spot vs Futures Divergence (async, 1h TF) ──
     try{
@@ -3432,6 +3601,8 @@ async function triggerAndPoll(){
     updateTabBadge(newSignals.length);
     pickBestSetups(allSignals);
     detectSectorRotation(allSignals);
+    try{computeInstWatchlist(allSignals);}catch(e){}
+    try{updateNarrativeBar();}catch(e){}
     // ── Start NR7 1m WebSocket for coiled spring breakout detection ──
     try{
       const nr7Coins=allSignals.filter(s=>s._nr7Pending).map(s=>s.symbol);
@@ -4909,6 +5080,7 @@ function renderWinRateBreakdown(){
 // ══════════════════════════════════════════════════════════════════
 const oiCache={};    // sym → {oiChg, oiDir, ts}
 const fundCache={};  // sym → {rate, ts}
+let chgCache={};     // sym → 24h % change (global, populated each scan)
 const FAPI='https://fapi.binance.com';
 
 async function fetchOIAndFunding(symbols){
@@ -4942,6 +5114,137 @@ async function fetchOIAndFunding(symbols){
   }
   // Silently update badges after all data is in
   render();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #2: OI DELTA STATE CLASSIFIER
+// Combines OI direction + price direction → institutional-grade label
+//   OI↑ + Price↑ = REAL BUYING (new longs entering)
+//   OI↑ + Price↓ = NEW SHORTS (new shorts entering)
+//   OI↓ + Price↑ = SHORT COVERING (shorts closing, weak rally)
+//   OI↓ + Price↓ = LONG LIQUIDATION (longs being flushed)
+// ══════════════════════════════════════════════════════════════════
+function getOIDeltaState(sym,priceChg){
+  const oi=oiCache[sym];
+  if(!oi||oi.oiDir==='FLAT')return null;
+  const priceDir=priceChg>0.3?'UP':priceChg<-0.3?'DOWN':'FLAT';
+  if(priceDir==='FLAT')return null;
+  let state,label,col,bg;
+  if(oi.oiDir==='UP'&&priceDir==='UP'){state='NEW_LONGS';label='REAL BUYING';col='#00FFB2';bg='rgba(0,255,178,.14)';}
+  else if(oi.oiDir==='UP'&&priceDir==='DOWN'){state='NEW_SHORTS';label='NEW SHORTS';col='#FF3333';bg='rgba(255,51,51,.14)';}
+  else if(oi.oiDir==='DOWN'&&priceDir==='UP'){state='SHORT_COVER';label='SHORT COVERING';col='#FFB800';bg='rgba(255,184,0,.14)';}
+  else{state='LONG_LIQ';label='LONG LIQUIDATION';col='#FF5E3A';bg='rgba(255,94,58,.14)';}
+  return{state,label,col,bg,oiChg:oi.oiChg,priceChg};
+}
+
+function getOIDeltaBadge(sym,priceChg){
+  const d=getOIDeltaState(sym,priceChg);
+  if(!d)return'';
+  return`<span style="font-size:.46rem;padding:1px 5px;background:${d.bg};color:${d.col};border:1px solid ${d.col}55;font-weight:800;letter-spacing:.03em" title="OI ${d.oiChg>0?'+':''}${d.oiChg}% · Price ${d.priceChg>0?'+':''}${d.priceChg.toFixed(2)}%">${d.label}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #4: RELATIVE STRENGTH vs BTC
+// RS = Coin 24h% change - BTC 24h% change
+// RS > +4% = being actively accumulated independent of BTC
+// ══════════════════════════════════════════════════════════════════
+function calcRelativeStrength(sym){
+  if(sym==='BTCUSDT')return null;
+  const coinChg=chgCache[sym];
+  const btcChg=chgCache['BTCUSDT'];
+  if(coinChg===undefined||btcChg===undefined)return null;
+  const rs=coinChg-btcChg;
+  return{rs:parseFloat(rs.toFixed(2)),coinChg,btcChg};
+}
+
+function getRSBadge(sym){
+  const d=calcRelativeStrength(sym);
+  if(!d)return'';
+  if(Math.abs(d.rs)<1.5)return''; // not meaningful, skip badge clutter
+  const strong=d.rs>=6,col=d.rs>0?(strong?'#00FF78':'#00BFFF'):(d.rs<-6?'#FF3333':'#FF8A65');
+  const bg=d.rs>0?'rgba(0,255,178,.1)':'rgba(255,94,58,.1)';
+  return`<span style="font-size:.44rem;padding:1px 4px;color:${col};border:1px solid ${col}55;background:${bg};font-weight:700" title="RS vs BTC: coin ${d.coinChg>0?'+':''}${d.coinChg.toFixed(1)}% / BTC ${d.btcChg>0?'+':''}${d.btcChg.toFixed(1)}%">RS:${d.rs>0?'+':''}${d.rs}%</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #5: POC MIGRATION DETECTOR
+// Tracks POC across consecutive scans per symbol. If POC has been
+// rising for 3+ consecutive scans, value is being accepted higher
+// (bullish). Falling POC = value rejected, bearish acceptance shift.
+// Persisted in localStorage-free in-memory map (resets on page reload,
+// which is fine — it rebuilds within a few scan cycles).
+// ══════════════════════════════════════════════════════════════════
+const pocHistory={}; // sym → [{poc,ts}, ...] max 8 entries
+
+function trackPOCMigration(sym,poc){
+  if(!pocHistory[sym])pocHistory[sym]=[];
+  const hist=pocHistory[sym];
+  const last=hist[hist.length-1];
+  // Only push if POC changed meaningfully (avoid noise) or list is empty
+  if(!last||Math.abs(poc-last.poc)/last.poc>0.001){
+    hist.push({poc,ts:Date.now()});
+    if(hist.length>8)hist.shift();
+  }
+}
+
+function getPOCMigrationState(sym){
+  const hist=pocHistory[sym];
+  if(!hist||hist.length<3)return null;
+  // Check direction across last N points
+  const recent=hist.slice(-4);
+  let upCount=0,downCount=0;
+  for(let i=1;i<recent.length;i++){
+    if(recent[i].poc>recent[i-1].poc)upCount++;
+    else if(recent[i].poc<recent[i-1].poc)downCount++;
+  }
+  const totalMoves=recent.length-1;
+  if(upCount>=totalMoves-0&&upCount>=2)return{dir:'UP',strength:upCount,arrows:'↑'.repeat(Math.min(3,upCount))};
+  if(downCount>=totalMoves-0&&downCount>=2)return{dir:'DOWN',strength:downCount,arrows:'↓'.repeat(Math.min(3,downCount))};
+  return null;
+}
+
+function getPOCMigrationBadge(sym){
+  const m=getPOCMigrationState(sym);
+  if(!m)return'';
+  const col=m.dir==='UP'?'#00FFB2':'#FF5E3A';
+  return`<span style="font-size:.44rem;padding:1px 4px;color:${col};border:1px solid ${col}55;background:${col}11;font-weight:800" title="POC has migrated ${m.dir.toLowerCase()} across last ${m.strength+1} scans — value being accepted ${m.dir==='UP'?'higher':'lower'}">POC${m.arrows}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMPROVEMENT #6: SMART MONEY ABSORPTION DETECTOR
+// Huge volume + small candle body + near support = effort without
+// result. Someone is soaking up every sell order. Classic accumulation.
+// ══════════════════════════════════════════════════════════════════
+function detectAbsorption(candles,vp){
+  const n=candles.length;
+  if(n<22)return null;
+  const cur=candles[n-2]; // last confirmed candle
+  const body=Math.abs(cur.close-cur.open);
+  const range=cur.high-cur.low;
+  if(range===0)return null;
+  const bodyRatio=body/range; // small body = low bodyRatio
+  // Volume vs rolling average
+  const recentVols=candles.slice(-22,-2).map(c=>c.volume);
+  const avgVol=recentVols.reduce((a,b)=>a+b,0)/recentVols.length;
+  if(avgVol<=0)return null;
+  const volRatio=cur.volume/avgVol;
+  // Near support: VAL or POC within 1.2%
+  const nearVAL=vp&&Math.abs(cur.close-vp.val)/vp.val<0.012;
+  const nearPOC=vp&&Math.abs(cur.close-vp.poc)/vp.poc<0.012;
+  const nearSupport=nearVAL||nearPOC;
+  // Absorption criteria: volume >= 2x avg, body ratio small (<0.35 of range), near support
+  if(volRatio>=2&&bodyRatio<0.35&&nearSupport){
+    const strength=volRatio>=3.5?'STRONG':'MODERATE';
+    return{type:'ABSORPTION',strength,volRatio:parseFloat(volRatio.toFixed(1)),bodyRatio:parseFloat(bodyRatio.toFixed(2)),nearLevel:nearVAL?'VAL':'POC'};
+  }
+  return null;
+}
+
+function getAbsorptionBadge(s){
+  if(!s.absorption)return'';
+  const a=s.absorption;
+  const col=a.strength==='STRONG'?'#00FFB2':'#00BFFF';
+  return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800;animation:pulse 2.2s infinite" title="High volume (${a.volRatio}× avg), tiny candle body near ${a.nearLevel} — sell pressure being absorbed">🧲 ABSORPTION ${a.strength}</span>`;
 }
 
 function getOIBadge(sym){
