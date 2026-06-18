@@ -1470,6 +1470,13 @@ function getUpgradeBadges(s){
   try{badges.push(getRSBadge(s.symbol));}catch(e){}
   try{badges.push(getPOCMigrationBadge(s.symbol));}catch(e){}
   try{badges.push(getAbsorptionBadge(s));}catch(e){}
+  // ── Cause-detection badges: Multi-day absorption, supply exhaustion, compression duration, sector ignition, pain index ──
+  try{badges.push(getMultiDayAbsorptionBadge(s));}catch(e){}
+  try{badges.push(getSupplyExhaustionBadge(s));}catch(e){}
+  try{badges.push(getCompressionDurationBadge(s));}catch(e){}
+  try{badges.push(getSectorIgnitionBadge(s));}catch(e){}
+  try{badges.push(getPainIndexBadge(s));}catch(e){}
+  try{badges.push(getProbabilityBadge(s));}catch(e){}
   return badges.filter(Boolean).join('');
 }
 
@@ -3555,6 +3562,23 @@ async function triggerAndPoll(){
     }catch(e){}
     if(c4h){candleCache[sym+'-4h']=c4h;try{results.push(...detectSignals(sym,c4h,'4h',chg,now));}catch(e){}}
     if(c1d){candleCache[sym+'-1d']=c1d;try{results.push(...detectSignals(sym,c1d,'1d',chg,now));}catch(e){}}
+
+    // ── IDEAS #1,#2,#4,#5,#6: compute once per coin, attach to all signals ──
+    if(results.length&&c1h){
+      let multiDayAbsorption=null,supplyExhaustion=null,compressionDuration=null,sectorIgnition=null,painIndex=null;
+      try{multiDayAbsorption=detectMultiDayAbsorption(c1d);}catch(e){}
+      try{supplyExhaustion=detectSupplyExhaustion(c1h);}catch(e){}
+      try{compressionDuration=detectCompressionDuration(c1h);}catch(e){}
+      try{sectorIgnition=detectSectorIgnition(null,sym);}catch(e){}
+      try{painIndex=calcPainIndex(sym,c1h);}catch(e){}
+      for(let i=0;i<results.length;i++){
+        results[i].multiDayAbsorption=multiDayAbsorption;
+        results[i].supplyExhaustion=supplyExhaustion;
+        results[i].compressionDuration=compressionDuration;
+        results[i].sectorIgnition=sectorIgnition;
+        results[i].painIndex=painIndex;
+      }
+    }
     return results;
   }
 
@@ -3603,6 +3627,7 @@ async function triggerAndPoll(){
     detectSectorRotation(allSignals);
     try{computeInstWatchlist(allSignals);}catch(e){}
     try{updateNarrativeBar();}catch(e){}
+    try{autoLogSignalsForProbability(allSignals);}catch(e){}
     // ── Start NR7 1m WebSocket for coiled spring breakout detection ──
     try{
       const nr7Coins=allSignals.filter(s=>s._nr7Pending).map(s=>s.symbol);
@@ -4517,17 +4542,52 @@ function wrTrackSignal(sig){
     btcRegime:getBTCRegime(),
     target:sig.vp?sig.vp.vah:null,stop:null,
     result4h:null,result24h:null,
-    checked4h:false,checked24h:false
+    checked4h:false,checked24h:false,
+    // ── feature vector for Probability of Expansion engine ──
+    features:{
+      volTier:sig.volTier||'NORMAL',
+      adx:Math.round(sig.adx||0),
+      grade:(typeof calcGrade==='function'?calcGrade(sig):null),
+      confluence:Math.round(sig.confluence||0),
+      narrative:(typeof calcNarrativeScore==='function'?calcNarrativeScore(sig).total:null),
+      trend:sig.trend||'NEUTRAL',
+      hasRS:!!(sig.relStrength&&sig.relStrength.rs>2),
+      hasAbsorption:!!(sig.absorption||sig.multiDayAbsorption),
+      hasSupplyExhaustion:!!sig.supplyExhaustion,
+      hasSectorIgnition:!!sig.sectorIgnition
+    }
   };
   wrLog.push(entry);
-  if(wrLog.length>200)wrLog=wrLog.slice(-200); // keep last 200
+  if(wrLog.length>500)wrLog=wrLog.slice(-500); // keep last 500 for meaningful stats
   localStorage.setItem('vpWinRate',JSON.stringify(wrLog));
   renderWinRate();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// AUTO-LOG: every signal that fires gets a lightweight feature-vector
+// entry (not just starred ones). This is what makes Probability of
+// Expansion possible — without volume of history, probabilities are
+// meaningless guesses.
+// ══════════════════════════════════════════════════════════════════
+function autoLogSignalsForProbability(signals){
+  // Cap how many we log per scan to avoid bloating localStorage —
+  // prioritize A/B grade signals plus anything with a "cause" badge
+  const candidates=signals.filter(s=>{
+    const grade=calcGrade(s);
+    return grade==='A'||grade==='B'||s.supplyExhaustion||s.multiDayAbsorption||s.sectorIgnition;
+  });
+  candidates.slice(0,40).forEach(s=>{try{wrTrackSignal(s);}catch(e){}});
 }
 
 async function wrCheckOutcomes(){
   let changed=false;
   const now=Date.now();
+  const BEARISH_TYPES=new Set(['VAL','VAL_SPIKE','EARLY_BEAR','BEAR_CONFIRM','SQUEEZE_BEAR','CHOCH']);
+  function isBullishType(type){
+    if(BEARISH_TYPES.has(type))return false;
+    if(type.startsWith('VAL')&&!type.includes('DIV'))return false; // VAL alone leans bearish (reclaim attempt failing)
+    return true; // VAH, POC, COMPRESSION_SQUEEZE, VWAP_RECLAIM, SPOT_ORGANIC, MTF_RSI_STAIRCASE, EARLY_BULL, BULL_CONFIRM, SQUEEZE_BULL, etc. are all bull-biased
+  }
   for(const entry of wrLog){
     const age=now-entry.ts;
     // Check 4H outcome
@@ -4538,7 +4598,7 @@ async function wrCheckOutcomes(){
         if(Array.isArray(raw)&&raw.length){
           const closePrice=parseFloat(raw[raw.length-1][4]);
           const pct=((closePrice-entry.entryPrice)/entry.entryPrice*100);
-          const isBull=entry.type.startsWith('VAH')||entry.type==='EARLY_BULL'||entry.type==='BULL_CONFIRM';
+          const isBull=isBullishType(entry.type);
           entry.result4h={price:closePrice,pct:pct.toFixed(2),win:isBull?pct>0:pct<0};
           entry.checked4h=true;changed=true;
         }
@@ -4552,7 +4612,7 @@ async function wrCheckOutcomes(){
         if(Array.isArray(raw)&&raw.length){
           const closePrice=parseFloat(raw[raw.length-1][4]);
           const pct=((closePrice-entry.entryPrice)/entry.entryPrice*100);
-          const isBull=entry.type.startsWith('VAH')||entry.type==='EARLY_BULL'||entry.type==='BULL_CONFIRM';
+          const isBull=isBullishType(entry.type);
           entry.result24h={price:closePrice,pct:pct.toFixed(2),win:isBull?pct>0:pct<0};
           entry.checked24h=true;changed=true;
         }
@@ -4560,6 +4620,65 @@ async function wrCheckOutcomes(){
     }
   }
   if(changed){localStorage.setItem('vpWinRate',JSON.stringify(wrLog));renderWinRate();}
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IDEA #8: PROBABILITY OF EXPANSION
+// Learns from wrLog (now storing full feature vectors + outcomes).
+// For a live signal, finds historical entries with similar features
+// and computes the empirical win rate of THAT combination — not just
+// the signal type in isolation. Requires a minimum sample size before
+// showing a number; otherwise shows "LEARNING" so it's never a fake stat.
+// ══════════════════════════════════════════════════════════════════
+const MIN_SAMPLE_FOR_PROBABILITY=8;
+
+function featureMatchScore(a,b){
+  // Similarity score 0-5 between two feature vectors
+  let score=0;
+  if(a.volTier===b.volTier)score++;
+  if(a.grade===b.grade)score++;
+  if(a.trend===b.trend)score++;
+  if(Math.abs((a.adx||0)-(b.adx||0))<=8)score++;
+  if(a.hasAbsorption===b.hasAbsorption&&a.hasSupplyExhaustion===b.hasSupplyExhaustion)score++;
+  return score;
+}
+
+function calcProbabilityOfExpansion(sig){
+  const sigFeatures={
+    volTier:sig.volTier||'NORMAL',
+    adx:Math.round(sig.adx||0),
+    grade:(typeof calcGrade==='function'?calcGrade(sig):null),
+    trend:sig.trend||'NEUTRAL',
+    hasAbsorption:!!(sig.absorption||sig.multiDayAbsorption),
+    hasSupplyExhaustion:!!sig.supplyExhaustion
+  };
+  // Only use resolved entries (24h outcome checked) of the SAME signal type
+  const resolved=wrLog.filter(e=>e.type===sig.type&&e.checked24h&&e.result24h&&e.features);
+  if(resolved.length<MIN_SAMPLE_FOR_PROBABILITY){
+    return{status:'LEARNING',sampleSize:resolved.length,needed:MIN_SAMPLE_FOR_PROBABILITY};
+  }
+  // Weight by similarity — closer feature matches count more
+  const scored=resolved.map(e=>({entry:e,match:featureMatchScore(sigFeatures,e.features)}));
+  scored.sort((a,b)=>b.match-a.match);
+  // Use top 60% most-similar entries (or all if sample is small)
+  const useCount=Math.max(MIN_SAMPLE_FOR_PROBABILITY,Math.ceil(scored.length*0.6));
+  const pool=scored.slice(0,useCount);
+  const wins=pool.filter(p=>p.entry.result24h.win).length;
+  const probability=Math.round((wins/pool.length)*100);
+  const avgMatch=pool.reduce((a,p)=>a+p.match,0)/pool.length;
+  const confidence=avgMatch>=4?'HIGH':avgMatch>=2.5?'MEDIUM':'LOW';
+  return{status:'READY',probability,sampleSize:pool.length,confidence};
+}
+
+function getProbabilityBadge(s){
+  let p;
+  try{p=calcProbabilityOfExpansion(s);}catch(e){return'';}
+  if(p.status==='LEARNING'){
+    return`<span style="font-size:.44rem;padding:1px 4px;color:#888;border:1px solid #555;background:rgba(128,128,128,.08)" title="Need ${p.needed} resolved outcomes for this signal type to compute probability — have ${p.sampleSize}">🎲 LEARNING (${p.sampleSize}/${p.needed})</span>`;
+  }
+  const col=p.probability>=65?'#00FFB2':p.probability>=45?'#FFB800':'#FF5E3A';
+  const confCol=p.confidence==='HIGH'?col:'#888';
+  return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800" title="Based on ${p.sampleSize} similar historical signals — confidence: ${p.confidence}">🎯 P(72h move)=${p.probability}% <span style="color:${confCol};font-size:.9em">[${p.confidence}]</span></span>`;
 }
 
 function renderWinRate(){
@@ -5245,6 +5364,201 @@ function getAbsorptionBadge(s){
   const a=s.absorption;
   const col=a.strength==='STRONG'?'#00FFB2':'#00BFFF';
   return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800;animation:pulse 2.2s infinite" title="High volume (${a.volRatio}× avg), tiny candle body near ${a.nearLevel} — sell pressure being absorbed">🧲 ABSORPTION ${a.strength}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IDEA #1: MULTI-DAY ABSORPTION INDEX
+// "Volume Expansion ÷ Price Expansion" across last 3-5 daily candles.
+// Climbing volume + flat price = someone soaking up every sell order
+// over multiple days. Stronger signal than single-candle absorption.
+// ══════════════════════════════════════════════════════════════════
+function detectMultiDayAbsorption(c1d){
+  if(!c1d||c1d.length<7)return null;
+  const days=c1d.slice(-6,-1); // last 5 confirmed daily candles
+  if(days.length<5)return null;
+  const vols=days.map(d=>d.volume);
+  const priceChgs=days.map(d=>Math.abs(d.close-d.open)/d.open*100);
+  // Volume expansion: is each day's volume generally higher than the prior?
+  let volRising=0;
+  for(let i=1;i<vols.length;i++)if(vols[i]>vols[i-1]*0.95)volRising++;
+  const volExpansionPct=((vols[vols.length-1]-vols[0])/vols[0])*100;
+  const avgPriceMove=priceChgs.reduce((a,b)=>a+b,0)/priceChgs.length;
+  if(volExpansionPct<60||volRising<3)return null; // need real volume climb
+  if(avgPriceMove>2.5)return null; // price moving too much — not absorption, it's a trend
+  const absorptionScore=volExpansionPct/Math.max(0.3,avgPriceMove);
+  if(absorptionScore<40)return null;
+  return{type:'MULTIDAY_ABSORPTION',volExpansionPct:Math.round(volExpansionPct),avgPriceMove:avgPriceMove.toFixed(2),absorptionScore:Math.round(absorptionScore),
+    level:absorptionScore>120?'EXTREME':absorptionScore>70?'HIGH':'MODERATE'};
+}
+
+function getMultiDayAbsorptionBadge(s){
+  if(!s.multiDayAbsorption)return'';
+  const a=s.multiDayAbsorption;
+  const col=a.level==='EXTREME'?'#FF00FF':a.level==='HIGH'?'#00FFB2':'#00BFFF';
+  return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800" title="Volume +${a.volExpansionPct}% over 5 days while price moved only ${a.avgPriceMove}%/day avg — sustained accumulation">📥 ${a.level} ABSORPTION (${a.absorptionScore})</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IDEA #2: SUPPLY EXHAUSTION SCORE
+// Measures shrinking pullback size across recent swing highs/lows.
+// Each rally gets sold less and less → sellers are running out.
+// ══════════════════════════════════════════════════════════════════
+function findSwingPullbacks(candles,lookback=40){
+  const sl=candles.slice(-lookback,-1);
+  if(sl.length<15)return[];
+  const pullbacks=[];
+  // Find local swing highs, then measure the pullback (high to next low) after each
+  for(let i=2;i<sl.length-2;i++){
+    const c=sl[i];
+    const isSwingHigh=c.high>sl[i-1].high&&c.high>sl[i-2].high&&c.high>sl[i+1].high&&c.high>sl[i+2].high;
+    if(isSwingHigh){
+      // find the lowest low in the next few candles (the pullback after this swing high)
+      const after=sl.slice(i+1,Math.min(i+6,sl.length));
+      if(after.length<2)continue;
+      const nextLow=Math.min(...after.map(a=>a.low));
+      const pullbackPct=((c.high-nextLow)/c.high)*100;
+      pullbacks.push({idx:i,pullbackPct});
+    }
+  }
+  return pullbacks;
+}
+
+function detectSupplyExhaustion(candles){
+  const pullbacks=findSwingPullbacks(candles);
+  if(pullbacks.length<3)return null;
+  const recent=pullbacks.slice(-4); // last up to 4 swing-high pullbacks
+  if(recent.length<3)return null;
+  // Check if pullback % is monotonically (or mostly) shrinking
+  let shrinking=0;
+  for(let i=1;i<recent.length;i++){
+    if(recent[i].pullbackPct<recent[i-1].pullbackPct*0.85)shrinking++;
+  }
+  const totalSteps=recent.length-1;
+  if(shrinking<totalSteps-0||shrinking<2)return null; // require consistent shrinkage
+  const firstPB=recent[0].pullbackPct,lastPB=recent[recent.length-1].pullbackPct;
+  const reductionPct=((firstPB-lastPB)/firstPB)*100;
+  if(reductionPct<40)return null; // not a meaningful enough reduction
+  return{type:'SUPPLY_EXHAUSTION',firstPullback:firstPB.toFixed(1),lastPullback:lastPB.toFixed(1),
+    reductionPct:Math.round(reductionPct),swingCount:recent.length};
+}
+
+function getSupplyExhaustionBadge(s){
+  if(!s.supplyExhaustion)return'';
+  const e=s.supplyExhaustion;
+  const col=e.reductionPct>65?'#00FFB2':'#FFB800';
+  return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800" title="Pullbacks shrinking: ${e.firstPullback}% → ${e.lastPullback}% across last ${e.swingCount} rallies — sellers running out">💧 SUPPLY EXHAUSTED -${e.reductionPct}%</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IDEA #6: TIME COMPRESSION DURATION
+// Extends NR7 — tracks HOW LONG a coin has been range-compressing,
+// not just whether the latest candle is the narrowest of 7.
+// Longer compression = more potential energy stored = bigger move.
+// ══════════════════════════════════════════════════════════════════
+function detectCompressionDuration(candles){
+  const n=candles.length;
+  if(n<45)return null;
+  const confirmed=candles.slice(0,-1); // exclude live forming candle
+  const ranges=confirmed.map(c=>c.high-c.low);
+  const baselineWindow=ranges.slice(-42,-22); // 20-candle baseline further back
+  if(baselineWindow.length<15)return null;
+  const baselineAvg=baselineWindow.reduce((a,b)=>a+b,0)/baselineWindow.length;
+  if(baselineAvg<=0)return null;
+  // Walk backward from the most recent candle, counting how many consecutive
+  // candles have range < 70% of baseline (i.e. still "compressed")
+  let duration=0;
+  for(let i=ranges.length-1;i>=Math.max(0,ranges.length-40);i--){
+    if(ranges[i]<baselineAvg*0.7)duration++;
+    else break;
+  }
+  if(duration<8)return null; // not meaningfully long yet
+  const tier=duration>=25?'EXTREME':duration>=16?'DEEP':'BUILDING';
+  return{type:'TIME_COMPRESSION',duration,tier};
+}
+
+function getCompressionDurationBadge(s){
+  if(!s.compressionDuration)return'';
+  const c=s.compressionDuration;
+  const col=c.tier==='EXTREME'?'#FF00FF':c.tier==='DEEP'?'#C97FFF':'#8A7FFF';
+  return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800" title="${c.duration} consecutive candles in compressed range — potential energy building">⏳ ${c.tier} COMPRESSION (${c.duration} bars)</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IDEA #4: SECTOR IGNITION
+// Within a sector, finds a leader already pumping while laggards are
+// still flat. The laggards are often the better trade — sector
+// expansion hasn't been priced in for them yet.
+// ══════════════════════════════════════════════════════════════════
+function detectSectorIgnition(allSignalsForSector,sym){
+  const sec=getSector(sym);
+  if(sec==='OTHER')return null;
+  // Gather all coins in this sector with current 24h change
+  const sectorCoins=Object.keys(SECTOR_MAP).filter(s=>SECTOR_MAP[s]===sec);
+  const changes=sectorCoins.map(s=>({sym:s,chg:chgCache[s]})).filter(c=>c.chg!==undefined);
+  if(changes.length<3)return null;
+  const sorted=[...changes].sort((a,b)=>b.chg-a.chg);
+  const leader=sorted[0];
+  const laggards=sorted.slice(1).filter(c=>c.chg<leader.chg*0.35); // well below leader's move
+  if(leader.chg<4)return null; // leader needs a real move to count as "ignition"
+  if(laggards.length<2)return null;
+  const isLeader=sym===leader.sym;
+  const isLaggard=laggards.some(l=>l.sym===sym);
+  if(!isLeader&&!isLaggard)return null;
+  return{type:'SECTOR_IGNITION',sector:sec,leaderSym:leader.sym,leaderChg:leader.chg,
+    laggardCount:laggards.length,role:isLeader?'LEADER':'LAGGARD'};
+}
+
+function getSectorIgnitionBadge(s){
+  if(!s.sectorIgnition)return'';
+  const ig=s.sectorIgnition;
+  if(ig.role==='LEADER'){
+    return`<span style="font-size:.46rem;padding:1px 5px;color:#00FF78;border:1px solid rgba(0,255,120,.55);background:rgba(0,255,120,.12);font-weight:800" title="${ig.sector} sector leader, +${ig.leaderChg.toFixed(1)}% — ${ig.laggardCount} laggards still sleeping">🔥 ${ig.sector} IGNITION LEADER</span>`;
+  }
+  return`<span style="font-size:.46rem;padding:1px 5px;color:#FFD700;border:1px solid rgba(255,215,0,.55);background:rgba(255,215,0,.12);font-weight:800" title="${ig.sector} leader ${ig.leaderSym.replace('USDT','')} is +${ig.leaderChg.toFixed(1)}% — this coin hasn't followed yet">⏰ ${ig.sector} LAGGARD (catch-up?)</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IDEA #5: PAIN INDEX (Trapped Traders) — simplified, honest version
+// Approximates trapped longs/shorts using funding + OI direction +
+// distance from VWAP. Not precise liquidation data — directional only.
+// ══════════════════════════════════════════════════════════════════
+function calcPainIndex(sym,candles){
+  const fund=fundCache[sym];
+  const oi=oiCache[sym];
+  if(!fund&&!oi)return null;
+  const vwapData=candles?calcSessionVWAP(candles):null;
+  let trappedLongsScore=0,trappedShortsScore=0;
+  const notes=[];
+  if(fund){
+    if(fund.rate>0.03){trappedLongsScore+=30;notes.push('positive funding');}
+    else if(fund.rate<-0.03){trappedShortsScore+=30;notes.push('negative funding');}
+  }
+  if(oi&&oi.oiDir==='UP'){
+    // OI rising — could be either side, lean on price position vs VWAP to decide
+    if(vwapData&&candles){
+      const cur=candles[candles.length-2];
+      if(cur.close<vwapData.vwap){trappedLongsScore+=25;notes.push('below VWAP w/ rising OI');}
+      else{trappedShortsScore+=25;notes.push('above VWAP w/ rising OI');}
+    }
+  }
+  if(vwapData&&candles){
+    const cur=candles[candles.length-2];
+    const distFromVwap=((cur.close-vwapData.vwap)/vwapData.vwap)*100;
+    if(distFromVwap<-1.5){trappedLongsScore+=20;notes.push('price stretched below VWAP');}
+    else if(distFromVwap>1.5){trappedShortsScore+=15;notes.push('price stretched above VWAP');}
+  }
+  const dominant=trappedLongsScore>trappedShortsScore?'LONGS':trappedShortsScore>trappedLongsScore?'SHORTS':null;
+  const score=Math.max(trappedLongsScore,trappedShortsScore);
+  if(!dominant||score<35)return null;
+  return{type:'PAIN_INDEX',side:dominant,score:Math.min(100,score),notes};
+}
+
+function getPainIndexBadge(s){
+  if(!s.painIndex)return'';
+  const p=s.painIndex;
+  const col=p.side==='SHORTS'?'#00FFB2':'#FF5E3A'; // trapped shorts = bullish for price, trapped longs = bearish risk
+  const label=p.side==='SHORTS'?'TRAPPED SHORTS':'TRAPPED LONGS';
+  return`<span style="font-size:.46rem;padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800" title="${p.notes.join(', ')} — score ${p.score}">⛓ ${label} (${p.score})</span>`;
 }
 
 function getOIBadge(sym){
