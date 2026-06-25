@@ -425,6 +425,11 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 @media(max-width:750px){.vp-sidebar,.modal-tf-row,.modal-ctx-bar{display:none;}.chart-info-bar{grid-template-columns:repeat(2,1fr);}}
 body.simple-mode #qualityFiltersRow{display:none !important;}
 #simpleModeBtn.on{background:rgba(0,255,178,.12);border-color:var(--acc);color:var(--acc);}
+.modal.clean-chart .modal-ctx-bar{max-height:22px;overflow:hidden;opacity:.45;}
+.modal.clean-chart .rr-panel{max-height:30px;overflow:hidden;opacity:.55;}
+#cleanChartBtn.on{background:rgba(0,255,178,.12);border-color:var(--acc);color:var(--acc);}
+.modal-ctx-bar .ctx-item.ctx-dim{opacity:.28;}
+#ctxShowAllBtn.on{background:rgba(0,191,255,.12);border-color:var(--acc2);color:var(--acc2);opacity:1;}
 </style>
 </head>
 <body>
@@ -736,28 +741,30 @@ body.simple-mode #qualityFiltersRow{display:none !important;}
         <button class="modal-tf-btn on" data-tf="1h" onclick="switchModalTF(this)">1H</button>
         <button class="modal-tf-btn" data-tf="4h" onclick="switchModalTF(this)">4H</button>
         <button class="modal-tf-btn" data-tf="1d" onclick="switchModalTF(this)">1D</button>
+        <button class="modal-tf-btn" id="cleanChartBtn" onclick="toggleCleanChart()" title="Collapses the context bar and R:R panel to single summary lines so the candle/volume/RSI area gets the freed-up height instead of being capped regardless of what's stacked above it" style="margin-left:8px">🧹 CLEAN</button>
       </div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-ctx-bar">
-      <div class="ctx-item">TREND <span class="ctx-val" id="ctxTrend">—</span></div>
-      <div class="ctx-item">EMA12 <span class="ctx-val" id="ctxEMA20">—</span></div>
-      <div class="ctx-item">EMA53 <span class="ctx-val" id="ctxEMA50">—</span></div>
-      <div class="ctx-item">EMA SIG <span class="ctx-val" id="ctxEMASig" style="font-weight:900">—</span></div>
-      <div class="ctx-item">VOL <span class="ctx-val" id="ctxVolTier">—</span></div>
-      <div class="ctx-item">RATIO <span class="ctx-val" id="ctxVolRatio">—</span></div>
-      <div class="ctx-item">HEAT <span class="ctx-val" id="ctxHeat">—</span></div>
-      <div class="ctx-item">STRUCT <span class="ctx-val" id="ctxMS">—</span></div>
-      <div class="ctx-item">OB <span class="ctx-val" id="ctxOB">—</span></div>
-      <div class="ctx-item">LIQ <span class="ctx-val" id="ctxLiq">—</span></div>
-      <div class="ctx-item">ADX <span class="ctx-val" id="ctxADX">—</span></div>
-      <div class="ctx-item">PATTERN <span class="ctx-val" id="ctxPattern">—</span></div>
-      <div class="ctx-item">CONF <span class="ctx-val" id="ctxConf">—</span></div>
-      <div class="ctx-item">OI <span class="ctx-val" id="ctxOI">—</span></div>
-      <div class="ctx-item">FUND <span class="ctx-val" id="ctxFund">—</span></div>
-      <div class="ctx-item">CVD <span class="ctx-val cvd-mini" id="ctxCVD">—</span></div>
-      <div class="ctx-item">Z-SCORE <span class="ctx-val" id="ctxZScore">—</span></div>
-      <div class="ctx-item">TAPE <span class="ctx-val" id="ctxTape">—</span></div>
+    <div class="modal-ctx-bar" id="ctxBar">
+      <div class="ctx-item" data-k="TREND">TREND <span class="ctx-val" id="ctxTrend">—</span></div>
+      <div class="ctx-item" data-k="EMA12">EMA12 <span class="ctx-val" id="ctxEMA20">—</span></div>
+      <div class="ctx-item" data-k="EMA53">EMA53 <span class="ctx-val" id="ctxEMA50">—</span></div>
+      <div class="ctx-item" data-k="EMASIG">EMA SIG <span class="ctx-val" id="ctxEMASig" style="font-weight:900">—</span></div>
+      <div class="ctx-item" data-k="VOL">VOL <span class="ctx-val" id="ctxVolTier">—</span></div>
+      <div class="ctx-item" data-k="RATIO">RATIO <span class="ctx-val" id="ctxVolRatio">—</span></div>
+      <div class="ctx-item" data-k="HEAT">HEAT <span class="ctx-val" id="ctxHeat">—</span></div>
+      <div class="ctx-item" data-k="STRUCT">STRUCT <span class="ctx-val" id="ctxMS">—</span></div>
+      <div class="ctx-item" data-k="OB">OB <span class="ctx-val" id="ctxOB">—</span></div>
+      <div class="ctx-item" data-k="LIQ">LIQ <span class="ctx-val" id="ctxLiq">—</span></div>
+      <div class="ctx-item" data-k="ADX">ADX <span class="ctx-val" id="ctxADX">—</span></div>
+      <div class="ctx-item" data-k="PATTERN">PATTERN <span class="ctx-val" id="ctxPattern">—</span></div>
+      <div class="ctx-item" data-k="CONF">CONF <span class="ctx-val" id="ctxConf">—</span></div>
+      <div class="ctx-item" data-k="OI">OI <span class="ctx-val" id="ctxOI">—</span></div>
+      <div class="ctx-item" data-k="FUND">FUND <span class="ctx-val" id="ctxFund">—</span></div>
+      <div class="ctx-item" data-k="CVD">CVD <span class="ctx-val cvd-mini" id="ctxCVD">—</span></div>
+      <div class="ctx-item" data-k="ZSCORE">Z-SCORE <span class="ctx-val" id="ctxZScore">—</span></div>
+      <div class="ctx-item" data-k="TAPE">TAPE <span class="ctx-val" id="ctxTape">—</span></div>
+      <button class="ctx-item" id="ctxShowAllBtn" onclick="toggleCtxRelevance()" style="cursor:pointer;background:transparent;border:1px solid var(--border2);color:var(--muted)" title="By default this strip dims fields that aren't typically relevant to the fired signal's type, so you scan for the 2-3 that matter instead of all 17">🔍 ALL</button>
     </div>
     <div class="rr-panel" id="rrPanel">
       <div class="rr-item"><div class="rr-item-lbl">ENTRY</div><div class="rr-item-val" id="rrEntry">—</div></div>
@@ -3906,7 +3913,48 @@ async function openChart(symbol,tf,sigType,vp){
   document.querySelectorAll('.modal-tf-btn').forEach(b=>b.classList.toggle('on',b.dataset.tf===(tf||'1h')));
   document.getElementById('modalOverlay').classList.add('open');document.getElementById('chartLoadingState').style.display='flex';document.getElementById('chartContainer').style.display='none';document.getElementById('chartInfoBar').style.display='none';
   document.getElementById('modalNote').value=tradeNotes[symbol]||'';
+  try{applyCtxRelevance(sigType);}catch(e){}
   await loadChartData(symbol,tf||'1h',vp);
+}
+
+// ── CONTEXT-BAR RELEVANCE ─────────────────────────────────────────
+// 17 fields is too many to scan on every open. Dim the ones that aren't
+// typically load-bearing for the signal type that actually fired —
+// same "budget" idea already used for the table's badge row. "🔍 ALL"
+// always un-dims everything with one click.
+let ctxShowAll=false;
+const CTX_RELEVANCE={
+  VAH:['TREND','VOL','RATIO','HEAT','CONF','OI','FUND'],
+  VAH_SPIKE:['TREND','VOL','RATIO','HEAT','CONF','OI','FUND'],
+  VAH_DIV:['TREND','VOL','RATIO','CONF','OI','FUND'],
+  VAL:['TREND','VOL','RATIO','HEAT','CONF','OI','FUND'],
+  VAL_SPIKE:['TREND','VOL','RATIO','HEAT','CONF','OI','FUND'],
+  VAL_DIV:['TREND','VOL','RATIO','CONF','OI','FUND'],
+  POC:['STRUCT','CONF','ADX','PATTERN'],
+  POC_SPIKE:['STRUCT','CONF','ADX','PATTERN','VOL'],
+  POC_DIV:['STRUCT','CONF','ADX','PATTERN'],
+  COMPRESSION_SQUEEZE:['ADX','VOL','RATIO','STRUCT'],
+  VWAP_RECLAIM:['TREND','EMASIG','VOL','STRUCT'],
+  MTF_RSI_STAIRCASE:['TREND','EMA12','EMA53','EMASIG'],
+  SPOT_ORGANIC:['CVD','TAPE','VOL','RATIO'],
+  EARLY_BULL:['TREND','EMASIG','VOL','ADX'],
+  BULL_CONFIRM:['TREND','EMASIG','VOL','CONF'],
+  EARLY_BEAR:['TREND','EMASIG','VOL','ADX']
+};
+function applyCtxRelevance(sigType){
+  const bar=document.getElementById('ctxBar');if(!bar)return;
+  const relevant=CTX_RELEVANCE[sigType];
+  const items=bar.querySelectorAll('.ctx-item[data-k]');
+  items.forEach(el=>{
+    const show=ctxShowAll||!relevant||relevant.includes(el.dataset.k);
+    el.classList.toggle('ctx-dim',!show);
+  });
+  const btn=document.getElementById('ctxShowAllBtn');
+  if(btn)btn.classList.toggle('on',ctxShowAll);
+}
+function toggleCtxRelevance(){
+  ctxShowAll=!ctxShowAll;
+  applyCtxRelevance(currentSigType);
 }
 
 async function loadChartData(symbol,tf,vpHint){
@@ -4062,6 +4110,7 @@ let layerState = {
   VOL:true, RSI:true,
   SR:{}, OB:{}
 };
+let cleanChartMode=false; // collapses ctx-bar + R:R panel so the chart can use the freed height
 // Stores {series, data, opts} for each layer so we can remove+recreate
 let layerDefs = {};
 let _srList=[], _obList=[];
@@ -4097,11 +4146,11 @@ function renderLayerToolbar(){
   html+=btn('POC','#FFD700',layerState.POC,"toggleLyr('POC')");
   html+=btn('VAL','#00FFB2',layerState.VAL,"toggleLyr('VAL')");
   html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
-  if(layerState.EMA5===undefined)layerState.EMA5=true;
-  if(layerState.EMA12===undefined)layerState.EMA12=true;
-  if(layerState.EMA16===undefined)layerState.EMA16=true;
+  if(layerState.EMA5===undefined)layerState.EMA5=false;
+  if(layerState.EMA12===undefined)layerState.EMA12=false;
+  if(layerState.EMA16===undefined)layerState.EMA16=false;
   if(layerState.EMA40===undefined)layerState.EMA40=false; // blue optional, off by default
-  if(layerState.EMA53===undefined)layerState.EMA53=true;
+  if(layerState.EMA53===undefined)layerState.EMA53=true; // baseline MA — kept visible
   html+=btn('MA5 Y','#FFD700',layerState.EMA5,"toggleLyr('EMA5')");
   html+=btn('MA12 R','#FF3333',layerState.EMA12,"toggleLyr('EMA12')");
   html+=btn('MA16 O','#FF9500',layerState.EMA16,"toggleLyr('EMA16')");
@@ -4111,7 +4160,7 @@ function renderLayerToolbar(){
     html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
     _srList.forEach((l,i)=>{
       const key='SR'+i;
-      if(layerState.SR[key]===undefined)layerState.SR[key]=true;
+      if(layerState.SR[key]===undefined)layerState.SR[key]=false;
       // Clean label: R1, R2, S1, S2 — with FLIP indicator
       const baseLbl=l.type==='R'?'R'+(++rIdx):'S'+(++sIdx);
       const lbl=l.flipped?baseLbl+'~':baseLbl; // tilde = flipped
@@ -4123,7 +4172,7 @@ function renderLayerToolbar(){
     html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
     _obList.forEach((ob,i)=>{
       const key='OB'+i;
-      if(layerState.OB[key]===undefined)layerState.OB[key]=true;
+      if(layerState.OB[key]===undefined)layerState.OB[key]=false;
       const lbl=(ob.type==='BULL'?'OB↑':'OB↓')+(i+1);
       html+=btn(lbl,ob.type==='BULL'?'#7C4DFF':'#FF4081',layerState.OB[key],`toggleOB(${i})`);
     });
@@ -4132,8 +4181,8 @@ function renderLayerToolbar(){
   html+=btn('VOL','#00BFFF',layerState.VOL,"toggleLyr('VOL')");
   html+=btn('RSI','#CF9FFF',layerState.RSI,"toggleLyr('RSI')");
   html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
-  if(layerState.VPVR===undefined)layerState.VPVR=true;
-  html+=btn('VPVR','#00E5FF',layerState.VPVR,"toggleLyr('VPVR')");
+  if(layerState.VPVR===undefined)layerState.VPVR=false;
+  html+=btn('VPVR','#00E5FF',layerState.VPVR,"toggleLyr('VPVR')").replace('<button',`<button title="Second volume profile recalculated for whatever's currently scrolled into view — different from the sidebar histogram, which stays fixed to the signal's original detection window"`);
   html+='<span style="color:#1E3A55;margin:0 2px">│</span>';
   html+=`<button onclick="resetAllLayers()" style="background:transparent;border:1px solid #3A6880;color:#3A6880;font-family:'Space Mono',monospace;font-size:var(--fs-2);padding:2px 8px;cursor:pointer">SHOW ALL</button>`;
   html+='</div>';
@@ -4251,6 +4300,24 @@ function resetAllLayers(){
   loadChartData(currentSymbol,currentTF,null);
 }
 
+// ── Session-open markers (1H chart only — boundaries align cleanly to
+// hourly candles; on 4H/1D the UTC session hours don't land on a candle
+// open so a marker there would be misleading, not helpful). ────────────
+function getSessionMarkers(candles,tf){
+  if(tf!=='1h')return[];
+  const out=[];
+  const opens=[{h:0,lbl:'ASIA',color:'#00BFFF'},{h:7,lbl:'EU',color:'#00FFB2'},{h:13,lbl:'US',color:'#FFB800'}];
+  candles.forEach(c=>{
+    const d=new Date(c.time);
+    if(d.getUTCMinutes()!==0)return; // only exact hour candles
+    const h=d.getUTCHours();
+    const match=opens.find(o=>o.h===h);
+    if(match){
+      out.push({time:Math.floor(c.time/1000),position:'aboveBar',color:match.color,shape:'circle',text:match.lbl[0],size:0.5});
+    }
+  });
+  return out;
+}
 function buildLWChart(candles,vp,sr,obs){
   destroyAllCharts();
   layerDefs={};
@@ -4263,7 +4330,7 @@ function buildLWChart(candles,vp,sr,obs){
   const container=document.getElementById('chartContainer');
 
   // Compute heights explicitly — no flex guessing
-  const mainH=Math.max(240,Math.floor(window.innerHeight*.38));
+  const mainH=Math.max(240,Math.floor(window.innerHeight*(cleanChartMode?0.58:0.38)));
   const volH=62;
   const rsiH=80;
   const SIDEBAR_W=106;
@@ -4367,7 +4434,7 @@ function buildLWChart(candles,vp,sr,obs){
     let rCount=0,sCount=0;
     sr.slice(0,5).forEach((l,i)=>{
       const key='SR'+i;
-      if(layerState.SR[key]===undefined) layerState.SR[key]=true;
+      if(layerState.SR[key]===undefined) layerState.SR[key]=false;
       const typeLabel=l.type==='R'?'R'+(++rCount):'S'+(++sCount);
       const flipMark=l.flipped?'~':''; // tilde signals S/R flip
       const label='◀ '+typeLabel+flipMark;
@@ -4382,7 +4449,7 @@ function buildLWChart(candles,vp,sr,obs){
   if(obs&&obs.length){
     obs.forEach((ob,i)=>{
       const key='OB'+i;
-      if(layerState.OB[key]===undefined) layerState.OB[key]=true;
+      if(layerState.OB[key]===undefined) layerState.OB[key]=false;
       const color=ob.type==='BULL'?'rgba(124,77,255,0.8)':'rgba(255,64,129,0.8)';
       const colorFaint=ob.type==='BULL'?'rgba(124,77,255,0.3)':'rgba(255,64,129,0.3)';
       const label=`◀ OB${ob.type==='BULL'?'↑':'↓'}${i+1}`;
@@ -4421,14 +4488,14 @@ function buildLWChart(candles,vp,sr,obs){
   // ── EMA Strategy Lines: 5/12/16/40/53 ─────────────────────────
   // Yellow=5, Red=12, Orange=16, Blue=40, White=53
   const emaConfig=[
-    {key:'EMA5', field:'ema5',  color:'#FFD700', width:1.5, title:'MA5'},
-    {key:'EMA12',field:'ema12', color:'#FF3333', width:1.5, title:'MA12'},
-    {key:'EMA16',field:'ema16', color:'#FF9500', width:1,   title:'MA16'},
-    {key:'EMA40',field:'ema40', color:'#4488FF', width:1,   title:'MA40'},
-    {key:'EMA53',field:'ema53', color:'#EEEEEE', width:2,   title:'MA53'},
+    {key:'EMA5', field:'ema5',  color:'#FFD700', width:1.5, title:'MA5',  defaultOn:false},
+    {key:'EMA12',field:'ema12', color:'#FF3333', width:1.5, title:'MA12', defaultOn:false},
+    {key:'EMA16',field:'ema16', color:'#FF9500', width:1,   title:'MA16', defaultOn:false},
+    {key:'EMA40',field:'ema40', color:'#4488FF', width:1,   title:'MA40', defaultOn:false},
+    {key:'EMA53',field:'ema53', color:'#EEEEEE', width:2,   title:'MA53', defaultOn:true},
   ];
   emaConfig.forEach(cfg=>{
-    if(layerState[cfg.key]===undefined)layerState[cfg.key]=true;
+    if(layerState[cfg.key]===undefined)layerState[cfg.key]=cfg.defaultOn;
     // EMA53 always visible by default (the baseline)
     const vis=cfg.key==='EMA53'?layerState[cfg.key]:layerState[cfg.key];
     const data=candles.filter(c=>c[cfg.field]>0).map(c=>({time:Math.floor(c.time/1000),value:c[cfg.field]}));
@@ -4450,20 +4517,25 @@ function buildLWChart(candles,vp,sr,obs){
   const sp=currentSigType&&currentSigType.startsWith('VAH')?'belowBar':'aboveBar';
 
   // ── Crossover markers + signal marker — set once together ────────
-  const crossMarkers=[];
+  // Capped to the most recent crossovers only — annotating EVERY historical
+  // MA cross in the loaded window turned into a dozen+ arrows fighting the
+  // S/R lines and OB boxes for the same small chart area.
+  const allCrossMarkers=[];
   for(let i=1;i<candles.length;i++){
     const c=candles[i],pc=candles[i-1];
     if(!c.ema5||!c.ema12||!c.ema53)continue;
     const t=Math.floor(c.time/1000);
     if(pc.ema5<=pc.ema53&&c.ema5>c.ema53)
-      crossMarkers.push({time:t,position:'belowBar',color:'#FFD700',shape:'arrowUp',text:'MA5↑'});
+      allCrossMarkers.push({time:t,position:'belowBar',color:'#FFD700',shape:'arrowUp',text:'MA5↑'});
     if(pc.ema12<=pc.ema53&&c.ema12>c.ema53)
-      crossMarkers.push({time:t,position:'belowBar',color:'#FF3333',shape:'arrowUp',text:'BULL'});
+      allCrossMarkers.push({time:t,position:'belowBar',color:'#FF3333',shape:'arrowUp',text:'BULL'});
     if(pc.ema5>=pc.ema53&&c.ema5<c.ema53)
-      crossMarkers.push({time:t,position:'aboveBar',color:'#FFD700',shape:'arrowDown',text:'MA5↓'});
+      allCrossMarkers.push({time:t,position:'aboveBar',color:'#FFD700',shape:'arrowDown',text:'MA5↓'});
     if(pc.ema12>=pc.ema53&&c.ema12<c.ema53)
-      crossMarkers.push({time:t,position:'aboveBar',color:'#FF3333',shape:'arrowDown',text:'BEAR'});
+      allCrossMarkers.push({time:t,position:'aboveBar',color:'#FF3333',shape:'arrowDown',text:'BEAR'});
   }
+  const crossMarkers=allCrossMarkers.slice(-2); // most recent 2 only
+  try{crossMarkers.push(...getSessionMarkers(candles,currentTF));}catch(e){}
   if(currentSigType) crossMarkers.push({time:last2.time,position:sp,color:sc,shape:ss2,text:currentSigType,size:2});
   if(crossMarkers.length){
     try{candleSeries.setMarkers(crossMarkers.sort((a,b)=>a.time-b.time));}catch(e){}
@@ -4539,7 +4611,11 @@ function buildLWChart(candles,vp,sr,obs){
 
   // ── VPVR — Visible Range Volume Profile ──────────────────────────
   // Draw after EMA lines so VPVR levels are visible on top
-  if(layerState.VPVR!==false){
+  // VPVR is a SECOND, differently-windowed volume profile (recalculated for
+  // whatever's currently scrolled into view) vs. the sidebar histogram (fixed
+  // to the signal's detection window). Showing both by default looked like
+  // two disagreeing volume reads — now opt-in via the layer toolbar.
+  if(layerState.VPVR===true){
     try{addVPVRToChart(window._extCandles||candles,currentTF);}catch(e){}
   }
 
@@ -4564,6 +4640,40 @@ function buildLWChart(candles,vp,sr,obs){
 }
 
 
+// ── CLEAN CHART ───────────────────────────────────────────────────
+// The candle pane was hard-capped at 38% of viewport height regardless
+// of how much chrome (17-field ctx bar, ~16-field R:R panel) sat above
+// it. This collapses that chrome to thin summary strips and gives the
+// freed height back to price/volume/RSI — without refetching candles
+// or losing the current zoom/scroll position.
+function toggleCleanChart(){
+  cleanChartMode=!cleanChartMode;
+  const modal=document.querySelector('.modal');
+  const btn=document.getElementById('cleanChartBtn');
+  if(modal)modal.classList.toggle('clean-chart',cleanChartMode);
+  if(btn)btn.classList.toggle('on',cleanChartMode);
+  if(!mainChartObj)return; // nothing loaded yet, just remember the preference for next open
+  const mainEl=document.getElementById('mainChart');
+  const volEl=document.getElementById('volChart');
+  const rsiEl=document.getElementById('rsiChart');
+  const innerRow=document.getElementById('chartInnerRow');
+  const container=document.getElementById('chartContainer');
+  const modalBody=container.closest('.modal-body')||container.parentElement;
+  const mainH=Math.max(240,Math.floor(window.innerHeight*(cleanChartMode?0.58:0.38)));
+  const volH=62,rsiH=80,SIDEBAR_W=106;
+  const availW=modalBody?modalBody.clientWidth:Math.floor(window.innerWidth*.94);
+  const mainW=Math.max(270,availW-SIDEBAR_W-2);
+  mainEl.style.height=mainH+'px';mainEl.style.width=mainW+'px';
+  if(innerRow){
+    innerRow.style.height=mainH+'px';
+    const sidebar=innerRow.querySelector('.vp-sidebar');
+    if(sidebar){sidebar.style.height=mainH+'px';sidebar.style.maxHeight=mainH+'px';}
+  }
+  container.style.height=(mainH+volH+rsiH)+'px';
+  try{mainChartObj.resize(mainW,mainH);}catch(e){}
+  try{if(volChartObj)volChartObj.resize(mainW,volH);}catch(e){}
+  try{if(rsiChartObj)rsiChartObj.resize(mainW,rsiH);}catch(e){}
+}
 function switchModalTF(btn){document.querySelectorAll('.modal-tf-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');currentTF=btn.dataset.tf;document.getElementById('modalTF').textContent=currentTF.toUpperCase();document.getElementById('chartLoadingState').style.display='flex';document.getElementById('chartLoadingState').innerHTML='<div>LOADING…</div><div class="loading-bar"><div class="loading-bar-inner"></div></div>';document.getElementById('chartContainer').style.display='none';document.getElementById('chartInfoBar').style.display='none';loadChartData(currentSymbol,currentTF,null);}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');destroyAllCharts();}
 function handleOverlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
