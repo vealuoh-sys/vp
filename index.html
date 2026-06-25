@@ -423,6 +423,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 .alert-item{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-2);padding:3px 0;border-bottom:1px solid var(--border);}
 .alert-del{color:var(--vah);cursor:pointer;}
 @media(max-width:750px){.vp-sidebar,.modal-tf-row,.modal-ctx-bar{display:none;}.chart-info-bar{grid-template-columns:repeat(2,1fr);}}
+body.simple-mode #qualityFiltersRow{display:none !important;}
+#simpleModeBtn.on{background:rgba(0,255,178,.12);border-color:var(--acc);color:var(--acc);}
 </style>
 </head>
 <body>
@@ -440,7 +442,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
     </div>
     <div>
       <div class="brand-name">VP<em>SCAN</em> <span style="font-size:var(--fs-3);color:var(--poc);font-weight:700">PRO</span></div>
-      <div class="brand-sub">MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · R:R · BACKTEST · CORR · LIVE WS · ALERTS</div>
+      <div class="brand-sub">MTF · CONFLUENCE · OB · WICK SWEEP · SMC · R:R · BACKTEST · CORR · LIVE WS · ALERTS</div>
     </div>
   </div>
   <div class="hdr-right">
@@ -496,8 +498,16 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <button class="sig-btn" id="earlyBearBtn" onclick="togEarlyBear(this)" style="border-color:#FF7040;color:#FF7040;opacity:.45">▼ EARLY BEAR</button>
   <button class="sig-btn" id="mtfBtn" onclick="togMTF(this)" style="border-color:#BF5FFF;color:#BF5FFF;">◈ MTF ONLY</button>
 </div>
+<!-- FILTER PRESETS -->
+<div style="display:flex;align-items:center;gap:6px;padding:5px 0 0;flex-wrap:wrap;" id="presetRow">
+  <span style="font-size:var(--fs-1);color:var(--muted);letter-spacing:.14em">PRESET:</span>
+  <button class="sig-btn" onclick="applyFilterPreset('CONSERVATIVE')" style="border-color:#00FFB2;color:#00FFB2" title="Tightest filters: trend-aligned, SPIKE+ volume, ADX≥25, ≤4% from POC, BTC corr≤0.7, needs 1.5×ATR upside room">🛡 CONSERVATIVE</button>
+  <button class="sig-btn" onclick="applyFilterPreset('STANDARD')" style="border-color:var(--acc);color:var(--acc)" title="The tool's normal defaults">⚖ STANDARD</button>
+  <button class="sig-btn" onclick="applyFilterPreset('AGGRESSIVE')" style="border-color:var(--warn);color:var(--warn)" title="Looser filters: trend-align off, lower vol/ADX bar, more room from POC — more signals, more noise">🚀 AGGRESSIVE</button>
+  <span style="font-size:var(--fs-1);color:var(--muted);margin-left:4px">— or tune individually below ↓</span>
+</div>
 <!-- TRADING QUALITY FILTERS -->
-<div style="display:flex;align-items:center;gap:6px;padding:5px 0 5px;flex-wrap:wrap;">
+<div style="display:flex;align-items:center;gap:6px;padding:5px 0 5px;flex-wrap:wrap;" id="qualityFiltersRow">
   <span style="font-size:var(--fs-1);color:var(--muted);letter-spacing:.14em">QUALITY:</span>
   <button id="btnTrendAlign" class="sig-btn" style="border-color:var(--acc);color:var(--acc);background:rgba(0,255,178,.07)" onclick="togTrendAlign()">✦ TREND ALIGNED</button>
   <div style="display:flex;align-items:center;gap:4px;font-size:var(--fs-2);color:var(--muted)">
@@ -596,6 +606,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <div class="view-toggle">
     <button class="view-btn on" id="viewTable" onclick="setView('table')" title="Table">☰</button>
     <button class="view-btn" id="viewHeat" onclick="setView('heatmap')" title="Heatmap">▦</button>
+    <button class="view-btn" id="simpleModeBtn" onclick="toggleSimpleMode()" title="Simple Mode — hides the granular filter dials and trims badges to just the single best one per row. Toggle off any time for full depth.">◐ SIMPLE</button>
   </div>
   <div class="flex1"></div>
   <span class="sig-count-badge" id="sigCount">— SIGNALS</span>
@@ -607,6 +618,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
   <div class="stat" style="--c:var(--poc)"><div class="stat-lbl">POC</div><div class="stat-val" id="stPOC">—</div></div>
   <div class="stat" style="--c:#BF5FFF"><div class="stat-lbl">MTF ◈</div><div class="stat-val" id="stMTF">—</div></div>
   <div class="stat" style="--c:#FF1744"><div class="stat-lbl">HIGH HEAT 🔥</div><div class="stat-val" id="stHeat">—</div></div>
+  <div class="stat" style="--c:#00BFFF" title="BTC trend regime — momentum signals get boosted in trending tape, fade/mean-reversion signals get boosted in chop. This adjusts signal strength, it doesn't hide anything."><div class="stat-lbl">BTC REGIME</div><div class="stat-val" id="stRegime">—</div></div>
   <div class="stat" style="--c:var(--warn)"><div class="stat-lbl">TOTAL</div><div class="stat-val" id="stTotal">—</div></div>
 </div>
 <div class="panel" id="watchlistPanel">
@@ -652,6 +664,8 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 <div class="panel wr-panel" id="badgeAnalyticsPanel" style="display:none;">
   <div class="panel-hdr" onclick="togglePanel('badgeAnalyticsPanel','baIco')"><span class="panel-title" style="color:#BF5FFF">🔬 BADGE ANALYTICS — WHICH SIGNALS ACTUALLY PREDICT OUTCOMES</span><span class="panel-toggle" id="baIco">▼</span></div>
   <div style="padding:8px" id="badgeAnalyticsBody"><div style="font-size:var(--fs-2);color:var(--muted)">Waiting for resolved signal outcomes…</div></div>
+  <div class="panel-hdr" style="cursor:default"><span class="panel-title" style="color:#BF5FFF;font-size:var(--fs-1)">↳ WHICH BADGES ARE JUST RESTATING EACH OTHER</span></div>
+  <div style="padding:8px" id="badgeCorrelationBody"><div style="font-size:var(--fs-2);color:var(--muted)">Waiting for logged signals…</div></div>
 </div>
 <div class="panel wr-panel" id="healthPanel" style="display:none;">
   <div class="panel-hdr" onclick="togglePanel('healthPanel','hpIco')"><span class="panel-title" style="color:#00BFFF">🩺 SYSTEM HEALTH — CONNECTIONS, SCANS &amp; ERRORS</span><span class="panel-toggle" id="hpIco">▼</span></div>
@@ -693,7 +707,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
 </div>
 <div class="heatmap-view" id="heatmapView"></div>
 <footer>
-  <div class="foot-note">VP 36-BIN · VALUE AREA 70% · MA5/12/16/40/53 · CROSSOVER · MTF · CONFLUENCE · OB · LIQ SWEEP · SMC · SESSION · BACKTEST · CORR · R:R · DIVERGENCE · ALERTS · WS · CVD ENGINE · VOL ACCEL · SWEEP RECLAIM · SECTOR CLUSTER · SPATIAL AUDIO · PHANTOM WALL · Z-SCORE · LIQ FUEL CELL · TAPE SWEEPER</div>
+  <div class="foot-note">VP 36-BIN · VALUE AREA 70% · MA5/12/16/40/53 · CROSSOVER · MTF · CONFLUENCE · OB · WICK SWEEP · SMC · SESSION · BACKTEST · CORR · R:R · DIVERGENCE · ALERTS · WS · CVD ENGINE · VOL ACCEL · WICK RECLAIM · SECTOR CLUSTER · OI UNWIND · Z-SCORE · LIQ CLUSTER (EST) · TAPE FREQ</div>
   <div class="legend">
     <div class="leg-item"><div class="leg-dot" style="background:var(--vah)"></div>VAH</div>
     <div class="leg-item"><div class="leg-dot" style="background:var(--val)"></div>VAL</div>
@@ -767,7 +781,7 @@ footer{margin-top:18px;padding-top:10px;border-top:1px solid var(--border);displ
       <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;"></div>
       <div class="rr-item"><div class="rr-item-lbl">ACCOUNT $</div><input id="psAccount" type="number" value="10000" style="background:var(--s2);border:1px solid var(--border2);color:var(--acc);font-family:'Space Mono',monospace;font-size:var(--fs-2);padding:2px 5px;width:80px;outline:none;" oninput="calcPositionSize()"></div>
       <div class="rr-item"><div class="rr-item-lbl">RISK %</div><input id="psRisk" type="number" value="1" min="0.1" max="10" step="0.1" style="background:var(--s2);border:1px solid var(--border2);color:var(--warn);font-family:'Space Mono',monospace;font-size:var(--fs-2);padding:2px 5px;width:50px;outline:none;" oninput="calcPositionSize()"></div>
-      <div class="rr-item"><div class="rr-item-lbl">AUTO SIZE</div><button onclick="calcKellySizing()" style="background:rgba(0,255,178,.08);border:1px solid var(--acc);color:var(--acc);font-family:'Space Mono',monospace;font-size:var(--fs-1);padding:3px 8px;cursor:pointer" title="Half-Kelly optimal sizing from your win rate data">½ KELLY</button></div>
+      <div class="rr-item"><div class="rr-item-lbl">AUTO SIZE</div><button onclick="calcVolTargetedSizing()" style="background:rgba(0,255,178,.08);border:1px solid var(--acc);color:var(--acc);font-family:'Space Mono',monospace;font-size:var(--fs-1);padding:3px 8px;cursor:pointer" title="Sizes risk% off volatility (ATR%) + a coarse win-rate tier — not a Kelly formula off a small sample">VOL SIZE</button></div>
       <div class="rr-item"><div class="rr-item-lbl">RISK $</div><div class="rr-item-val rr-b" id="psRiskDollar">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">UNITS</div><div class="rr-item-val" style="color:var(--acc2)" id="psUnits">—</div></div>
       <div class="rr-item"><div class="rr-item-lbl">POS SIZE</div><div class="rr-item-val rr-g" id="psPosSize">—</div></div>
@@ -923,6 +937,7 @@ const DEFAULT_PAIRS=[
 // STATE
 let activeTFs=new Set(['1h','4h','1d']),activeSigs=new Set(['VAH','VAL','POC']);
 let showWarnings=false,mtfOnly=false,allSignals=[],minStrength=0;
+let simpleMode=false; // hides granular filters + trims badges to the single best one
 let showEarlyBear=false; // OFF by default — noise signal
 let sortKey='strength',sortDir='desc',scanHistory=[],prevSigKeys=new Set();
 let livePrices={},watchlist=[],priceAlerts=[],coinGroups=[],activeGroup=null,tradeNotes={};
@@ -991,7 +1006,8 @@ const LABEL_MAP={
   COMPRESSION_SQUEEZE:'🌀 COILED SPRING',
   VWAP_RECLAIM:'🏛 VWAP RECLAIM',
   SPOT_ORGANIC:'🟢 SPOT PUMP',
-  MTF_RSI_STAIRCASE:'🪜 MTF STAIRCASE'
+  MTF_RSI_STAIRCASE:'🪜 MTF STAIRCASE',
+  PORTFOLIO_MANUAL:'📁 MANUAL CLOSE'
 };
 
 // ── SECTOR MAP ────────────────────────────────────────────────────
@@ -1183,13 +1199,13 @@ function detectSweepReclaim(candles,vp){
   const highVolume=last.volume>(candles.slice(-20,-1).reduce((a,c)=>a+c.volume,0)/19)*1.5;
 
   if(wentBelowVAL&&closedAboveVAL&&highVolume){
-    return{type:'SWEEP_RECLAIM',label:'SWEEP↑ RECLAIM',score:28};
+    return{type:'SWEEP_RECLAIM',label:'WICK RECLAIM (VAL)',score:28};
   }
   // Also check POC reclaim
   const wentBelowPOC=last.low<vp.poc*0.999;
   const closedAbovePOC=last.close>vp.poc;
   if(wentBelowPOC&&closedAbovePOC&&highVolume){
-    return{type:'POC_SWEEP',label:'POC SWEEP↑',score:20};
+    return{type:'POC_SWEEP',label:'WICK RECLAIM (POC)',score:20};
   }
   return null;
 }
@@ -1273,7 +1289,7 @@ function detectPhantomWall(symbol){
 
   if(oiDecaying&&fundNeg){
     phantomWallCache[symbol]={ts:now,signal:true};
-    return{label:'PHANTOM WALL ↑',title:'OI collapsing + negative funding: sell wall being pulled, runway clearing'};
+    return{label:'OI UNWIND ↑',title:'OI collapsing + negative funding — a proxy for short covering / sell pressure fading, not a literal visible sell wall'};
   }
   phantomWallCache[symbol]={ts:now,signal:false};
   return null;
@@ -1352,12 +1368,12 @@ function detectLiqFuelCell(s){
   const buyDom=s.volDelta&&s.volDelta.buyPct>62;
 
   if(oiHigh&&fundNeg&&nearVAH&&buyDom){
-    return{label:'🔥 LIQ FUEL CELL',title:'Short liquidation cluster detected: OI high + negative funding + price approaching VAH + buy delta dominant'};
+    return{label:'🔥 LIQ CLUSTER (EST)',title:'Estimated short-liquidation-cluster setup: OI high + negative funding + price near VAH + buy delta dominant. This is inferred from OI/funding/volume proxies — Binance free API gives no real liquidation map.'};
   }
   // Less strict version: 3 of 4 conditions
   const conditions=[oiHigh,fundNeg,nearVAH,buyDom].filter(Boolean).length;
   if(conditions>=3){
-    return{label:'LIQ CLUSTER ↑',title:`${conditions}/4 liquidation conditions met`};
+    return{label:'LIQ CLUSTER (EST) ↑',title:`${conditions}/4 estimated liquidation conditions met — proxy from OI/funding/volume, not real liquidation data`};
   }
   return null;
 }
@@ -1394,10 +1410,10 @@ function detectTapeSweep(candles){
 
   // Tape sweep: high vol-per-pip ratio AND small body (many orders, net direction hidden)
   if(ratio>6&&bodyRatio<0.3){
-    return{label:'TAPE SWEEP',ratio:ratio.toFixed(0),title:`HFT bot detected: volume/pip is ${ratio.toFixed(0)}× baseline with small body — algorithmic TWAP accumulation`};
+    return{label:'HIGH TAPE FREQ',ratio:ratio.toFixed(0),title:`Volume/pip is ${ratio.toFixed(0)}× baseline with a small body — a proxy for high trade frequency (possible TWAP-style activity), not a confirmed bot detection`};
   }
   if(ratio>10){
-    return{label:'HFT ACCUM',ratio:ratio.toFixed(0),title:`Extreme tape frequency: ${ratio.toFixed(0)}× baseline — automated accumulation bot active`};
+    return{label:'EXTREME TAPE FREQ',ratio:ratio.toFixed(0),title:`Volume/pip is ${ratio.toFixed(0)}× baseline — proxy for unusually high trade frequency, not a confirmed bot detection`};
   }
   return null;
 }
@@ -1415,9 +1431,9 @@ function detectTapeSweep(candles){
 function detectOrderFlowProxy(s){
   const candles=candleCache&&candleCache[s.symbol+'-'+s.tf];
   const lfc=detectLiqFuelCell(s);
-  if(lfc&&lfc.label.includes('🔥'))return{tier:'IGNITION',label:'LIQ FUEL CELL',title:lfc.title,color:'#FF1744'};
+  if(lfc&&lfc.label.includes('🔥'))return{tier:'IGNITION',label:'LIQ CLUSTER (EST)',title:lfc.title,color:'#FF1744'};
   const sweep=(candles&&s.vp)?detectSweepReclaim(candles,s.vp):null;
-  if(sweep)return{tier:'SWEEP',label:sweep.label,title:`${sweep.label}: stop-run reclaim — highest R:R sniper long setup`,color:'#00E5FF'};
+  if(sweep)return{tier:'SWEEP',label:sweep.label,title:`${sweep.label}: wicked below the level then closed back above it on volume — a candle-pattern proxy, not a confirmed order-flow event`,color:'#00E5FF'};
   const pw=detectPhantomWall(s.symbol);
   if(pw)return{tier:'WALL',label:pw.label,title:pw.title,color:'#BF5FFF'};
   const ts=candles?detectTapeSweep(candles):null;
@@ -1441,6 +1457,31 @@ function getOrderFlowProxyBadge(s){
 // UPGRADE INTEGRATION: call sector expansion after each scan
 // Also inject all new badges into the existing badge row
 // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// PLAIN-ENGLISH "WHY" LINE
+// The gap that breaks trust isn't seeing a badge, it's not knowing what
+// it's actually saying. This costs nothing computationally — it just
+// turns fields the row already computed into one short sentence.
+// ══════════════════════════════════════════════════════════════════
+function explainSignalRow(s){
+  const parts=[];
+  const bt=baseType(s.type);
+  if(bt==='VAH')parts.push('Price reacting to the high-volume resistance zone (VAH)');
+  else if(bt==='VAL')parts.push('Price reacting to the high-volume support zone (VAL)');
+  else if(bt==='POC')parts.push('Price reacting to the point of control (heaviest-traded price)');
+  else if(s.type==='COMPRESSION_SQUEEZE')parts.push('Range has been unusually tight, now expanding');
+  else if(s.type==='VWAP_RECLAIM')parts.push('Price reclaimed session VWAP from below');
+  else if(s.type==='SPOT_ORGANIC')parts.push('Spot volume leading futures — organic buying, not just leverage');
+  else if(s.type==='MTF_RSI_STAIRCASE')parts.push('RSI aligned bullish across multiple timeframes');
+  if(s.volTier==='MEGA_SPIKE')parts.push('on extreme volume');
+  else if(s.volTier==='SPIKE')parts.push('on a volume spike');
+  if(s.trend==='UP')parts.push('higher-TF trend is up');
+  else if(s.trend==='DOWN')parts.push('higher-TF trend is down');
+  if(s.htfGated)parts.push('capped — fighting the higher-timeframe trend');
+  if(s.regimeNote)parts.push(s.regimeNote);
+  if(!parts.length)return'';
+  return parts.join(' · ')+'.';
+}
 function getUpgradeBadges(s){
   // ── Core badges: tied directly to the signal type that fired. Always shown — these
   // explain *why* the row exists, so they're not subject to the badge budget below. ──
@@ -1480,21 +1521,20 @@ function getUpgradeBadges(s){
   const push=(p,fn)=>{try{const html=fn();if(html)advisory.push({p,html});}catch(e){}};
   push(1,()=>getProbabilityBadge(s));
   push(2,()=>getOrderFlowProxyBadge(s));            // consolidated: Phantom Wall + Liq Fuel Cell + Tape Sweep + Sweep Reclaim
-  push(3,()=>getAbsorptionUnifiedBadge(s));          // consolidated: single-candle + multi-day absorption
-  push(4,()=>getSupplyExhaustionBadge(s));
-  push(5,()=>getSectorIgnitionBadge(s));
-  push(6,()=>getOIDeltaBadge(s.symbol,s.chg||0));
-  push(7,()=>getRSBadge(s.symbol));
-  push(8,()=>getPOCMigrationBadge(s.symbol));
-  push(9,()=>getPainIndexBadge(s));
-  push(10,()=>getCompressionDurationBadge(s));
-  push(11,()=>getCVDBadge(s));
-  push(12,()=>getSpotPerpBadge(s.symbol));
-  push(13,()=>getVolAccelBadge(s));
-  push(14,()=>getZScoreBadge(s));
+  push(3,()=>getSupplyDryingUpBadge(s));             // consolidated: single-candle absorption + multi-day absorption + supply exhaustion
+  push(4,()=>getSectorIgnitionBadge(s));
+  push(5,()=>getOIDeltaBadge(s.symbol,s.chg||0));
+  push(6,()=>getRSBadge(s.symbol));
+  push(7,()=>getPOCMigrationBadge(s.symbol));
+  push(8,()=>getPainIndexBadge(s));                  // NOT merged above — bidirectional positioning read, distinct from bullish-leaning supply signals
+  push(9,()=>getCompressionDurationBadge(s));
+  push(10,()=>getCVDBadge(s));
+  push(11,()=>getSpotPerpBadge(s.symbol));
+  push(12,()=>getVolAccelBadge(s));
+  push(13,()=>getZScoreBadge(s));
 
   advisory.sort((a,b)=>a.p-b.p);
-  const BADGE_BUDGET=5;
+  const BADGE_BUDGET=simpleMode?1:5;
   const shown=advisory.slice(0,BADGE_BUDGET);
   const hidden=advisory.slice(BADGE_BUDGET);
   let html=core.filter(Boolean).join('')+shown.map(b=>b.html).join('');
@@ -1524,6 +1564,19 @@ function togSig(el){const sig=el.dataset.sig,cls=`on-${sig.toLowerCase()}`;if(ac
 function togWarn(el){showWarnings=!showWarnings;el.style.opacity=showWarnings?'1':'0.45';render();}
 function togMTF(el){mtfOnly=!mtfOnly;el.style.opacity=mtfOnly?'1':'0.45';el.style.background=mtfOnly?'rgba(124,77,255,.1)':'';render();}
 function setView(v){document.getElementById('viewTable').classList.toggle('on',v==='table');document.getElementById('viewHeat').classList.toggle('on',v==='heatmap');document.getElementById('tblWrap').style.display=v==='table'?'block':'none';document.getElementById('heatmapView').classList.toggle('active',v==='heatmap');if(v==='heatmap')renderHeatmap();}
+// ── SIMPLE MODE ───────────────────────────────────────────────────
+// For someone who doesn't want to learn 14 badges and 6 filter dials
+// to get a usable answer: hides the granular quality-filter row (the
+// 3 presets above it still work) and trims each row to its single
+// best-conviction badge instead of up to 5. Nothing is deleted —
+// toggle off any time to get full depth back.
+function toggleSimpleMode(){
+  simpleMode=!simpleMode;
+  document.body.classList.toggle('simple-mode',simpleMode);
+  document.getElementById('simpleModeBtn').classList.toggle('on',simpleMode);
+  localStorage.setItem('vpSimpleMode',simpleMode?'1':'0');
+  render();
+}
 
 // SORT
 function setSort(k){if(sortKey===k){sortDir=sortDir==='desc'?'asc':'desc';}else{sortKey=k;sortDir='desc';}document.querySelectorAll('.th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));if(k==='strength')document.getElementById('thStr').classList.add(sortDir==='desc'?'sort-desc':'sort-asc');render();}
@@ -1750,16 +1803,20 @@ function calcADX(candles,period=14){
 
 // == 5. STOP HUNT DETECTOR ==
 function detectStopHunt(candles){
+  // NOTE: renamed from "Stop Hunt" — this is a wick-rejection proxy off spot
+  // candles, not a detection of actual stop-loss clusters or market-maker
+  // intent (no order-book/liquidation data exists on the free API). Label
+  // kept descriptive rather than implying certainty about WHY it happened.
   const n=candles.length-1,cur=candles[n];
   const prev5=candles.slice(Math.max(0,n-8),n);
   if(prev5.length<4)return null;
   const swLow=Math.min(...prev5.map(c=>c.low)),swHigh=Math.max(...prev5.map(c=>c.high));
   const bodyLow=Math.min(cur.open,cur.close),bodyHigh=Math.max(cur.open,cur.close);
   if(cur.low<swLow*0.999&&bodyLow>swLow){
-    return{type:'BULL_HUNT',label:'STOP HUNT ↑',score:22};
+    return{type:'BULL_HUNT',label:'WICK REJECT ↑',title:'Wick poked below recent swing low then closed back above it — a proxy for stop-run/rejection, not a confirmed liquidation event',score:22};
   }
   if(cur.high>swHigh*1.001&&bodyHigh<swHigh){
-    return{type:'BEAR_HUNT',label:'STOP HUNT ↓',score:-18};
+    return{type:'BEAR_HUNT',label:'WICK REJECT ↓',title:'Wick poked above recent swing high then closed back below it — a proxy for stop-run/rejection, not a confirmed liquidation event',score:-18};
   }
   return null;
 }
@@ -2029,7 +2086,7 @@ function detectSR(candles,count=5){
 function detectOrderblocks(candles){const obs=[];for(let i=2;i<candles.length-1;i++){const cur=candles[i],next=candles[i+1];if(cur.close<cur.open&&next.close>cur.high*1.005)obs.push({type:'BULL',top:cur.open,bottom:cur.close,idx:i,age:candles.length-1-i});if(cur.close>cur.open&&next.close<cur.low*0.995)obs.push({type:'BEAR',top:cur.close,bottom:cur.open,idx:i,age:candles.length-1-i});}const lC=candles[candles.length-1].close;return obs.filter(ob=>{if(ob.age>20)return false;if(ob.type==='BULL'&&lC>ob.bottom)return true;if(ob.type==='BEAR'&&lC<ob.top)return true;return false;}).slice(-3);}
 
 // 4. LIQUIDITY SWEEP
-function detectLiquiditySweep(candles){const n=candles.length-1;const cur=candles[n];const recent=candles.slice(-10,-1);const rLo=Math.min(...recent.map(c=>c.low)),rHi=Math.max(...recent.map(c=>c.high));if(cur.low<rLo&&cur.close>rLo*1.002)return{type:'BULL_SWEEP',label:'LIQ SWEEP ↑',score:20};if(cur.high>rHi&&cur.close<rHi*0.998)return{type:'BEAR_SWEEP',label:'LIQ SWEEP ↓',score:-15};return null;}
+function detectLiquiditySweep(candles){const n=candles.length-1;const cur=candles[n];const recent=candles.slice(-10,-1);const rLo=Math.min(...recent.map(c=>c.low)),rHi=Math.max(...recent.map(c=>c.high));if(cur.low<rLo&&cur.close>rLo*1.002)return{type:'BULL_SWEEP',label:'WICK SWEEP ↑',title:'Candle wicked below recent range low then closed back inside it — a proxy pattern, not confirmed liquidation flow',score:20};if(cur.high>rHi&&cur.close<rHi*0.998)return{type:'BEAR_SWEEP',label:'WICK SWEEP ↓',title:'Candle wicked above recent range high then closed back inside it — a proxy pattern, not confirmed liquidation flow',score:-15};return null;}
 
 // 5. SMC - FVG
 function detectFVG(candles){const fvgs=[];for(let i=1;i<candles.length-1;i++){const prev=candles[i-1],next=candles[i+1];if(next.low>prev.high)fvgs.push({type:'BULL',top:next.low,bottom:prev.high,idx:i});if(next.high<prev.low)fvgs.push({type:'BEAR',top:prev.low,bottom:next.high,idx:i});}return fvgs.filter(f=>candles.length-1-f.idx<15).slice(-2);}
@@ -2067,7 +2124,7 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   if(ms&&['CHOCH','LL','LH'].includes(ms)&&nearVAH)factors.push({n:'MS BEAR',s:-15});
   const sw=session.weight||1;if(sw>1)factors.push({n:'SESSION',s:Math.round(12*(sw-1))});
   if(e20>0&&e50>0){if(price>e20&&e20>e50)factors.push({n:'EMA STACK',s:10});if(price<e20&&e20<e50)factors.push({n:'EMA BEAR',s:-10});}
-  if(liqSweep&&liqSweep.type==='BULL_SWEEP')factors.push({n:'LIQ SWEEP',s:20});
+  if(liqSweep&&liqSweep.type==='BULL_SWEEP')factors.push({n:'WICK SWEEP',s:20});
   const nearSR=sr&&sr.find(l=>Math.abs(l.price-price)/price<0.008);
   if(nearSR){
     let srScore;
@@ -2088,8 +2145,8 @@ function calcConfluence(candles,vp,rsi,div,trend,volTier,ms,session,liqSweep,sr,
   // NEW confluence factors
   if(pattern&&pattern.bullish===true)factors.push({n:pattern.pattern,s:pattern.score});
   if(pattern&&pattern.bullish===false)factors.push({n:pattern.pattern,s:pattern.score});
-  if(stopHunt&&stopHunt.type==='BULL_HUNT')factors.push({n:'STOP HUNT',s:22});
-  if(stopHunt&&stopHunt.type==='BEAR_HUNT')factors.push({n:'STOP HUNT D',s:-18});
+  if(stopHunt&&stopHunt.type==='BULL_HUNT')factors.push({n:'WICK REJECT',s:22});
+  if(stopHunt&&stopHunt.type==='BEAR_HUNT')factors.push({n:'WICK REJECT D',s:-18});
   // Squeeze confirmation bonus
   if(typeof squeeze!=='undefined'&&squeeze&&squeeze.type==='SQUEEZE_BULL')factors.push({n:'SQUEEZE',s:18});
   if(typeof squeeze!=='undefined'&&squeeze&&squeeze.type==='SQUEEZE_BEAR')factors.push({n:'SQUEEZE D',s:-15});
@@ -2132,6 +2189,25 @@ function setFundingFilter(v){filterFunding=v;render();}
 function setMinVol(v){filterMinVol=v;render();}
 function setADXMin(v){filterADXMin=v;render();}
 function setPOCDist(v){filterPOCDistMax=v;render();}
+// ── FILTER PRESETS: set all 6 quality knobs at once instead of requiring
+// someone to understand and tune 6 independent dials individually ──────
+function applyFilterPreset(name){
+  const presets={
+    CONSERVATIVE:{trendAligned:true,minVol:'SPIKE',adxMin:25,pocDist:4,btcCorr:0.7,funding:'ALL',minUpside:1.5},
+    STANDARD:{trendAligned:true,minVol:'CONFIRMED',adxMin:20,pocDist:6,btcCorr:1,funding:'ALL',minUpside:0},
+    AGGRESSIVE:{trendAligned:false,minVol:'STRONG',adxMin:10,pocDist:10,btcCorr:1,funding:'ALL',minUpside:0}
+  };
+  const p=presets[name];if(!p)return;
+  filterTrendAligned=p.trendAligned;filterMinVol=p.minVol;filterADXMin=p.adxMin;filterPOCDistMax=p.pocDist;
+  filterBTCCorr=p.btcCorr;filterFunding=p.funding;filterMinUpsideATR=p.minUpside;
+  const sv=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val;};
+  sv('selMinVol',p.minVol);sv('selADX',p.adxMin);sv('selPOCDist',p.pocDist);
+  sv('selBTCCorr',p.btcCorr);sv('selFundingFilter',p.funding);sv('selMinUpside',p.minUpside);
+  const btn=document.getElementById('btnTrendAlign');
+  if(btn){btn.style.background=filterTrendAligned?'rgba(0,255,178,.07)':'transparent';btn.style.borderColor=filterTrendAligned?'var(--acc)':'var(--border)';btn.style.color=filterTrendAligned?'var(--acc)':'var(--muted)';}
+  showToast(`Preset applied: ${name}`,'var(--acc)');
+  render();
+}
 function resetQualityFilters(){
   filterTrendAligned=true;filterMinVol='CONFIRMED';filterADXMin=20;filterPOCDistMax=6;
   filterBTCCorr=1;filterFunding='ALL';filterMinUpsideATR=0;
@@ -3639,6 +3715,7 @@ async function triggerAndPoll(){
   const allMerged=[...mergedSignals.filter(s=>{const bt=baseType(s.type);return bt!=='VAH'&&bt!=='VAL';}),
                    ...mergedSignals.filter(s=>{const bt=baseType(s.type);return (bt==='VAH'||bt==='VAL')&&confirmedSignals.some(c=>c.symbol===s.symbol&&c.tf===s.tf&&baseType(c.type)===bt);}),
                    ...mergedSignals.filter(s=>{const bt=baseType(s.type);return (bt==='VAH'||bt==='VAL')&&!confirmedSignals.some(c=>c.symbol===s.symbol&&c.tf===s.tf&&baseType(c.type)===bt);})];
+  try{applyRegimeAdjustment(allMerged);}catch(e){}
   const newKeys=new Set(allMerged.map(sigKey));const brandNew=allMerged.filter(s=>!prevSigKeys.has(sigKey(s)));prevSigKeys=newKeys;allSignals=allMerged;
   try{checkSignalAlerts(brandNew);}catch(e){}
   try{
@@ -3652,6 +3729,14 @@ async function triggerAndPoll(){
     document.getElementById('scanTime').textContent='LAST: '+new Date().toLocaleTimeString('en-GB');
     document.getElementById('stHeat').textContent=newSignals.filter(s=>(s.heat||0)>=4).length;
     document.getElementById('stMTF').textContent=newSignals.filter(s=>s.mtfCount>=2).length;
+    try{
+      const reg=getBTCRegime();
+      const regEl=document.getElementById('stRegime');
+      if(regEl){
+        regEl.textContent=reg==='UP'?'TREND ▲':reg==='DOWN'?'TREND ▼':reg==='NEUTRAL'?'CHOP ↔':'—';
+        regEl.style.color=reg==='UP'?'#00FF78':reg==='DOWN'?'#FF1744':reg==='NEUTRAL'?'#FFB800':'';
+      }
+    }catch(e){}
     scanStats.lastSuccessTs=Date.now();
     scanStats.lastFullScanCoins=pairs.length;
     renderHealthPanel();
@@ -3774,9 +3859,9 @@ function renderRow(s,i,isMobile){
     const obBadge=s.obs&&s.obs.length?'<span class="ob-badge">OB</span>':'';
     const flippedSR=s.sr&&s.sr.find(l=>l.flipped&&Math.abs(l.price-s.price)/s.price<0.012);
     const srFlipBadge=flippedSR?`<span style="font-size:var(--fs-2);padding:1px 4px;color:#FF9500;border:1px solid rgba(255,149,0,.5);background:rgba(255,149,0,.08);font-weight:700">SR FLIP</span>`:'';
-    const liqBadge=s.liqSweep?'<span class="liq-badge">LIQ</span>':'';
+    const liqBadge=s.liqSweep?`<span class="liq-badge" title="${s.liqSweep.title||'Wick-sweep proxy pattern, not confirmed liquidation flow'}">LIQ</span>`:'';
     const patternBadge=s.pattern?`<span style="font-size:var(--fs-2);padding:1px 4px;color:#00E5FF;border:1px solid rgba(0,229,255,.35);background:rgba(0,229,255,.08)">${s.pattern}</span>`:'';
-    const huntBadge=s.stopHunt?`<span style="font-size:var(--fs-2);padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite">${s.stopHunt.label}</span>`:'';
+    const huntBadge=s.stopHunt?`<span style="font-size:var(--fs-2);padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite" title="${s.stopHunt.title||'Wick-rejection proxy — not a confirmed liquidation event'}">${s.stopHunt.label}</span>`:'';
     const emaCrossBadge=s.crossBullish12?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FF3333;border:1px solid rgba(255,51,51,.5);background:rgba(255,51,51,.1);font-weight:900">BULL CONFIRM</span>':s.crossBullish5?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FFD700;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.08)">EARLY BULL</span>':s.crossBearish12?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FF5E3A;border:1px solid rgba(255,94,58,.5);background:rgba(255,94,58,.1);font-weight:900">BEAR CONFIRM</span>':s.earlyWarning?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FF9500;border:1px solid rgba(255,149,0,.4)">WARN</span>':''
     const adxBadge=s.adx?`<span style="font-size:var(--fs-2);color:${s.adx>25?'var(--acc)':s.adx<20?'var(--vah)':'var(--muted)'}">${s.adx>25?'ADX:TREND':'ADX:CHOP'}</span>`:''
     // OI, Funding, BTC Corr, Vol Delta, Liq Cluster badges — dedicated row
@@ -3787,12 +3872,14 @@ function renderRow(s,i,isMobile){
     const liqClusterBadge=getLiqClusterLabel(s);
     const upgradeBadges=getUpgradeBadges(s);
     const hasBadges=oiBadge||fundBadge||btcCorrBadge||volDeltaBadge||liqClusterBadge||upgradeBadges;
-    const extraRow=hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px;padding-top:2px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}${upgradeBadges}</div>`:'';
+    const whyLine=explainSignalRow(s);
+    const whyHtml=whyLine?`<div style="font-size:var(--fs-1);color:var(--muted);margin-top:2px;font-style:italic">${whyLine}</div>`:'';
+    const extraRow=hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px;padding-top:2px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}${upgradeBadges}</div>${whyHtml}`:whyHtml;
     const heatBar=renderHeatBar(s.heat||1);const age=getSignalAge(s.ts||Date.now());
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:var(--fs-1)" title="${note}">📝</span>`:'';
     const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}${isStarred?' starred':''}${s.counterTrend?' counter-trend':''}`;
-    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span>${(s.extraBadges||[]).map(t=>`<span class="badge ${t}" style="font-size:var(--fs-1);padding:1px 3px">${LABEL_MAP[t]||t}</span>`).join('')}${counterBadge}<span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div>${hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;padding:3px 8px 4px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:''}<div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
+    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span>${(s.extraBadges||[]).map(t=>`<span class="badge ${t}" style="font-size:var(--fs-1);padding:1px 3px">${LABEL_MAP[t]||t}</span>`).join('')}${counterBadge}<span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div>${hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;padding:3px 8px 4px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:''}${whyLine?`<div style="font-size:var(--fs-1);color:var(--muted);padding:0 8px 4px;font-style:italic">${whyLine}</div>`:''}<div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
     return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
       <div class="td rank">${qaButtons}</div>
       <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${pocDistBadge}${upsideBadge}${htfBadge}${getPendingBadge(s.symbol,s.tf,s.type)}${s.consolidationCount>=3?`<span style="font-size:var(--fs-1);padding:1px 4px;margin-left:2px;color:#BF9FFF;border:1px solid rgba(191,159,255,.4)" title="${s.consolidationCount} candles consolidation before break">${s.consolidationCount}C${s.higherLow?" HL":""}</span>`:""}}${noteDot}</div><div class="pair">${s.symbol}${sectorBadge}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span>${(()=>{const cd=getCooldownRemaining(s.symbol,s.tf);return cd?`<span style="font-size:var(--fs-1);color:var(--muted);margin-left:3px">⏱${cd}</span>`:'';})()}</div>${extraRow}</div></div>
@@ -4584,12 +4671,54 @@ const BADGE_FLAGS=[
   {key:'hasOIDelta',label:'OI Delta State'},
   {key:'hasPOCMigration',label:'POC Migration'}
 ];
+function computeBadgeCorrelationMatrix(){
+  // Phi coefficient (binary correlation) between every pair of badge flags.
+  // High |phi| (>0.5) means two badges fire together most of the time —
+  // i.e. they're not independent confirmations, they're restating each other.
+  const logged=wrLog.filter(e=>e.features);
+  const pairs=[];
+  for(let i=0;i<BADGE_FLAGS.length;i++){
+    for(let j=i+1;j<BADGE_FLAGS.length;j++){
+      const a=BADGE_FLAGS[i],b=BADGE_FLAGS[j];
+      let n11=0,n10=0,n01=0,n00=0;
+      logged.forEach(e=>{
+        const av=!!e.features[a.key],bv=!!e.features[b.key];
+        if(av&&bv)n11++;else if(av&&!bv)n10++;else if(!av&&bv)n01++;else n00++;
+      });
+      const denom=Math.sqrt((n11+n10)*(n01+n00)*(n11+n01)*(n10+n00));
+      const phi=denom>0?((n11*n00-n10*n01)/denom):0;
+      pairs.push({a:a.label,b:b.label,phi,n:n11});
+    }
+  }
+  return{pairs:pairs.sort((x,y)=>Math.abs(y.phi)-Math.abs(x.phi)),total:logged.length};
+}
+function renderBadgeCorrelationTable(){
+  const el=document.getElementById('badgeCorrelationBody');
+  if(!el)return;
+  const{pairs,total}=computeBadgeCorrelationMatrix();
+  if(total<10){el.innerHTML=`<div style="font-size:var(--fs-2);color:var(--muted);padding:8px 0">Need at least 10 logged signals to compute badge correlation. Currently: ${total}.</div>`;return;}
+  const top=pairs.slice(0,10);
+  el.innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:var(--fs-2)">
+      <tr style="color:var(--muted);text-align:left"><th>Badge A</th><th>Badge B</th><th>φ (correlation)</th><th>Co-fire N</th></tr>
+      ${top.map(p=>{
+        const strong=Math.abs(p.phi)>=0.5;
+        return`<tr style="border-top:1px solid var(--border)${strong?';background:rgba(255,184,0,.06)':''}">
+        <td>${p.a}</td><td>${p.b}</td>
+        <td style="color:${strong?'var(--warn)':'var(--muted)'};font-weight:${strong?'700':'400'}">${p.phi.toFixed(2)}${strong?' ⚠':''}</td>
+        <td>${p.n}</td>
+      </tr>`;}).join('')}
+    </table>
+    <div style="font-size:var(--fs-1);color:var(--muted);margin-top:6px">φ near +1 = the two badges almost always fire together (redundant — candidate to merge). φ near 0 = independent (good — genuine extra confirmation). φ near −1 = mutually exclusive. Computed on ${total} logged signals. Rows ⚠ highlighted at |φ|≥0.5.</div>
+  `;
+}
 function refreshBadgeAnalytics(){
   const el=document.getElementById('badgeAnalyticsBody');
   if(!el)return;
   const resolved=wrLog.filter(e=>e.result24h&&e.features);
   if(resolved.length<10){
     el.innerHTML=`<div style="font-size:var(--fs-2);color:var(--muted);padding:8px 0">Need at least 10 resolved signals to compute meaningful win rates. Currently: ${resolved.length}. This fills in automatically as scans run and signals resolve over 24h.</div>`;
+    try{renderBadgeCorrelationTable();}catch(e){}
     return;
   }
   const winRate=arr=>arr.length?Math.round(100*arr.filter(e=>e.result24h.win).length/arr.length):null;
@@ -4612,6 +4741,7 @@ function refreshBadgeAnalytics(){
     </table>
     <div style="font-size:var(--fs-1);color:var(--muted);margin-top:6px">Lift = win rate WITH the badge minus win rate WITHOUT it, on ${resolved.length} resolved signals. Low/negative lift after a real sample size (N>30) means that badge isn't earning its screen space.</div>
   `;
+  try{renderBadgeCorrelationTable();}catch(e){}
 }
 
 function wrTrackSignal(sig){
@@ -5540,16 +5670,32 @@ function detectMultiDayAbsorption(c1d){
 // separately duplicated the story — this shows ONE badge, preferring
 // the multi-day read since it's the stronger, less noisy signal.
 // ══════════════════════════════════════════════════════════════════
-function getAbsorptionUnifiedBadge(s){
+// ══════════════════════════════════════════════════════════════════
+// FURTHER CONSOLIDATION: Absorption (single-candle + multi-day) and
+// Supply Exhaustion both answer the same underlying question — "is
+// selling pressure drying up?" — just measured two different ways
+// (volume-soaked-up-at-a-level vs. shrinking pullbacks over time).
+// Both lean bullish/bullish-continuation, so they're merged into ONE
+// tiered badge instead of two. Pain Index is deliberately NOT merged
+// in here — it's a bidirectional positioning read (trapped longs OR
+// shorts) and folding it into a bullish-leaning badge would hide a
+// bearish-risk signal under a bullish-sounding name.
+// ══════════════════════════════════════════════════════════════════
+function getSupplyDryingUpBadge(s){
   if(s.multiDayAbsorption){
     const a=s.multiDayAbsorption;
     const col=a.level==='EXTREME'?'#FF00FF':a.level==='HIGH'?'#00FFB2':'#00BFFF';
-    return`<span class="badge-pill" style="color:${col};border-color:${col}99;background:${col}1a" title="Multi-day read: volume +${a.volExpansionPct}% over 5 days while price moved only ${a.avgPriceMove}%/day avg — sustained accumulation">🧲 ABSORPTION ${a.level} ·5D</span>`;
+    return`<span class="badge-pill" data-tier="supply" style="color:${col};border-color:${col}99;background:${col}1a" title="Multi-day read: volume +${a.volExpansionPct}% over 5 days while price moved only ${a.avgPriceMove}%/day avg — sustained accumulation">🧲 SUPPLY DRYING UP ${a.level} ·5D</span>`;
+  }
+  if(s.supplyExhaustion){
+    const e=s.supplyExhaustion;
+    const col=e.reductionPct>65?'#00FFB2':'#FFB800';
+    return`<span class="badge-pill" data-tier="supply" style="color:${col};border-color:${col}99;background:${col}1a" title="Pullbacks shrinking: ${e.firstPullback}% → ${e.lastPullback}% across last ${e.swingCount} rallies — sellers running out">🧲 SUPPLY DRYING UP -${e.reductionPct}% PB</span>`;
   }
   if(s.absorption){
     const a=s.absorption;
     const col=a.strength==='STRONG'?'#00FFB2':'#00BFFF';
-    return`<span class="badge-pill" style="color:${col};border-color:${col}99;background:${col}1a" title="Single-candle read: volume ${a.volRatio}× avg, tiny body near ${a.nearLevel} — sell pressure absorbed">🧲 ABSORPTION ${a.strength} ·1C</span>`;
+    return`<span class="badge-pill" data-tier="supply" style="color:${col};border-color:${col}99;background:${col}1a" title="Single-candle read: volume ${a.volRatio}× avg, tiny body near ${a.nearLevel} — sell pressure absorbed">🧲 SUPPLY DRYING UP ${a.strength} ·1C</span>`;
   }
   return'';
 }
@@ -5596,13 +5742,6 @@ function detectSupplyExhaustion(candles){
   if(reductionPct<40)return null; // not a meaningful enough reduction
   return{type:'SUPPLY_EXHAUSTION',firstPullback:firstPB.toFixed(1),lastPullback:lastPB.toFixed(1),
     reductionPct:Math.round(reductionPct),swingCount:recent.length};
-}
-
-function getSupplyExhaustionBadge(s){
-  if(!s.supplyExhaustion)return'';
-  const e=s.supplyExhaustion;
-  const col=e.reductionPct>65?'#00FFB2':'#FFB800';
-  return`<span style="font-size:var(--fs-2);padding:1px 5px;color:${col};border:1px solid ${col}66;background:${col}14;font-weight:800" title="Pullbacks shrinking: ${e.firstPullback}% → ${e.lastPullback}% across last ${e.swingCount} rallies — sellers running out">💧 SUPPLY EXHAUSTED -${e.reductionPct}%</span>`;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -5878,7 +6017,34 @@ function addPortfolioTrade(){
   renderPortfolioPanel();
 }
 
+// ── CLOSE THE LOOP: closing a portfolio position auto-writes its
+// outcome into wrLog instead of leaving Portfolio and Win Rate as two
+// hand-tracked logs that drift out of sync. ──────────────────────────
 function removePortfolioTrade(i){
+  const t=portfolioTrades[i];
+  if(t&&t.entry){
+    const lp=livePrices[t.symbol];
+    const exitPrice=lp?lp.price:t.entry;
+    const pct=((exitPrice-t.entry)/t.entry*100);
+    const win=t.stop?(exitPrice>t.entry):(pct>0); // long-only portfolio assumption, matches addPortfolioTrade
+    const entry={
+      key:'PORTFOLIO-'+t.symbol+'-'+t.ts,
+      symbol:t.symbol,tf:'manual',type:'PORTFOLIO_MANUAL',
+      entryPrice:t.entry,ts:t.ts||Date.now(),
+      sector:getSector(t.symbol),session:getCurrentSession().session,btcRegime:getBTCRegime(),
+      target:null,stop:t.stop||null,
+      result4h:{win,pct:pct.toFixed(2)},result24h:{win,pct:pct.toFixed(2)},
+      checked4h:true,checked24h:true,
+      features:{} // no badge data — this is a manual close, not a scanned signal
+    };
+    if(!wrLog.find(e=>e.key===entry.key)){
+      wrLog.push(entry);
+      if(wrLog.length>500)wrLog=wrLog.slice(-500);
+      localStorage.setItem('vpWinRate',JSON.stringify(wrLog));
+      showToast(`Closed ${t.symbol.replace('USDT','')} ${pct>0?'+':''}${pct.toFixed(2)}% → logged to Win Rate`,win?'var(--acc)':'var(--vah)');
+      try{renderWinRate();}catch(e){}
+    }
+  }
   portfolioTrades.splice(i,1);
   localStorage.setItem('vpPortfolio',JSON.stringify(portfolioTrades));
   renderPortfolioPanel();
@@ -6001,30 +6167,41 @@ function getPendingBadge(sym,tf,type){
   return'';
 }
 
-// ── KELLY CRITERION SIZING ───────────────────────────────────────
-function calcKellySizing(){
-  const entryEl=document.getElementById('rrEntry');
-  const stopEl=document.getElementById('rrStop');
-  const accountEl=document.getElementById('psAccount');
+// ── VOL-TARGETED POSITION SIZING ─────────────────────────────────
+// Replaces the old Kelly-criterion button. Kelly needs a long, stable,
+// already-known edge distribution — applying it to ~5-80 freshly-logged
+// signals manufactures false precision and can push risk UP on noise.
+// This instead does what professional discretionary desks actually do:
+// size DOWN when volatility is high (wide stop relative to price), and
+// only nudge size with a coarse, discrete confidence tier from realized
+// win-rate data — never a continuous formula extrapolated from a small n.
+function calcVolTargetedSizing(){
   const riskEl=document.getElementById('psRisk');
-  if(!entryEl||!stopEl||!accountEl||!riskEl)return;
-  // Get signal type from modal context
-  const sigType=currentSigType;
-  const sigTF=currentTF;
-  // Filter wrLog for this signal type + TF — need resolved outcomes
-  const matching=wrLog.filter(e=>e.result24h&&e.type===sigType&&e.tf===sigTF);
-  if(matching.length<5){showToast('⚠ Need ≥5 resolved signals of this type for Kelly sizing','var(--warn)');return;}
-  const wins=matching.filter(e=>e.result24h.win).length;
-  const W=wins/matching.length;
-  const avgWinAmt=matching.filter(e=>e.result24h.win).reduce((a,e)=>a+Math.abs(parseFloat(e.result24h.pct)),0)/(wins||1);
-  const avgLossAmt=matching.filter(e=>!e.result24h.win).reduce((a,e)=>a+Math.abs(parseFloat(e.result24h.pct)),0)/((matching.length-wins)||1);
-  const R=avgLossAmt>0?avgWinAmt/avgLossAmt:1;
-  const kelly=Math.max(0,W-(1-W)/R);
-  const halfKelly=(kelly/2*100).toFixed(1); // half-Kelly, as %
-  // Apply to risk field
-  riskEl.value=Math.min(10,Math.max(0.1,parseFloat(halfKelly)));
+  if(!riskEl)return;
+  const sigObj=allSignals.find(s=>s.symbol===currentSymbol&&s.tf===currentTF&&s.type===currentSigType)
+            || allSignals.find(s=>s.symbol===currentSymbol&&s.tf===currentTF);
+  if(!sigObj||!sigObj.atr||!sigObj.price){showToast('⚠ No live signal data for vol sizing — open from a scan row first','var(--warn)');return;}
+  const atrPct=sigObj.atr/sigObj.price*100;
+  const BASE_RISK=1.0; // %
+  let riskPct;
+  let volNote;
+  if(atrPct<1.2){riskPct=BASE_RISK*1.25;volNote='LOW vol';}
+  else if(atrPct<2.5){riskPct=BASE_RISK;volNote='NORMAL vol';}
+  else if(atrPct<4.5){riskPct=BASE_RISK*0.6;volNote='HIGH vol';}
+  else {riskPct=BASE_RISK*0.35;volNote='EXTREME vol';}
+  // Discrete confidence tier — coarse buckets only, never a continuous formula off a small n
+  const matching=wrLog.filter(e=>e.result24h&&e.type===currentSigType&&e.tf===currentTF);
+  let tierNote='not enough history';
+  if(matching.length>=10){
+    const wr=matching.filter(e=>e.result24h.win).length/matching.length;
+    if(wr>=0.55){riskPct*=1.2;tierNote=`${Math.round(wr*100)}% WR (n=${matching.length}) → tier UP`;}
+    else if(wr<0.40){riskPct*=0.5;tierNote=`${Math.round(wr*100)}% WR (n=${matching.length}) → tier DOWN`;}
+    else{tierNote=`${Math.round(wr*100)}% WR (n=${matching.length}) → neutral`;}
+  }
+  riskPct=Math.min(10,Math.max(0.1,Math.round(riskPct*10)/10));
+  riskEl.value=riskPct;
   calcPositionSize();
-  showToast(`Kelly: WR=${Math.round(W*100)}% R=${R.toFixed(1)} → ½Kelly=${halfKelly}% risk`,'var(--acc)');
+  showToast(`Vol-sized: ATR=${atrPct.toFixed(1)}% (${volNote}) · ${tierNote} → ${riskPct}% risk`,'var(--acc)');
 }
 
 // ── WIN RATE AUTO-RECOMMENDATIONS ───────────────────────────────
@@ -6078,6 +6255,38 @@ function getBTCRegime(){
   return trendObj.trend||'NEUTRAL';
 }
 
+// ── REGIME-GATED SIGNAL WEIGHTING ────────────────────────────────
+// Idea: don't just LOG the regime (old behavior) — use it to adjust conviction.
+// In a trending BTC tape, breakout/momentum signal families have historically
+// better follow-through; in chop, mean-reversion (fade VAH/VAL/POC) families do.
+// This nudges strength rather than hard-filtering, so nothing disappears —
+// it just gets re-ranked to match the regime the market is actually in.
+const REGIME_MOMENTUM_TYPES=new Set(['VAH_SPIKE','VAL_SPIKE','POC_SPIKE','BULL_CONFIRM','EARLY_BULL','EARLY_BEAR','COMPRESSION_SQUEEZE','VWAP_RECLAIM','SPOT_ORGANIC','MTF_RSI_STAIRCASE']);
+const REGIME_MEANREV_TYPES=new Set(['VAH','VAL','POC','VAH_DIV','VAL_DIV','POC_DIV']);
+function regimeFamily(type){
+  if(REGIME_MOMENTUM_TYPES.has(type))return'MOMENTUM';
+  if(REGIME_MEANREV_TYPES.has(type))return'MEANREV';
+  return null; // WARNING / unclassified — left alone
+}
+function applyRegimeAdjustment(signals){
+  const regime=getBTCRegime(); // UP / DOWN / NEUTRAL / UNKNOWN
+  if(regime==='UNKNOWN')return;
+  const trending=(regime==='UP'||regime==='DOWN');
+  signals.forEach(s=>{
+    const fam=regimeFamily(s.type);
+    if(!fam)return;
+    let delta=0;
+    if(trending){ delta=fam==='MOMENTUM'?8:-6; }
+    else { delta=fam==='MEANREV'?8:-6; } // NEUTRAL = chop
+    s.strength=Math.min(99,Math.max(15,Math.round((s.strength||35)+delta)));
+    s.regime=regime;
+    s.regimeFamily=fam;
+    s.regimeNote=(delta>0)
+      ?`${trending?'Trending':'Choppy'} BTC tape favors ${fam==='MOMENTUM'?'breakout':'fade'} setups — conviction bumped`
+      :`${trending?'Trending':'Choppy'} BTC tape works against ${fam==='MOMENTUM'?'breakout':'fade'} setups — conviction trimmed`;
+  });
+}
+
 // ── PORTFOLIO DRAWDOWN TRACKING ──────────────────────────────────
 // peakPriceCache: symbol → peak price seen since position opened
 const peakPriceCache={};
@@ -6112,6 +6321,7 @@ setInterval(updatePortfolioDrawdown,30000);
 // INIT
 window.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('vpTheme')||'dark';document.documentElement.setAttribute('data-theme',saved);document.getElementById('themeBtn').textContent=saved==='dark'?'🌙':'☀️';
+  if(localStorage.getItem('vpSimpleMode')==='1'){simpleMode=true;document.body.classList.add('simple-mode');const sb=document.getElementById('simpleModeBtn');if(sb)sb.classList.add('on');}
   try{watchlist=JSON.parse(localStorage.getItem('vpWatchlist')||'[]');}catch(e){watchlist=[];}
   try{priceAlerts=JSON.parse(localStorage.getItem('vpAlerts')||'[]');}catch(e){priceAlerts=[];}
   try{signalAlerts=JSON.parse(localStorage.getItem('vpSignalAlerts')||'[]');}catch(e){signalAlerts=[];}
