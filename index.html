@@ -218,6 +218,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .chg{font-size:var(--fs-3);font-weight:700;}
 .chg.up{color:var(--acc);}.chg.dn{color:var(--vah);}
 .age-tag{font-size:var(--fs-1);color:var(--muted);}
+.status-cluster{font-size:var(--fs-1);padding:1px 5px;margin-left:3px;border-radius:3px;color:var(--acc);border:1px solid rgba(0,191,255,.35);background:rgba(0,191,255,.08);cursor:help;font-weight:700;}
+.status-cluster.warn{color:#FF9500;border-color:rgba(255,149,0,.45);background:rgba(255,149,0,.08);}
 .age-tag.fresh{color:var(--acc);}.age-tag.mid{color:var(--poc);}
 .badge{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-1);font-weight:700;padding:2px 6px;letter-spacing:.06em;white-space:nowrap;}
 .badge.VAH{background:rgba(255,94,58,.1);color:var(--vah);border:1px solid rgba(255,94,58,.28);}
@@ -256,6 +258,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .tools-dropdown{position:absolute;top:calc(100% + 6px);left:0;background:var(--s2);border:1px solid var(--border2);padding:6px;display:none;flex-direction:column;gap:4px;z-index:50;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
 .tools-dropdown.open{display:flex;}
 .tools-dropdown .group-btn{width:100%;text-align:left;}
+.tools-group-label{font-size:var(--fs-1);color:var(--muted);letter-spacing:.06em;padding:5px 6px 1px;font-weight:700;border-top:1px solid rgba(255,255,255,.06);margin-top:2px;}
+.tools-group-label:first-child{border-top:none;margin-top:0;}
 .health-row{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-2);padding:3px 0;border-bottom:1px solid var(--border);}
 .health-ok{color:var(--acc);}
 .health-warn{color:var(--warn);}
@@ -603,16 +607,22 @@ body.simple-mode #qualityFiltersRow{display:none !important;}
   <div class="tools-menu-wrap">
     <button class="group-btn" onclick="toggleToolsMenu()" id="toolsMenuBtn">⚙ TOOLS ▾</button>
     <div class="tools-dropdown" id="toolsDropdown">
-      <button class="group-btn" onclick="togglePanel('watchlistPanel','wlIco');toggleToolsMenu()">☆ WATCHLIST</button>
-      <button class="group-btn" onclick="togglePanel('groupsPanel','grpIco');toggleToolsMenu()">⊞ GROUPS</button>
-      <button class="group-btn" onclick="togglePanel('tgPanel','tgIco');toggleToolsMenu()">✈ TELEGRAM</button>
+      <div class="tools-group-label">ANALYTICS</div>
+      <button class="group-btn" onclick="togglePanel('wrPanel','wrIco');toggleToolsMenu()">🏆 WIN RATE</button>
+      <button class="group-btn" onclick="togglePanel('badgeAnalyticsPanel','baIco');toggleToolsMenu()">🔬 BADGE ANALYTICS</button>
       <button class="group-btn" onclick="togglePanel('btPanel','btIco');toggleToolsMenu()">📊 BACKTEST</button>
       <button class="group-btn" onclick="togglePanel('corrPanel','corrIco');toggleToolsMenu()">⊡ CORR</button>
-      <button class="group-btn" onclick="togglePanel('historyWrap','histIco');toggleToolsMenu()">📋 HISTORY</button>
-      <button class="group-btn" onclick="togglePanel('wrPanel','wrIco');toggleToolsMenu()">🏆 WIN RATE</button>
+      <div class="tools-group-label">ACCOUNT</div>
+      <button class="group-btn" onclick="togglePanel('watchlistPanel','wlIco');toggleToolsMenu()">☆ WATCHLIST</button>
+      <button class="group-btn" onclick="togglePanel('groupsPanel','grpIco');toggleToolsMenu()">⊞ GROUPS</button>
       <button class="group-btn" onclick="togglePanel('portfolioPanel','portIco');toggleToolsMenu()">💼 PORTFOLIO</button>
-      <button class="group-btn" onclick="togglePanel('badgeAnalyticsPanel','baIco');toggleToolsMenu()">🔬 BADGE ANALYTICS</button>
+      <div class="tools-group-label">SYSTEM</div>
+      <button class="group-btn" onclick="togglePanel('tgPanel','tgIco');toggleToolsMenu()">✈ TELEGRAM</button>
+      <button class="group-btn" onclick="togglePanel('historyWrap','histIco');toggleToolsMenu()">📋 HISTORY</button>
       <button class="group-btn" onclick="togglePanel('healthPanel','hpIco');toggleToolsMenu()">🩺 SYSTEM HEALTH</button>
+      <button class="group-btn" onclick="exportState();toggleToolsMenu()" title="Download all your data as a JSON file — watchlist, win-rate log, portfolio, notes, starred signals, journal">💾 EXPORT STATE</button>
+      <button class="group-btn" onclick="document.getElementById('importStateFile').click()" title="Restore from a previously exported JSON file">📂 IMPORT STATE</button>
+      <input type="file" id="importStateFile" accept=".json" style="display:none" onchange="importState(this.files[0])">
     </div>
   </div>
   <div class="view-toggle">
@@ -678,6 +688,12 @@ body.simple-mode #qualityFiltersRow{display:none !important;}
   <div style="padding:8px" id="badgeAnalyticsBody"><div style="font-size:var(--fs-2);color:var(--muted)">Waiting for resolved signal outcomes…</div></div>
   <div class="panel-hdr" style="cursor:default"><span class="panel-title" style="color:#BF5FFF;font-size:var(--fs-1)">↳ WHICH BADGES ARE JUST RESTATING EACH OTHER</span></div>
   <div style="padding:8px" id="badgeCorrelationBody"><div style="font-size:var(--fs-2);color:var(--muted)">Waiting for logged signals…</div></div>
+  <div class="panel-hdr" style="cursor:default"><span class="panel-title" style="color:#00BFFF;font-size:var(--fs-1)">↳ ARE STRENGTH/HEAT/GRADE/PROBABILITY 4 READS OR 1</span></div>
+  <div style="padding:8px" id="headlineScoreCorrBody"><div style="font-size:var(--fs-2);color:var(--muted)">Waiting for logged signals…</div></div>
+  <div class="panel-hdr" style="cursor:default"><span class="panel-title" style="color:#FFB800;font-size:var(--fs-1)">↳ IS THE PROBABILITY ENGINE ACTUALLY CALIBRATED</span></div>
+  <div style="padding:8px" id="probCalibrationBody"><div style="font-size:var(--fs-2);color:var(--muted)">Waiting for resolved signals with a predicted probability…</div></div>
+  <div class="panel-hdr" style="cursor:default"><span class="panel-title" style="color:#00FFB2;font-size:var(--fs-1)">↳ DO THE SESSION WEIGHTS MATCH REAL WIN RATES</span></div>
+  <div style="padding:8px" id="sessionWinRateBody"><div style="font-size:var(--fs-2);color:var(--muted)">Waiting for resolved signals…</div></div>
 </div>
 <div class="panel wr-panel" id="healthPanel">
   <div class="panel-hdr" onclick="togglePanel('healthPanel','hpIco')"><span class="panel-title" style="color:#00BFFF">🩺 SYSTEM HEALTH — CONNECTIONS, SCANS &amp; ERRORS</span><span class="panel-toggle" id="hpIco">▼</span></div>
@@ -709,9 +725,8 @@ body.simple-mode #qualityFiltersRow{display:none !important;}
     <div class="th" onclick="setSort('tf')">TF</div>
     <div class="th" onclick="setSort('trend')">TREND</div>
     <div class="th" onclick="setSort('heat')">HEAT</div>
-    <div class="th">R:R</div>
+    <div class="th" onclick="setSort('rr')" id="thRR" title="Sort by Risk:Reward">R:R↕</div>
     <div class="th sort-desc" id="thStr" onclick="setSort('strength')">STR</div>
-    <div class="th" onclick="setSort('rr')" id="thRR" title="Sort by Risk:Reward">RR↕</div>
   </div>
   <div class="click-hint">CLICK ROW → CHART + R:R CALC + NOTES · 🔥HOT=fresh · ◈=MTF · OB=Orderblock · LIQ=Liquidity Sweep</div>
   <div class="prog-wrap" id="progWrap"><span id="progTxt">SCANNING…</span><div class="prog-bg"><div class="prog-fg" id="progFg" style="width:0%"></div></div></div>
@@ -804,6 +819,7 @@ body.simple-mode #qualityFiltersRow{display:none !important;}
         <input id="modalNote" type="text" placeholder="Trade note…">
         <button class="note-save-btn" onclick="saveNote()">SAVE NOTE</button>
       </div>
+      <div id="modalJournal" style="display:none;font-size:var(--fs-1);color:var(--muted);padding:3px 7px;font-style:italic;max-width:100%"></div>
     </div>
     <div class="modal-body">
       <div id="layerToolbar"></div>
@@ -944,8 +960,8 @@ const DEFAULT_PAIRS=[
   // ── Low-cap expansion ──
   'ASTRUSDT','COMBOUSDT','PROMUSDT','QKCUSDT','VITEUSDT','OXTUSDT','SUPERUSDT','MDXUSDT','TWTUSDT','BADGERUSDT',
   'REQUSDT','POWRUSDT','TVKUSDT','HARDUSDT','AURAUSDT','BONDUSDT','PHAUSDT','LITUSDT','PAXGUSDT','MLNUSDT',
-  'ERNUSDT','DIAUSDT','WINGUSDT','MBLUSDT','CLAMOUSDT','ICXUSDT','WAVESUSDT','SCUSDT','DGBUSDT','XEMUSDT',
-  'ELFUSDT','NULSUSDT','TNBUSDT','ROSEUSDT','CELRUSDT','WNXMUSDT','ALPHAOUSDT','DREPUSDT','LAZIOUSDT','PORTOUSDT',
+  'ERNUSDT','DIAUSDT','WINGUSDT','MBLUSDT','CLAMUSDT','ICXUSDT','WAVESUSDT','SCUSDT','DGBUSDT','XEMUSDT',
+  'ELFUSDT','NULSUSDT','TNBUSDT','ROSEUSDT','CELRUSDT','WNXMUSDT','ALPHAUSDT','DREPUSDT','LAZIOUSDT','PORTOUSDT',
   'TUSDT','JUVUSDT','PSGUSDT','CITYUSDT','ATMUSDT','INTERUSDT','ARUSDT','FIDAUSDT','MBXUSDT','BICOUSDT'
 ];
 
@@ -955,7 +971,7 @@ let showWarnings=false,mtfOnly=false,allSignals=[],minStrength=0;
 let simpleMode=false; // hides granular filters + trims badges to the single best one
 let showEarlyBear=false; // OFF by default — noise signal
 let sortKey='strength',sortDir='desc',scanHistory=[],prevSigKeys=new Set();
-let livePrices={},watchlist=[],priceAlerts=[],coinGroups=[],activeGroup=null,tradeNotes={};
+let livePrices={},watchlist=[],priceAlerts=[],coinGroups=[],activeGroup=null,tradeNotes={},tradeJournal={};
 let wsConn=null,wsReconnectTimer=null,candleCache={};
 
 // ══════════════════════════════════════════════════════════════════
@@ -989,6 +1005,7 @@ function renderHealthPanel(){
   };
   const scanAge=scanStats.lastSuccessTs?Math.round((Date.now()-scanStats.lastSuccessTs)/1000)+'s ago':'never';
   const recentErrors=errorLog.slice(-8).reverse();
+  const unmappedSectors=checkSectorCoverage();
   el.innerHTML=`
     ${wsRow('Mini-Ticker WS',ws.miniTicker)}
     ${wsRow('NR7 Volatility WS',ws.nr7)}
@@ -996,6 +1013,8 @@ function renderHealthPanel(){
     <div class="health-row"><span>Last successful scan</span><span class="${scanStats.lastSuccessTs?'health-ok':'health-warn'}">${scanAge}</span></div>
     <div class="health-row"><span>Coins scanned (last run)</span><span>${scanStats.lastFullScanCoins||'—'}</span></div>
     <div class="health-row"><span>Failed fetches (last run)</span><span class="${scanStats.lastFailedFetches>0?'health-warn':'health-ok'}">${scanStats.lastFailedFetches}</span></div>
+    <div class="health-row"><span>Sector map coverage</span><span class="${unmappedSectors.length?'health-warn':'health-ok'}" title="${unmappedSectors.join(', ')}">${unmappedSectors.length?unmappedSectors.length+' unmapped':'100%'}</span></div>
+    <div class="health-row"><span>Circuit breaker (BTC dump kill switch)</span><span class="${isCircuitBreakerActive()?'health-bad':'health-ok'}">${isCircuitBreakerActive()?`ACTIVE — ${Math.ceil((circuitBreakerUntil-Date.now())/60000)}min left, ${circuitBreakerSuppressedCount} suppressed`:'armed'}</span></div>
     <div class="health-row"><span>Cross-exchange check (Bybit)</span><span id="bybitHealthLabel" class="health-warn">checking…</span></div>
     <div style="margin-top:8px;font-size:var(--fs-2);color:var(--muted)">Recent caught errors (${errorLog.length} total)</div>
     <div style="max-height:140px;overflow-y:auto;margin-top:4px">
@@ -1043,9 +1062,9 @@ const SECTOR_MAP={
   RUNEUSDT:'DEFI',JUPUSDT:'DEFI',RAYDIUMUSDT:'DEFI',PENDLEUSDT:'DEFI',CVXUSDT:'DEFI',
   JOEUSDT:'DEFI',HIGHUSDT:'DEFI',WOOUSDT:'DEFI',XVSUSDT:'DEFI',KAVAUSDT:'DEFI',
   CELOUSDT:'DEFI',COTIUSDT:'DEFI',ONDOUSDT:'DEFI',AEVOUSDT:'DEFI',ETHFIUSDT:'DEFI',
-  ALPACAUSDT:'DEFI',CLVUSDT:'DEFI',AGLDUSDT:'DEFI',BANDUSDT:'DEFI',LRCUSDT:'DEFI',
+  ALPACAUSDT:'DEFI',CLVUSDT:'DEFI',AGLDUSDT:'DEFI',BANDUSDT:'DEFI',
   // AI
-  FETUSDT:'AI',AGIXUSDT:'AI',WLDUSDT:'AI',RENDERUSDT:'AI',TAOAUSDT:'AI',
+  FETUSDT:'AI',AGIXUSDT:'AI',WLDUSDT:'AI',RENDERUSDT:'AI',TAOUSDT:'AI',
   AIUSDT:'AI',NFPUSDT:'AI',VANRYUSDT:'AI',GRASSUSDT:'AI',BIOUSDT:'AI',
   OCEANUSDT:'AI',
   // L2
@@ -1071,12 +1090,59 @@ const SECTOR_MAP={
   UXLINKUSDT:'CEX',
   // Privacy
   XMRUSDT:'PRIV',ZECUSDT:'PRIV',DASHUSDT:'PRIV',
+  // Layer 1 (previously untagged)
+  LTCUSDT:'L1',FTMUSDT:'L1',ZETAUSDT:'L1',CFXUSDT:'L1',KAIAUSDT:'L1',
+  LUNCUSDT:'L1',ASTRUSDT:'L1',QKCUSDT:'L1',VITEUSDT:'L1',CLAMUSDT:'L1',
+  ICXUSDT:'L1',WAVESUSDT:'L1',DGBUSDT:'L1',XEMUSDT:'L1',ELFUSDT:'L1',
+  NULSUSDT:'L1',
+  // Layer 2 (previously untagged)
+  STXUSDT:'L2',DYMUSDT:'L2',MNTUSDT:'L2',ZKUSDT:'L2',
+  // DeFi (previously untagged)
+  DYDXUSDT:'DEFI',GMXUSDT:'DEFI',CAKEUSDT:'DEFI',JITOUSDT:'DEFI',ENAUSDT:'DEFI',
+  EIGENUSDT:'DEFI',REZUSDT:'DEFI',LISTAUSDT:'DEFI',FRONTUSDT:'DEFI',IDEXUSDT:'DEFI',
+  BURGERUSDT:'DEFI',OMUSDT:'DEFI',AUCTIONUSDT:'DEFI',PERPUSDT:'DEFI',ACAUSDT:'DEFI',
+  BNTUSDT:'DEFI',FORTHUSDT:'DEFI',MDXUSDT:'DEFI',BADGERUSDT:'DEFI',REQUSDT:'DEFI',
+  HARDUSDT:'DEFI',AURAUSDT:'DEFI',BONDUSDT:'DEFI',MLNUSDT:'DEFI',WINGUSDT:'DEFI',
+  WNXMUSDT:'DEFI',ALPHAUSDT:'DEFI',TUSDT:'DEFI',
+  // AI (previously untagged)
+  ARKMUSDT:'AI',CYBERUSDT:'AI',
+  // Gaming / NFT (previously untagged)
+  APEUSDT:'GAME',BEAMXUSDT:'GAME',RONINUSDT:'GAME',BLURUSDT:'GAME',MAGICUSDT:'GAME',
+  HOOKUSDT:'GAME',PIXELUSDT:'GAME',PORTALUSDT:'GAME',PYRUSDT:'GAME',COMBOUSDT:'GAME',
+  SUPERUSDT:'GAME',TVKUSDT:'GAME',ERNUSDT:'GAME',MBXUSDT:'GAME',
+  // Meme (previously untagged)
+  ORDIUSDT:'MEME',NOTUSDT:'MEME',TURBOUSDT:'MEME',MEWUSDT:'MEME',MYROUSDT:'MEME',
+  PEOPLEUSDT:'MEME',MEMEUSDT:'MEME',SATSUSDT:'MEME',
+  // Infra / Storage / Oracle (previously untagged)
+  TIAUSDT:'INFRA',ENSUSDT:'INFRA',THETAUSDT:'INFRA',PYTHUSDT:'INFRA',AXLUSDT:'INFRA',
+  WUSDT:'INFRA',IOUSDT:'INFRA',ZROUSDT:'INFRA',IDUSDT:'INFRA',MASKUSDT:'INFRA',
+  DENTUSDT:'INFRA',GTCUSDT:'INFRA',KEYUSDT:'INFRA',PONDUSDT:'INFRA',PROMUSDT:'INFRA',
+  TWTUSDT:'INFRA',POWRUSDT:'INFRA',PHAUSDT:'INFRA',LITUSDT:'INFRA',DIAUSDT:'INFRA',
+  MBLUSDT:'INFRA',SCUSDT:'INFRA',TNBUSDT:'INFRA',CELRUSDT:'INFRA',DREPUSDT:'INFRA',
+  FIDAUSDT:'INFRA',BICOUSDT:'INFRA',ACHUSDT:'INFRA',
+  // Privacy (previously untagged)
+  XVGUSDT:'PRIV',DUSKUSDT:'PRIV',OXTUSDT:'PRIV',ROSEUSDT:'PRIV',
+  // Sports fan tokens (new sector — was lumping 8 coins into OTHER)
+  ALPINEUSDT:'FAN',LAZIOUSDT:'FAN',PORTOUSDT:'FAN',JUVUSDT:'FAN',
+  PSGUSDT:'FAN',CITYUSDT:'FAN',ATMUSDT:'FAN',INTERUSDT:'FAN',
 };
 const SECTOR_COLORS={
   L1:'#00BFFF',DEFI:'#BF5FFF',AI:'#00FFB2',L2:'#FF9500',
-  GAME:'#FF4081',MEME:'#FFD700',INFRA:'#69F0AE',CEX:'#FF5E3A',PRIV:'#A0A0A0'
+  GAME:'#FF4081',MEME:'#FFD700',INFRA:'#69F0AE',CEX:'#FF5E3A',PRIV:'#A0A0A0',
+  FAN:'#FF6B6B'
 };
 function getSector(sym){return SECTOR_MAP[sym]||'OTHER';}
+// ── SECTOR COVERAGE SELF-CHECK ────────────────────────────────────
+// Catches the class of bug where a pair gets added to DEFAULT_PAIRS but
+// never gets a SECTOR_MAP entry (silently falls into OTHER, weakening
+// Sector Ignition/Rotation and the sector filter). Runs once at startup.
+function checkSectorCoverage(){
+  const unmapped=(typeof DEFAULT_PAIRS!=='undefined'?DEFAULT_PAIRS:[]).filter(p=>!SECTOR_MAP[p]);
+  if(unmapped.length){
+    console.warn(`[VPSCAN] ${unmapped.length} pair(s) missing SECTOR_MAP entry — falling back to OTHER:`,unmapped);
+  }
+  return unmapped;
+}
 
 // Active sector filter (null = show all)
 let activeSector=null;
@@ -3731,7 +3797,9 @@ async function triggerAndPoll(){
                    ...mergedSignals.filter(s=>{const bt=baseType(s.type);return (bt==='VAH'||bt==='VAL')&&confirmedSignals.some(c=>c.symbol===s.symbol&&c.tf===s.tf&&baseType(c.type)===bt);}),
                    ...mergedSignals.filter(s=>{const bt=baseType(s.type);return (bt==='VAH'||bt==='VAL')&&!confirmedSignals.some(c=>c.symbol===s.symbol&&c.tf===s.tf&&baseType(c.type)===bt);})];
   try{applyRegimeAdjustment(allMerged);}catch(e){}
-  const newKeys=new Set(allMerged.map(sigKey));const brandNew=allMerged.filter(s=>!prevSigKeys.has(sigKey(s)));prevSigKeys=newKeys;allSignals=allMerged;
+  let gatedMerged=allMerged;
+  try{gatedMerged=applyCircuitBreaker(allMerged);}catch(e){}
+  const newKeys=new Set(gatedMerged.map(sigKey));const brandNew=gatedMerged.filter(s=>!prevSigKeys.has(sigKey(s)));prevSigKeys=newKeys;allSignals=gatedMerged;
   try{checkSignalAlerts(brandNew);}catch(e){}
   try{
     const isAnomaly=detectVolumeAnomaly(newSignals);
@@ -3854,8 +3922,8 @@ function renderRow(s,i,isMobile){
     const pocDistPct=s.vp&&s.price?Math.abs((s.price-s.vp.poc)/s.vp.poc*100):null;
     // FIX-E: potential upside badge
     const upside=calcPotentialUpside(s);
-    const upsideBadge=upside?`<span style="font-size:var(--fs-1);padding:1px 4px;margin-left:2px;color:${parseFloat(upside.atrMultiple)>=2?'#00FFB2':parseFloat(upside.atrMultiple)>=1.5?'#FFB800':'#FF5E3A'};border:1px solid ${parseFloat(upside.atrMultiple)>=2?'rgba(0,255,178,.35)':parseFloat(upside.atrMultiple)>=1.5?'rgba(255,184,0,.35)':'rgba(255,94,58,.35)'}" title="Potential upside to nearest resistance">↑${upside.distPct}%(${upside.atrMultiple}R)</span>`:'';    // FIX-C: HTF gate badge
-    const htfBadge=s.htfGated?'<span style="font-size:var(--fs-1);padding:1px 4px;margin-left:2px;color:#FF9500;border:1px solid rgba(255,149,0,.4);background:rgba(255,149,0,.08)" title="Signal against higher timeframe trend">HTF↓</span>':''
+    const upsideBadge=upside?`<span style="font-size:var(--fs-1);padding:1px 4px;margin-left:2px;color:${parseFloat(upside.atrMultiple)>=2?'#00FFB2':parseFloat(upside.atrMultiple)>=1.5?'#FFB800':'#FF5E3A'};border:1px solid ${parseFloat(upside.atrMultiple)>=2?'rgba(0,255,178,.35)':parseFloat(upside.atrMultiple)>=1.5?'rgba(255,184,0,.35)':'rgba(255,94,58,.35)'}" title="Potential upside to nearest resistance">↑${upside.distPct}%(${upside.atrMultiple}R)</span>`:'';
+    // FIX-C: HTF gate is now surfaced via statusCluster below, not a standalone tag
     const pocDistBadge=pocDistPct!==null?`<span style="font-size:var(--fs-1);padding:1px 4px;margin-left:2px;color:${pocDistPct<2?'#00FFB2':pocDistPct<4?'#FFB800':'#FF5E3A'};border:1px solid ${pocDistPct<2?'rgba(0,255,178,.35)':pocDistPct<4?'rgba(255,184,0,.35)':'rgba(255,94,58,.35)'};background:${pocDistPct<2?'rgba(0,255,178,.06)':pocDistPct<4?'rgba(255,184,0,.06)':'rgba(255,94,58,.06)'}">POC:${pocDistPct.toFixed(1)}%</span>`:'';
     const counterBadge=s.counterTrend?`<span style="font-size:var(--fs-1);padding:1px 4px;background:rgba(255,94,58,.12);color:#FF5E3A;border:1px dashed #FF5E3A;margin-left:2px">CT</span>`:'';
     const qaButtons=`<div class="qa-wrap" onclick="event.stopPropagation()">
@@ -3867,9 +3935,7 @@ function renderRow(s,i,isMobile){
     const lp=livePrices[s.symbol];const dispPrice=lp?lp.price:s.price;const dispChg=lp?lp.chg:(s.chg||0);
     const chgStr=(dispChg>=0?'+':'')+dispChg.toFixed(2)+'%',chgCls=dispChg>=0?'up':'dn';
     const isNew=!prevSigKeys.has(sigKey(s)),inWL=watchlist.includes(s.symbol),isMTF=(s.mtfCount||0)>=2;
-    const newTag=isNew?'<span class="badge NEW-TAG">NEW</span>':'';
-    const mtfTag=isMTF?`<span class="badge MTF-TAG">MTF ${s.mtfCount}×</span>`:'';
-    const freshTag=s.freshness==='HOT'?'<span class="fresh-tag HOT">🔥HOT</span>':s.freshness==='WARM'?'<span class="fresh-tag WARM">WARM</span>':'';
+    // newTag/mtfTag/freshTag now folded into statusCluster (built below, after srFlip/EMA/ADX flags are computed)
     const msBadge=s.ms&&s.ms!=='NEUTRAL'?`<span class="ms-badge ${s.ms}">${s.msLabel}</span>`:'';
     const obBadge=s.obs&&s.obs.length?'<span class="ob-badge">OB</span>':'';
     const flippedSR=s.sr&&s.sr.find(l=>l.flipped&&Math.abs(l.price-s.price)/s.price<0.012);
@@ -3879,6 +3945,29 @@ function renderRow(s,i,isMobile){
     const huntBadge=s.stopHunt?`<span style="font-size:var(--fs-2);padding:1px 4px;color:#FF4081;border:1px solid rgba(255,64,129,.4);background:rgba(255,64,129,.08);animation:pulse 1.5s infinite" title="${s.stopHunt.title||'Wick-rejection proxy — not a confirmed liquidation event'}">${s.stopHunt.label}</span>`:'';
     const emaCrossBadge=s.crossBullish12?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FF3333;border:1px solid rgba(255,51,51,.5);background:rgba(255,51,51,.1);font-weight:900">BULL CONFIRM</span>':s.crossBullish5?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FFD700;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.08)">EARLY BULL</span>':s.crossBearish12?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FF5E3A;border:1px solid rgba(255,94,58,.5);background:rgba(255,94,58,.1);font-weight:900">BEAR CONFIRM</span>':s.earlyWarning?'<span style="font-size:var(--fs-2);padding:1px 5px;color:#FF9500;border:1px solid rgba(255,149,0,.4)">WARN</span>':''
     const adxBadge=s.adx?`<span style="font-size:var(--fs-2);color:${s.adx>25?'var(--acc)':s.adx<20?'var(--vah)':'var(--muted)'}">${s.adx>25?'ADX:TREND':'ADX:CHOP'}</span>`:''
+    // Status cluster: consolidates all freshness/state flags (new, MTF, fresh, HTF-gate,
+    // consolidation, SR flip, EMA cross confirmation, ADX regime, pending, cooldown) into
+    // one compact element instead of ~10 separate always-on inline tags. Fixes the bug where
+    // srFlipBadge/emaCrossBadge/adxBadge were computed every render but never displayed.
+    const pendingBadgeStr=getPendingBadge(s.symbol,s.tf,s.type);
+    const cdRemaining=getCooldownRemaining(s.symbol,s.tf);
+    const statusFlags=[];
+    let statusSeverity='neutral';
+    if(isNew)statusFlags.push('🆕 New signal this scan');
+    if(isMTF)statusFlags.push(`📐 Confirmed on ${s.mtfCount} timeframes`);
+    if(s.freshness==='HOT')statusFlags.push('🔥 Hot — fired in the last few minutes');
+    else if(s.freshness==='WARM')statusFlags.push('🌤 Warm — fired recently');
+    if(s.htfGated){statusFlags.push('⚠ Against higher-timeframe trend (HTF gated)');statusSeverity='warn';}
+    if(s.consolidationCount>=3)statusFlags.push(`📦 ${s.consolidationCount} candles consolidating before break${s.higherLow?' + higher low':''}`);
+    if(flippedSR)statusFlags.push('🔄 SR FLIP — level flipped support/resistance');
+    if(s.crossBullish12)statusFlags.push('✔ EMA BULL CONFIRM (12-period cross)');
+    else if(s.crossBullish5)statusFlags.push('⚡ EMA EARLY BULL (5-period cross)');
+    else if(s.crossBearish12){statusFlags.push('✖ EMA BEAR CONFIRM');statusSeverity='warn';}
+    else if(s.earlyWarning){statusFlags.push('⚠ EMA WARN');statusSeverity='warn';}
+    if(s.adx)statusFlags.push(s.adx>25?`📈 ADX ${s.adx.toFixed(0)} — trending regime`:s.adx<20?`〜 ADX ${s.adx.toFixed(0)} — choppy regime`:`ADX ${s.adx.toFixed(0)}`);
+    if(pendingBadgeStr)statusFlags.push('⏳ PENDING — awaiting confirmation candle');
+    if(cdRemaining)statusFlags.push(`⏱ Cooldown ${cdRemaining} before re-alert`);
+    const statusCluster=statusFlags.length?`<span class="status-cluster${statusSeverity==='warn'?' warn':''}" title="${statusFlags.join(' • ').replace(/"/g,'&quot;')}">${statusSeverity==='warn'?'⚠':'•'}${statusFlags.length}</span>`:'';
     // OI, Funding, BTC Corr, Vol Delta, Liq Cluster badges — dedicated row
     const oiBadge=getOIBadge(s.symbol);
     const fundBadge=getFundingBadge(s.symbol);
@@ -3894,10 +3983,10 @@ function renderRow(s,i,isMobile){
     const rr=calcRR(s.price,s.vp,s.type);const rrColor=parseFloat(rr.rr)>=2?'rr-good':parseFloat(rr.rr)>=1?'rr-mid':'rr-bad';
     const note=tradeNotes[s.symbol];const noteDot=note?`<span style="color:var(--poc);font-size:var(--fs-1)" title="${note}">📝</span>`:'';
     const rowClass=`row${isNew?' is-new':''}${inWL?' wl-row':''}${isMTF?' mtf-row':''}${isStarred?' starred':''}${s.counterTrend?' counter-trend':''}`;
-    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span>${(s.extraBadges||[]).map(t=>`<span class="badge ${t}" style="font-size:var(--fs-1);padding:1px 3px">${LABEL_MAP[t]||t}</span>`).join('')}${counterBadge}<span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div>${hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;padding:3px 8px 4px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:''}${whyLine?`<div style="font-size:var(--fs-1);color:var(--muted);padding:0 8px 4px;font-style:italic">${whyLine}</div>`:''}<div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
+    if(isMobile){return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})"><div class="card-top"><div class="coin"><div class="sym">${sym}${gradeHtml}${statusCluster}${sectorBadge}</div><div class="pair">${s.symbol}${msBadge}${obBadge}${liqBadge}${patternBadge}${huntBadge}${noteDot}</div></div><div style="text-align:right"><div class="price-cell price-live">$${fp(dispPrice)}</div><div class="chg chg-live ${chgCls}">${chgStr}</div></div></div><div class="card-mid"><span class="badge ${s.type}">${bl}</span>${(s.extraBadges||[]).map(t=>`<span class="badge ${t}" style="font-size:var(--fs-1);padding:1px 3px">${LABEL_MAP[t]||t}</span>`).join('')}${counterBadge}<span class="tf-tag">${s.tf.toUpperCase()}</span><span class="trend-pill ${s.trend||'NEUTRAL'}">${trendLbl}</span>${qaButtons}</div>${hasBadges?`<div style="display:flex;gap:4px;flex-wrap:wrap;padding:3px 8px 4px;border-top:1px solid rgba(255,255,255,.04)">${oiBadge}${fundBadge}${btcCorrBadge}${volDeltaBadge}${liqClusterBadge}</div>`:''}${whyLine?`<div style="font-size:var(--fs-1);color:var(--muted);padding:0 8px 4px;font-style:italic">${whyLine}</div>`:''}<div class="card-bot">${heatBar}<div class="str-wrap"><div class="bar-bg"><div class="bar-fg" style="width:${s.strength}%"></div></div><div class="str-n">${s.strength}%</div></div></div></div>`;}
     return`<div class="${rowClass}" data-sym="${s.symbol}" data-rowkey="${rowKey}" style="animation-delay:${i*16}ms" onclick="openChart('${s.symbol}','${s.tf}','${s.type}',${vpStr})">
       <div class="td rank">${qaButtons}</div>
-      <div class="td"><div class="coin"><div class="sym">${sym}${newTag}${mtfTag}${freshTag}${gradeHtml}${pocDistBadge}${upsideBadge}${htfBadge}${getPendingBadge(s.symbol,s.tf,s.type)}${s.consolidationCount>=3?`<span style="font-size:var(--fs-1);padding:1px 4px;margin-left:2px;color:#BF9FFF;border:1px solid rgba(191,159,255,.4)" title="${s.consolidationCount} candles consolidation before break">${s.consolidationCount}C${s.higherLow?" HL":""}</span>`:""}}${noteDot}</div><div class="pair">${s.symbol}${sectorBadge}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span>${(()=>{const cd=getCooldownRemaining(s.symbol,s.tf);return cd?`<span style="font-size:var(--fs-1);color:var(--muted);margin-left:3px">⏱${cd}</span>`:'';})()}</div>${extraRow}</div></div>
+      <div class="td"><div class="coin"><div class="sym">${sym}${gradeHtml}${pocDistBadge}${upsideBadge}${statusCluster}${noteDot}</div><div class="pair">${s.symbol}${sectorBadge}${msBadge}${obBadge}${liqBadge}<span class="age-tag ${age.cls}">${age.text}</span></div>${extraRow}</div></div>
       <div class="td"><span class="price-cell price-live">$${fp(dispPrice)}</span></div>
       <div class="td"><span class="chg chg-live ${chgCls}">${chgStr}</span></div>
       <div class="td lvl">$${fp(s.vp.vah)}</div><div class="td lvl">$${fp(s.vp.val)}</div><div class="td lvl">$${fp(s.vp.poc)}</div>
@@ -3921,6 +4010,10 @@ async function openChart(symbol,tf,sigType,vp){
   document.querySelectorAll('.modal-tf-btn').forEach(b=>b.classList.toggle('on',b.dataset.tf===(tf||'1h')));
   document.getElementById('modalOverlay').classList.add('open');document.getElementById('chartLoadingState').style.display='flex';document.getElementById('chartContainer').style.display='none';document.getElementById('chartInfoBar').style.display='none';
   document.getElementById('modalNote').value=tradeNotes[symbol]||'';
+  const journalEntry=tradeJournal[symbol+'-'+(tf||'1h')+'-'+sigType];
+  const journalEl=document.getElementById('modalJournal');
+  if(journalEntry&&journalEntry.thesis){journalEl.style.display='block';journalEl.textContent=`📓 Why you took this: "${journalEntry.thesis}"`;}
+  else{journalEl.style.display='none';}
   try{applyCtxRelevance(sigType);}catch(e){}
   await loadChartData(symbol,tf||'1h',vp);
 }
@@ -4758,6 +4851,14 @@ function starSignal(sym,tf,type,e){
     if(sig)wrTrackSignal(sig);
     // Add to watchlist if not already there
     if(!watchlist.includes(sym)){watchlist.push(sym);localStorage.setItem('vpWatchlist',JSON.stringify(watchlist));renderWatchlist();}
+    // Pre-trade thesis capture — at decision time, not just at chart-close.
+    // Optional: skip the prompt if it slows down rapid-fire starring, but
+    // default is to ask since this is the highest-value moment to capture it.
+    const thesis=prompt(`Why are you taking ${sym} (${type} on ${tf.toUpperCase()})? (optional — leave blank to skip)`,'');
+    if(thesis&&thesis.trim()){
+      tradeJournal[key]={thesis:thesis.trim(),ts:Date.now(),symbol:sym,tf,type};
+      localStorage.setItem('vpJournal',JSON.stringify(tradeJournal));
+    }
     showToast(`⭐ ${sym} starred — tracking outcome`,'#FFD700');
   }
   localStorage.setItem('vpStarred',JSON.stringify([...starredSignals]));
@@ -4798,7 +4899,8 @@ const BADGE_FLAGS=[
   {key:'hasRS',label:'Relative Strength vs BTC'},
   {key:'hasPainIndex',label:'Pain Index'},
   {key:'hasOIDelta',label:'OI Delta State'},
-  {key:'hasPOCMigration',label:'POC Migration'}
+  {key:'hasPOCMigration',label:'POC Migration'},
+  {key:'hasCompressionDuration',label:'⏳ Compression Duration'}
 ];
 function computeBadgeCorrelationMatrix(){
   // Phi coefficient (binary correlation) between every pair of badge flags.
@@ -4848,6 +4950,9 @@ function refreshBadgeAnalytics(){
   if(resolved.length<10){
     el.innerHTML=`<div style="font-size:var(--fs-2);color:var(--muted);padding:8px 0">Need at least 10 resolved signals to compute meaningful win rates. Currently: ${resolved.length}. This fills in automatically as scans run and signals resolve over 24h.</div>`;
     try{renderBadgeCorrelationTable();}catch(e){}
+    try{renderHeadlineScoreCorrelation();}catch(e){}
+    try{renderProbabilityCalibration();}catch(e){}
+    try{renderSessionWinRateBreakdown();}catch(e){}
     return;
   }
   const winRate=arr=>arr.length?Math.round(100*arr.filter(e=>e.result24h.win).length/arr.length):null;
@@ -4871,22 +4976,153 @@ function refreshBadgeAnalytics(){
     <div style="font-size:var(--fs-1);color:var(--muted);margin-top:6px">Lift = win rate WITH the badge minus win rate WITHOUT it, on ${resolved.length} resolved signals. Low/negative lift after a real sample size (N>30) means that badge isn't earning its screen space.</div>
   `;
   try{renderBadgeCorrelationTable();}catch(e){}
+  try{renderHeadlineScoreCorrelation();}catch(e){}
+  try{renderProbabilityCalibration();}catch(e){}
+  try{renderSessionWinRateBreakdown();}catch(e){}
+}
+// ══════════════════════════════════════════════════════════════════
+// HEADLINE SCORE CORRELATION — the same multicollinearity check the
+// badge-level phi matrix runs, applied one layer up. Strength%, Heat,
+// Grade, and the Probability-of-Expansion badge are the four numbers a
+// trader actually scans first on every row. If those four move together
+// almost every time, they're not four independent reads on a setup —
+// they're one read wearing four costumes.
+// ══════════════════════════════════════════════════════════════════
+function pearsonCorr(xs,ys){
+  const n=xs.length;if(n<2)return 0;
+  const mx=xs.reduce((a,b)=>a+b,0)/n,my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,dx2=0,dy2=0;
+  for(let i=0;i<n;i++){const dx=xs[i]-mx,dy=ys[i]-my;num+=dx*dy;dx2+=dx*dx;dy2+=dy*dy;}
+  const denom=Math.sqrt(dx2*dy2);
+  return denom>0?num/denom:0;
+}
+const GRADE_NUMERIC={A:4,B:3,C:2,D:1};
+function computeHeadlineScoreCorrelation(){
+  const logged=wrLog.filter(e=>e.features&&e.features.grade);
+  const scores={strength:[],heat:[],grade:[]};
+  const withProb=logged.filter(e=>e.predictedProb!=null);
+  logged.forEach(e=>{scores.strength.push(e.features.strength||0);scores.heat.push(e.features.heat||0);scores.grade.push(GRADE_NUMERIC[e.features.grade]||0);});
+  const pairs=[];
+  const dims=[['Strength %','strength'],['Heat','heat'],['Grade','grade']];
+  for(let i=0;i<dims.length;i++){
+    for(let j=i+1;j<dims.length;j++){
+      const r=pearsonCorr(scores[dims[i][1]],scores[dims[j][1]]);
+      pairs.push({a:dims[i][0],b:dims[j][0],r,n:logged.length});
+    }
+  }
+  if(withProb.length>=10){
+    const ps=withProb.map(e=>e.predictedProb);
+    [['strength','Strength %'],['heat','Heat'],['grade','Grade']].forEach(([key,label])=>{
+      const vals=withProb.map(e=>key==='grade'?(GRADE_NUMERIC[e.features.grade]||0):(e.features[key]||0));
+      pairs.push({a:label,b:'Probability badge',r:pearsonCorr(vals,ps),n:withProb.length});
+    });
+  }
+  return{pairs:pairs.sort((x,y)=>Math.abs(y.r)-Math.abs(x.r)),total:logged.length};
+}
+function renderHeadlineScoreCorrelation(){
+  const el=document.getElementById('headlineScoreCorrBody');
+  if(!el)return;
+  const{pairs,total}=computeHeadlineScoreCorrelation();
+  if(total<10){el.innerHTML=`<div style="font-size:var(--fs-2);color:var(--muted);padding:8px 0">Need at least 10 logged signals. Currently: ${total}.</div>`;return;}
+  el.innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:var(--fs-2)">
+      <tr style="color:var(--muted);text-align:left"><th>Score A</th><th>Score B</th><th>r (correlation)</th><th>N</th></tr>
+      ${pairs.map(p=>{
+        const strong=Math.abs(p.r)>=0.6;
+        return`<tr style="border-top:1px solid var(--border)${strong?';background:rgba(255,184,0,.06)':''}">
+        <td>${p.a}</td><td>${p.b}</td>
+        <td style="color:${strong?'var(--warn)':'var(--muted)'};font-weight:${strong?'700':'400'}">${p.r.toFixed(2)}${strong?' ⚠':''}</td>
+        <td>${p.n}</td>
+      </tr>`;}).join('')}
+    </table>
+    <div style="font-size:var(--fs-1);color:var(--muted);margin-top:6px">r near ±1 = these two headline scores move together almost every time — you may be reading the same underlying signal twice. r near 0 = genuinely independent reads. ⚠ at |r|≥0.6.</div>
+  `;
+}
+// ══════════════════════════════════════════════════════════════════
+// PROBABILITY CALIBRATION — buckets every resolved signal by the
+// probability the engine predicted AT signal time, then compares it to
+// the realized win rate in that bucket. If the line doesn't track the
+// 45° diagonal, "probability" is a ranking, not a probability.
+// ══════════════════════════════════════════════════════════════════
+function renderProbabilityCalibration(){
+  const el=document.getElementById('probCalibrationBody');
+  if(!el)return;
+  const resolved=wrLog.filter(e=>e.predictedProb!=null&&e.checked24h&&e.result24h);
+  if(resolved.length<20){el.innerHTML=`<div style="font-size:var(--fs-2);color:var(--muted);padding:8px 0">Need at least 20 resolved signals with a predicted probability. Currently: ${resolved.length}.</div>`;return;}
+  const buckets=[[0,20],[20,40],[40,60],[60,80],[80,101]];
+  const rows=buckets.map(([lo,hi])=>{
+    const inBucket=resolved.filter(e=>e.predictedProb>=lo&&e.predictedProb<hi);
+    if(!inBucket.length)return{lo,hi,n:0,predicted:null,realized:null};
+    const predicted=Math.round(inBucket.reduce((a,e)=>a+e.predictedProb,0)/inBucket.length);
+    const realized=Math.round(100*inBucket.filter(e=>e.result24h.win).length/inBucket.length);
+    return{lo,hi,n:inBucket.length,predicted,realized};
+  });
+  el.innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:var(--fs-2)">
+      <tr style="color:var(--muted);text-align:left"><th>Predicted bucket</th><th>N</th><th>Avg predicted</th><th>Realized win%</th><th>Gap</th></tr>
+      ${rows.map(r=>{
+        if(!r.n)return`<tr style="border-top:1px solid var(--border)"><td>${r.lo}–${r.hi}%</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>`;
+        const gap=r.realized-r.predicted;const bad=Math.abs(gap)>=15;
+        return`<tr style="border-top:1px solid var(--border)${bad?';background:rgba(255,94,58,.06)':''}">
+        <td>${r.lo}–${r.hi}%</td><td>${r.n}</td><td>${r.predicted}%</td><td>${r.realized}%</td>
+        <td style="color:${bad?'var(--vah)':'var(--muted)'};font-weight:${bad?'700':'400'}">${gap>0?'+':''}${gap}pt${bad?' ⚠':''}</td>
+      </tr>`;}).join('')}
+    </table>
+    <div style="font-size:var(--fs-1);color:var(--muted);margin-top:6px">Gap = realized win% minus avg predicted probability in that bucket. Near 0 across all buckets = well-calibrated. Consistently positive = the engine is underconfident; consistently negative = overconfident. Computed on ${resolved.length} resolved signals.</div>
+  `;
+}
+// ══════════════════════════════════════════════════════════════════
+// SESSION WIN-RATE BREAKDOWN — the session multipliers (Asia 1.0,
+// Europe 1.1, US 1.2, Overlap 1.35) in getCurrentSession() are stated
+// assumptions, never validated against outcomes. This breaks out
+// realized win rate by session so they can be checked the same way
+// the BTC-regime deltas are meant to be.
+// ══════════════════════════════════════════════════════════════════
+function renderSessionWinRateBreakdown(){
+  const el=document.getElementById('sessionWinRateBody');
+  if(!el)return;
+  const resolved=wrLog.filter(e=>e.checked24h&&e.result24h&&e.session);
+  if(resolved.length<20){el.innerHTML=`<div style="font-size:var(--fs-2);color:var(--muted);padding:8px 0">Need at least 20 resolved signals. Currently: ${resolved.length}.</div>`;return;}
+  const assumedWeight={ASIA:1.0,EUROPE:1.1,US:1.2,OVERLAP:1.35,CLOSED:1.0};
+  const sessions=[...new Set(resolved.map(e=>e.session))];
+  const rows=sessions.map(s=>{
+    const inSession=resolved.filter(e=>e.session===s);
+    const wr=Math.round(100*inSession.filter(e=>e.result24h.win).length/inSession.length);
+    return{session:s,n:inSession.length,winRate:wr,assumedWeight:assumedWeight[s]||1.0};
+  }).sort((a,b)=>b.winRate-a.winRate);
+  const byWeight=[...rows].sort((a,b)=>b.assumedWeight-a.assumedWeight).map(r=>r.session).join('>');
+  const byWinRate=rows.map(r=>r.session).join('>');
+  const matches=byWeight===byWinRate;
+  el.innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:var(--fs-2)">
+      <tr style="color:var(--muted);text-align:left"><th>Session</th><th>N</th><th>Realized win%</th><th>Assumed weight</th></tr>
+      ${rows.map(r=>`<tr style="border-top:1px solid var(--border)">
+        <td>${r.session}</td><td>${r.n}</td><td>${r.winRate}%</td><td>${r.assumedWeight}×</td>
+      </tr>`).join('')}
+    </table>
+    <div style="font-size:var(--fs-1);color:${matches?'var(--acc)':'var(--warn)'};margin-top:6px">${matches?'✓':'⚠'} Win-rate ranking (${byWinRate}) ${matches?'matches':'does NOT match'} the assumed-weight ranking (${byWeight}). Computed on ${resolved.length} resolved signals — treat as directional until each session bucket has 30+ samples.</div>
+  `;
 }
 
 function wrTrackSignal(sig){
   const key=sig.symbol+'-'+sig.tf+'-'+sig.type+'-'+sig.ts;
   if(wrLog.find(e=>e.key===key))return; // already logged
+  let predictedProb=null;
+  try{const p=calcProbabilityOfExpansion(sig);if(p&&p.status==='READY')predictedProb=p.probability;}catch(e){}
   const entry={
     key,symbol:sig.symbol,tf:sig.tf,type:sig.type,
     entryPrice:sig.price,ts:sig.ts||Date.now(),
     sector:getSector(sig.symbol),
     session:sig.session||getCurrentSession().session,
     btcRegime:getBTCRegime(),
+    predictedProb,
     target:sig.vp?sig.vp.vah:null,stop:null,
     result4h:null,result24h:null,
     checked4h:false,checked24h:false,
     // ── feature vector for Probability of Expansion engine + Badge Analytics ──
     features:{
+      strength:Math.round(sig.strength||0),
+      heat:sig.heat||0,
       volTier:sig.volTier||'NORMAL',
       adx:Math.round(sig.adx||0),
       grade:(typeof calcGrade==='function'?calcGrade(sig):null),
@@ -4900,7 +5136,8 @@ function wrTrackSignal(sig){
       hasOrderFlowProxy:!!(typeof detectOrderFlowProxy==='function'&&detectOrderFlowProxy(sig)),
       hasPainIndex:!!sig.painIndex,
       hasOIDelta:!!(typeof getOIDeltaState==='function'&&getOIDeltaState(sig.symbol,sig.chg||0)),
-      hasPOCMigration:!!sig.pocMigration
+      hasPOCMigration:!!sig.pocMigration,
+      hasCompressionDuration:!!(sig.compressionDuration&&(sig.compressionDuration.tier==='DEEP'||sig.compressionDuration.tier==='EXTREME'))
     }
   };
   wrLog.push(entry);
@@ -6416,7 +6653,49 @@ function applyRegimeAdjustment(signals){
   });
 }
 
-// ── PORTFOLIO DRAWDOWN TRACKING ──────────────────────────────────
+// ── CIRCUIT BREAKER: FAST BTC DUMP KILL SWITCH ───────────────────
+// applyRegimeAdjustment() above handles steady-state trend/chop by nudging
+// strength scores. A fast dump is a different animal — it deserves a hard
+// gate, not a discount. This tracks BTC price over a rolling window and,
+// if it drops past a threshold, suppresses NEW momentum-long signals
+// fleet-wide for a cooldown period rather than just scoring them lower.
+const CIRCUIT_BREAKER_DROP_PCT=-3;          // BTC % drop over the window that trips the breaker
+const CIRCUIT_BREAKER_WINDOW_MS=5*60*1000;  // 5-minute rolling window
+const CIRCUIT_BREAKER_COOLDOWN_MS=15*60*1000; // suppress for 15 minutes after tripping
+const MOMENTUM_LONG_TYPES=new Set(['VAH_SPIKE','BULL_CONFIRM','EARLY_BULL','VWAP_RECLAIM','SPOT_ORGANIC','MTF_RSI_STAIRCASE','SQUEEZE_BULL']);
+let btcPriceSamples=[];
+let circuitBreakerUntil=0;
+let circuitBreakerSuppressedCount=0;
+function sampleBTCForCircuitBreaker(){
+  const lp=livePrices['BTCUSDT'];
+  if(!lp||!lp.price)return;
+  const now=Date.now();
+  btcPriceSamples.push({ts:now,price:lp.price});
+  btcPriceSamples=btcPriceSamples.filter(s=>now-s.ts<=CIRCUIT_BREAKER_WINDOW_MS);
+  if(btcPriceSamples.length<2)return;
+  const oldest=btcPriceSamples[0];
+  const pct=((lp.price-oldest.price)/oldest.price)*100;
+  if(pct<=CIRCUIT_BREAKER_DROP_PCT&&circuitBreakerUntil<now){
+    circuitBreakerUntil=now+CIRCUIT_BREAKER_COOLDOWN_MS;
+    showToast(`⛔ CIRCUIT BREAKER: BTC ${pct.toFixed(1)}% in 5min — new momentum-long signals suppressed for ${Math.round(CIRCUIT_BREAKER_COOLDOWN_MS/60000)}min`,'var(--vah)');
+    try{typeof sendTelegram==='function'&&sendTelegram(`⛔ <b>CIRCUIT BREAKER TRIPPED</b>\nBTC ${pct.toFixed(1)}% in 5min — momentum-long signals suppressed fleet-wide for ${Math.round(CIRCUIT_BREAKER_COOLDOWN_MS/60000)} minutes.`);}catch(e){}
+  }
+}
+function isCircuitBreakerActive(){return Date.now()<circuitBreakerUntil;}
+function applyCircuitBreaker(signals){
+  if(!isCircuitBreakerActive())return signals;
+  const kept=[];
+  let suppressed=0;
+  signals.forEach(s=>{
+    if(MOMENTUM_LONG_TYPES.has(s.type)&&!starredSignals.has(s.symbol+'-'+s.tf+'-'+s.type)){suppressed++;return;}
+    kept.push(s);
+  });
+  circuitBreakerSuppressedCount=suppressed;
+  return kept;
+}
+setInterval(sampleBTCForCircuitBreaker,15000);
+
+
 // peakPriceCache: symbol → peak price seen since position opened
 const peakPriceCache={};
 function updatePortfolioDrawdown(){
@@ -6447,8 +6726,41 @@ function updatePortfolioDrawdown(){
 // Run drawdown check every 30s alongside portfolio panel render
 setInterval(updatePortfolioDrawdown,30000);
 
+// ── STATE EXPORT/IMPORT ──────────────────────────────────────────
+// Zero-backend by design means a cleared cache or a new browser/device
+// loses everything with no recovery path. This is a JSON download/upload,
+// not a server — keeps the no-backend constraint intact.
+const VP_STORAGE_KEYS=['vpTheme','vpSimpleMode','tgToken','tgChat','vpAlerts','vpSignalAlerts','vpNotes','vpGroups','vpWatchlist','vpStarred','vpDismissed','vpWinRate','vpPortfolio','vpJournal'];
+function exportState(){
+  const data={};
+  VP_STORAGE_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)data[k]=v;});
+  const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),version:1,data},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`vpscan-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ STATE EXPORTED');
+}
+function importState(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const parsed=JSON.parse(e.target.result);
+      const data=parsed.data||parsed; // tolerate a raw key/value dump too
+      if(!confirm('This will overwrite your current watchlist, win-rate log, portfolio, notes, and other saved data with the contents of this file. Continue?'))return;
+      VP_STORAGE_KEYS.forEach(k=>{if(data[k]!==undefined)localStorage.setItem(k,data[k]);});
+      showToast('✓ STATE IMPORTED — RELOADING');
+      setTimeout(()=>location.reload(),900);
+    }catch(err){showToast('✗ IMPORT FAILED — invalid file','var(--vah)');}
+  };
+  reader.readAsText(file);
+}
+
 // INIT
 window.addEventListener('DOMContentLoaded',()=>{
+  checkSectorCoverage();
   const saved=localStorage.getItem('vpTheme')||'dark';document.documentElement.setAttribute('data-theme',saved);document.getElementById('themeBtn').textContent=saved==='dark'?'🌙':'☀️';
   if(localStorage.getItem('vpSimpleMode')==='1'){simpleMode=true;document.body.classList.add('simple-mode');const sb=document.getElementById('simpleModeBtn');if(sb)sb.classList.add('on');}
   try{watchlist=JSON.parse(localStorage.getItem('vpWatchlist')||'[]');}catch(e){watchlist=[];}
@@ -6456,6 +6768,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{signalAlerts=JSON.parse(localStorage.getItem('vpSignalAlerts')||'[]');}catch(e){signalAlerts=[];}
   try{coinGroups=JSON.parse(localStorage.getItem('vpGroups')||'[]');}catch(e){coinGroups=[];}
   try{tradeNotes=JSON.parse(localStorage.getItem('vpNotes')||'{}');}catch(e){tradeNotes={};}
+  try{tradeJournal=JSON.parse(localStorage.getItem('vpJournal')||'{}');}catch(e){tradeJournal={};}
   const tgT=localStorage.getItem('tgToken'),tgC=localStorage.getItem('tgChat');
   if(tgT)document.getElementById('tgToken').value=tgT;if(tgC)document.getElementById('tgChat').value=tgC;
   document.getElementById('warnBtn').style.opacity='0.45';document.getElementById('mtfBtn').style.opacity='0.45';
